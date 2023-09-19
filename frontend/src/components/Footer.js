@@ -27,9 +27,7 @@ const Footer = (props) => {
     return (
         <ThemeProvider theme={theme}>
             <footer className={classes.footer}>
-                Copyright &copy; {new Date().getFullYear()} Question Systems Corp 501(c)(3):
-                <a href="https://twitter.com/question_pol" target="_blank" rel="noopener noreferrer">@question_pol</a>
-                <Link to="/privacy" className={classes.link}>privacy policy</Link>
+                Copyright &copy; {new Date().getFullYear()} Lawcrawl:
             </footer>
         </ThemeProvider>
     )

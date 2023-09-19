@@ -4,11 +4,10 @@ import {makeStyles} from '@material-ui/core/styles';
 import Typography from "@material-ui/core/Typography";
 import Footer from "./Footer";
 import theme from './Theme';
-import {Box, Card, CardActionArea, CardContent, ThemeProvider} from "@material-ui/core";
-import Button from '@material-ui/core/Button';
-import CloudUploadIcon from '@material-ui/icons/CloudUpload';
+import {Box, ThemeProvider} from "@material-ui/core";
+import LibraryBooksIcon from "@material-ui/icons/LibraryBooks";
+import AddIcon from '@mui/icons-material/Add';
 import config from './config';
-
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -16,45 +15,47 @@ const useStyles = makeStyles((theme) => ({
         overflowY: 'scroll',
         justifyContent: 'center',
         minHeight: "100vh",
-        paddingBottom: 35,
+        paddingBottom: 50,
     },
-    homePageContainer: {
-        paddingTop: 35,
+    chatContainer: {
+        paddingTop: 80,
         textAlign: 'center',
+        paddingHorizontal: 20,
     },
     mainLogo: {
-        width: '25%',
+        width: '15%',
         margin: '0 auto',
         display: 'block',
     },
     textLogo: {
-        width: '30%',
-        marginLeft: 10,
-        marginTop: 12,
-        marginBottom: 16,
-        display: 'block',
+        fontSize: '4.5vw',
+    },
+    subTitle: {
+        fontSize: '2vw',
+        marginBottom: 20,
+    },
+    description: {
+        fontSize: '1.2vw',
     },
     icon: {
-        fontSize: 60,
-        height: 50,
-        width: 50,
+        fontSize: 80,
+        color: 'black',
     },
     plusIcon: {
-        margin: '15px',
+        fontSize: 40,
+        margin: '0 30px',
+    },
+    openAILogo: {
+        height: 80,
+        width: 80,
     },
     iconContainer: {
         display: 'flex',
-        justifyContent: 'space-around',
-    },
-    cardTile: {
-        fontFamily: 'DMSans, sans-serif',
-    },
-    button: {
-        marginTop: 20,
-        marginBottom: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 30,
     }
 }));
-
 
 const HomePage = () => {
     const classes = useStyles();
@@ -62,34 +63,37 @@ const HomePage = () => {
     return (
         <ThemeProvider theme={theme}>
             <div className={classes.root}>
-                <div className={classes.homePageContainer}>
+                <div className={classes.chatContainer}>
                     <Grid container>
                         <Grid item xs={12}>
-                            <img src={`${config.STATIC_URL}images/logos/lawcrawl2.png`}
+                            <img src={`${config.STATIC_URL}images/logos/LawcrawlLogo.png`}
                                  alt="Lawcrawl Logo"
                                  className={classes.mainLogo}/>
                         </Grid>
 
                         <Grid item xs={12}>
-                            <Box display="flex" justifyContent="center" alignItems="center">
-                                <Typography style={{fontSize: '5.0vw', marginTop: -30}}>
-                                    Law Crawl
-                                </Typography>
-                            </Box>
-                            <Box display="flex" justifyContent="center" alignItems="center">
-                                <Typography style={{fontSize: '1.8vw'}}>
-                                    Upload your case documents and chat
-                                </Typography>
-                            </Box>
+                            <Typography className={classes.textLogo}>Law Crawl</Typography>
+                            <Typography className={classes.subTitle}>Your personal AI legal
+                                advisor</Typography>
                         </Grid>
 
                         <Grid item xs={12}>
-                            <Typography>
-                                <h3></h3>
+                            <Typography className={classes.description}>
+                                Upload your legal documents, then chat <br/>
+                                with our version of GPT that knows the law and knows your case.
                             </Typography>
                         </Grid>
-                    </Grid>
 
+                        <Grid item xs={12}>
+                            <div className={classes.iconContainer}>
+                                <LibraryBooksIcon className={classes.icon}/>
+                                <AddIcon className={classes.plusIcon}/>
+                                <img className={classes.openAILogo}
+                                     src={`${config.STATIC_URL}images/logos/OpenAILogo.png`}
+                                     alt="OpenAI Logo"/>
+                            </div>
+                        </Grid>
+                    </Grid>
                 </div>
             </div>
             <Footer/>

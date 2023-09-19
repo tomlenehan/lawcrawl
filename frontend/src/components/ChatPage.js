@@ -4,7 +4,15 @@ import {makeStyles} from '@material-ui/core/styles';
 import Typography from "@material-ui/core/Typography";
 import Footer from "./Footer";
 import theme from './Theme';
-import {Button, ThemeProvider, TextField} from "@material-ui/core";
+import {
+    Button,
+    ThemeProvider,
+    TextField,
+    Select,
+    MenuItem,
+    InputLabel,
+    FormControl
+} from "@material-ui/core";
 import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import config from './config';
 
@@ -17,7 +25,7 @@ const useStyles = makeStyles((theme) => ({
         paddingBottom: 35,
     },
     homePageContainer: {
-        paddingTop: 55,
+        paddingTop: 80,
         textAlign: 'center',
     },
     mainLogo: {
@@ -53,6 +61,7 @@ const useStyles = makeStyles((theme) => ({
     },
     textField: {
         marginTop: 20,
+        minWidth: 200,
         width: '100%',
     },
     fileInput: {
@@ -63,6 +72,8 @@ const useStyles = makeStyles((theme) => ({
 const ChatPage = () => {
     const classes = useStyles();
     const [caseName, setCaseName] = React.useState('');
+    const [selectedState, setSelectedState] = React.useState('');
+
 
     const handleUploadClick = (event) => {
         const fileInput = document.getElementById('fileInput');
@@ -70,6 +81,8 @@ const ChatPage = () => {
     };
 
     const handleFileChange = async (event) => {
+        print('handleFileChange');
+
         const files = event.target.files;
         const formData = new FormData();
 
@@ -78,6 +91,7 @@ const ChatPage = () => {
         }
 
         formData.append('case_name', caseName);
+        formData.append('state', selectedState);
 
         try {
             const response = await fetch('/api/upload/', {
@@ -99,7 +113,7 @@ const ChatPage = () => {
                     <Grid container spacing={3} direction="column" alignItems="center">
                         <Grid item xs={12}>
                             <Typography variant="h5">
-                                First, give a name for your case <br />
+                                First, give a name for your case <br/>
                                 and upload the document(s)
                             </Typography>
                         </Grid>
@@ -113,6 +127,70 @@ const ChatPage = () => {
                                 helperText="Provide a name for easy reference."
                             />
                         </Grid>
+
+                        <Grid item xs={12}>
+                            <FormControl variant="outlined" className={classes.textField}>
+                                <InputLabel id="state-label">State</InputLabel>
+                                <Select
+                                    labelId="state-label"
+                                    value={selectedState}
+                                    onChange={e => setSelectedState(e.target.value)}
+                                    label="State"
+                                >
+                                    <MenuItem value="AL">Alabama</MenuItem>
+                                    <MenuItem value="AK">Alaska</MenuItem>
+                                    <MenuItem value="AZ">Arizona</MenuItem>
+                                    <MenuItem value="AR">Arkansas</MenuItem>
+                                    <MenuItem value="CA">California</MenuItem>
+                                    <MenuItem value="CO">Colorado</MenuItem>
+                                    <MenuItem value="CT">Connecticut</MenuItem>
+                                    <MenuItem value="DE">Delaware</MenuItem>
+                                    <MenuItem value="FL">Florida</MenuItem>
+                                    <MenuItem value="GA">Georgia</MenuItem>
+                                    <MenuItem value="HI">Hawaii</MenuItem>
+                                    <MenuItem value="ID">Idaho</MenuItem>
+                                    <MenuItem value="IL">Illinois</MenuItem>
+                                    <MenuItem value="IN">Indiana</MenuItem>
+                                    <MenuItem value="IA">Iowa</MenuItem>
+                                    <MenuItem value="KS">Kansas</MenuItem>
+                                    <MenuItem value="KY">Kentucky</MenuItem>
+                                    <MenuItem value="LA">Louisiana</MenuItem>
+                                    <MenuItem value="ME">Maine</MenuItem>
+                                    <MenuItem value="MD">Maryland</MenuItem>
+                                    <MenuItem value="MA">Massachusetts</MenuItem>
+                                    <MenuItem value="MI">Michigan</MenuItem>
+                                    <MenuItem value="MN">Minnesota</MenuItem>
+                                    <MenuItem value="MS">Mississippi</MenuItem>
+                                    <MenuItem value="MO">Missouri</MenuItem>
+                                    <MenuItem value="MT">Montana</MenuItem>
+                                    <MenuItem value="NE">Nebraska</MenuItem>
+                                    <MenuItem value="NV">Nevada</MenuItem>
+                                    <MenuItem value="NH">New Hampshire</MenuItem>
+                                    <MenuItem value="NJ">New Jersey</MenuItem>
+                                    <MenuItem value="NM">New Mexico</MenuItem>
+                                    <MenuItem value="NY">New York</MenuItem>
+                                    <MenuItem value="NC">North Carolina</MenuItem>
+                                    <MenuItem value="ND">North Dakota</MenuItem>
+                                    <MenuItem value="OH">Ohio</MenuItem>
+                                    <MenuItem value="OK">Oklahoma</MenuItem>
+                                    <MenuItem value="OR">Oregon</MenuItem>
+                                    <MenuItem value="PA">Pennsylvania</MenuItem>
+                                    <MenuItem value="RI">Rhode Island</MenuItem>
+                                    <MenuItem value="SC">South Carolina</MenuItem>
+                                    <MenuItem value="SD">South Dakota</MenuItem>
+                                    <MenuItem value="TN">Tennessee</MenuItem>
+                                    <MenuItem value="TX">Texas</MenuItem>
+                                    <MenuItem value="UT">Utah</MenuItem>
+                                    <MenuItem value="VT">Vermont</MenuItem>
+                                    <MenuItem value="VA">Virginia</MenuItem>
+                                    <MenuItem value="WA">Washington</MenuItem>
+                                    <MenuItem value="WV">West Virginia</MenuItem>
+                                    <MenuItem value="WI">Wisconsin</MenuItem>
+                                    <MenuItem value="WY">Wyoming</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+
                         <Grid item xs={12}>
                             <input
                                 accept="application/pdf"
