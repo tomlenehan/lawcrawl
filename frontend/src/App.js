@@ -1,0 +1,56 @@
+import React, { useEffect } from "react";
+import {Provider} from "react-redux";
+import {Routes, Route, BrowserRouter, useLocation, RouterProvider} from "react-router-dom";
+import Layout from "./components/Layout";
+import store from "./store";
+import theme from './components/Theme';
+import CssBaseline from '@mui/material/CssBaseline';
+import {ThemeProvider} from '@mui/material/styles';
+import {makeStyles} from "@material-ui/core";
+import HomePage from "./components/HomePage";
+import Login from "./components/Login";
+import Chat from "./components/ChatPage";
+
+
+const bodyStyles = makeStyles(() => ({
+    htmlBody: {
+        height: '100%',
+        width: '100%',
+        margin: 0,
+        padding: 0,
+        backgroundColor: '#B2DFDB',
+        color: '#3a3a3a',
+        fontFamily: 'Roboto, sans-serif',
+    },
+}));
+
+// const tagManagerArgs = {
+//     gtmId: 'GTM-5L4W47L'
+// }
+
+// TagManager.initialize(tagManagerArgs)
+
+export default function App() {
+
+    const bodyClasses = bodyStyles();
+
+    return (
+        <ThemeProvider theme={theme}>
+            <CssBaseline/>
+            <Provider store={store}>
+                <BrowserRouter>
+                    <Layout>
+                        <div className={bodyClasses.htmlBody}>
+                            <Routes>
+                                <Route path="/" element={<HomePage/>}/>
+                                <Route path="/home" element={<HomePage/>}/>
+                                <Route path="/login" element={<Login/>}/>
+                                <Route path="/chat" element={<Chat/>}/>
+                            </Routes>
+                        </div>
+                    </Layout>
+                </BrowserRouter>
+            </Provider>
+        </ThemeProvider>
+    );
+}

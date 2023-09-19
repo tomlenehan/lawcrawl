@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap'); /* Global CSS*/
+html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background-color: #076AE0;
+    color: #FFFFFF;
+    font-family: 'Bebas Neue', cursive;
+}
+
+#main {
+    height: 100%;
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    left: 0;
+    top: 0;
+}
+
+#app {
+    overflow-y: scroll;
+    justify-content: center;
+}
+
+.appbar {
+    font-family: 'Roboto', sans-serif;
+}
+
+.full-width {
+    width: 100%;
+}
+
+
+/* Hompage CSS */
+.center-image {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.main-img {
+    width: 50%;
+    border-radius: 10px;
+}
+
+.sub-img {
+    width: 25%;
+    margin-top: 10px;
+    border-radius: 10px;
+}
+
+
+.image-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.main-image {
+    width: 50%;
+    margin-bottom: 20px;
+}
+
+.smaller-image {
+    width: 25%;
+}
+
+
