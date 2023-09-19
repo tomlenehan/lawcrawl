@@ -36,7 +36,7 @@
     "react-gtm-module": "^2.0.11",
     "react-linkify": "^1.0.0-alpha",
     "react-query": "^3.39.3",
-    "react-redux": "^8.0.5",
+    "react-redux": "^8.1.2",
     "react-router-dom": "^6.8.0",
     "react-scripts": "^5.0.1",
     "react-twitter-embed": "^4.0.4",

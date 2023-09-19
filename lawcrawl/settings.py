@@ -36,6 +36,8 @@ ALLOWED_HOSTS = ['*']
 
 CORS_ALLOW_ALL_ORIGINS = True
 
+CORS_ALLOW_CREDENTIALS = True
+
 AUTH_USER_MODEL = 'users.User'
 
 # Application definition
@@ -47,9 +49,21 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "storages",
+
+    # Django webpack loader
+    'webpack_loader',
+
+    # Third party apps
     "rest_framework",
-    'corsheaders',
+    "djoser",
+    "corsheaders",
+    "social_django",
+
+    # 'storages',
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
+
+    # local apps
     'lawcrawl',
     'main',
     'frontend',
@@ -69,6 +83,8 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "lawcrawl.urls"
+BASE_URL = 'http://127.0.0.1:8000'
+# BASE_URL = 'https://lawcrawl.com'
 
 TEMPLATES = [
     {
@@ -90,6 +106,35 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "lawcrawl.wsgi.application"
 
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+
+    ),
+}
+SIMPLE_JWT = {
+    'AUTH_HEADER_TYPES': ('JWT',),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+}
+
+DJOSER = {
+    'LOGIN_FIELD': 'email',
+    'SOCIAL_AUTH_TOKEN_STRATEGY': 'djoser.social.token.jwt.TokenStrategy',
+    'SOCIAL_AUTH_ALLOWED_REDIRECT_URIS': ['http://127.0.0.1:8000', 'http://127.0.0.1:8000/chat', 'http://127.0.0.1:8000/login'
+                                          'http://lawcrawl.com', 'http://lawcrawl.com/chat', 'http://lawcrawl.com/login'],
+    'SERIALIZERS': {},
+}
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.twitter.TwitterOAuth',
+    'django.contrib.auth.backends.ModelBackend'
+)
+SOCIAL_AUTH_TWITTER_KEY = os.getenv('TWITTER_API_KEY')
+SOCIAL_AUTH_TWITTER_SECRET = os.getenv('TWITTER_API_KEY_SECRET')
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases

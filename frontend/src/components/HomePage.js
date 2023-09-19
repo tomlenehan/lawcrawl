@@ -18,7 +18,7 @@ const useStyles = makeStyles((theme) => ({
         paddingBottom: 50,
     },
     chatContainer: {
-        paddingTop: 80,
+        paddingTop: 60,
         textAlign: 'center',
         paddingHorizontal: 20,
     },
@@ -80,7 +80,7 @@ const HomePage = () => {
                         <Grid item xs={12}>
                             <Typography className={classes.description}>
                                 Upload your legal documents, then chat <br/>
-                                with our version of GPT that knows the law and knows your case.
+                                with a version of GPT that knows the law and knows your case.
                             </Typography>
                         </Grid>
 

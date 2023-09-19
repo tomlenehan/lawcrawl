@@ -14,6 +14,7 @@ import {
     FormControl
 } from "@material-ui/core";
 import CloudUploadIcon from '@material-ui/icons/CloudUpload';
+import {useSelector} from 'react-redux';
 import config from './config';
 
 const useStyles = makeStyles((theme) => ({
@@ -60,20 +61,25 @@ const useStyles = makeStyles((theme) => ({
         marginBottom: 30,
     },
     textField: {
-        marginTop: 20,
         minWidth: 200,
         width: '100%',
     },
     fileInput: {
         display: 'none',
-    }
+    },
+    blackLabel: {
+        color: "black",
+    },
+    creamInput: {
+        backgroundColor: '#fcfbe8', // This is a cream color. You can adjust to your preference.
+    },
 }));
 
-const ChatPage = () => {
+const ChatPage = ({isAuthenticated}) => {
     const classes = useStyles();
     const [caseName, setCaseName] = React.useState('');
     const [selectedState, setSelectedState] = React.useState('');
-
+    const token = localStorage.getItem('access');
 
     const handleUploadClick = (event) => {
         const fileInput = document.getElementById('fileInput');
@@ -81,7 +87,9 @@ const ChatPage = () => {
     };
 
     const handleFileChange = async (event) => {
-        print('handleFileChange');
+        console.log('handleFileChange');  // Using 'console.log' instead of 'print' here.
+
+        event.preventDefault();  // Prevent Chrome or any other browser from opening the file.
 
         const files = event.target.files;
         const formData = new FormData();
@@ -97,6 +105,9 @@ const ChatPage = () => {
             const response = await fetch('/api/upload/', {
                 method: 'POST',
                 body: formData,
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
             });
 
             const data = await response.json();
@@ -104,6 +115,9 @@ const ChatPage = () => {
         } catch (error) {
             console.error("There was an error uploading the file.", error);
         }
+
+        // Clear the input value so the same file can be uploaded again if needed.
+        event.target.value = null;
     };
 
     return (
@@ -122,19 +136,25 @@ const ChatPage = () => {
                                 label="Case Name"
                                 variant="outlined"
                                 value={caseName}
+                                InputLabelProps={{className: classes.blackLabel}}
+                                InputProps={{
+                                    className: classes.creamInput
+                                }}
                                 onChange={e => setCaseName(e.target.value)}
-                                className={classes.textField}
+                                className={`${classes.textField}`}
                                 helperText="Provide a name for easy reference."
                             />
                         </Grid>
 
                         <Grid item xs={12}>
                             <FormControl variant="outlined" className={classes.textField}>
-                                <InputLabel id="state-label">State</InputLabel>
+                                <InputLabel id="state-label"
+                                            className={classes.blackLabel}>State</InputLabel>
                                 <Select
                                     labelId="state-label"
                                     value={selectedState}
                                     onChange={e => setSelectedState(e.target.value)}
+                                    className={`${classes.textField} ${classes.creamInput}`}
                                     label="State"
                                 >
                                     <MenuItem value="AL">Alabama</MenuItem>

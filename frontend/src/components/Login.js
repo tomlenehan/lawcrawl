@@ -6,6 +6,8 @@ import TwitterIcon from "@mui/icons-material/Twitter";
 import Footer from "./Footer";
 import theme from "./Theme";
 import axios from "axios";
+import Grid from "@material-ui/core/Grid";
+import config from "./config";
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -22,6 +24,11 @@ const useStyles = makeStyles((theme) => ({
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
+    },
+    mainLogo: {
+        width: '15%',
+        margin: '0 auto',
+        display: 'block',
     },
     loginHeadline: {
         fontFamily: "DMSans, sans-serif",
@@ -45,7 +52,7 @@ const Login = ({isAuthenticated}) => {
         // Logic for logging in with Twitter
         try {
             console.log("REACT_APP_API_URL:", process.env.REACT_APP_API_URL);
-            const res = await axios.get(`/auth/o/twitter/?redirect_uri=${process.env.REACT_APP_API_URL}/home`)
+            const res = await axios.get(`/auth/o/twitter/?redirect_uri=${process.env.REACT_APP_API_URL}/chat`)
             window.location.replace(res.data.authorization_url)
 
         } catch (err) {
@@ -54,7 +61,7 @@ const Login = ({isAuthenticated}) => {
     };
 
     if (isAuthenticated) {
-        return <Navigate to="/home"/>;
+        return <Navigate to="/chat" />;
     }
 
     const classes = useStyles();
@@ -63,13 +70,19 @@ const Login = ({isAuthenticated}) => {
         <ThemeProvider theme={theme}>
             <div className={classes.root}>
                 <Container className={classes.contentContainer}>
+                    <Grid container>
+                        <Grid item xs={12}>
+                            <img src={`${config.STATIC_URL}images/logos/LawcrawlLogo.png`}
+                                 alt="Lawcrawl Logo"
+                                 className={classes.mainLogo}/>
+                        </Grid>
+                    </Grid>
                     <Box className={classes.formContainer}>
                         <Typography className={classes.loginHeadline} variant="h4" gutterBottom>
                             Log in
                         </Typography>
                         <Typography className={classes.loginBody} variant="subtitle1">
-                            Log in, then contact your congressperson and
-                            post to Twitter to make your voice heard
+                            Log in, then upload your case documents to get started.
                         </Typography>
                         <Box mt={2}>
                             <Button
@@ -78,7 +91,7 @@ const Login = ({isAuthenticated}) => {
                                 onClick={loginWithTwitter}
                                 startIcon={<TwitterIcon/>}
                             >
-                                Log in with Twitter
+                                Twitter
                             </Button>
                         </Box>
                     </Box>
