@@ -56,29 +56,46 @@ const useStyles = makeStyles((theme) => ({
     cardTile: {
         fontFamily: 'DMSans, sans-serif',
     },
-    button: {
-        marginTop: 20,
-        marginBottom: 30,
+    loginButton: {
+        backgroundColor: '#80cbc4',
+        color: '#3a3a3a',
+        padding: '10px 30px',
+        '&:hover': {
+            backgroundColor: '#26a69a',  // Darker color on hover
+        },
+        borderRadius: '10px',
+        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
+        textTransform: 'none',
     },
     textField: {
         minWidth: 200,
         width: '100%',
+        color: '#3a3a3a',
     },
     fileInput: {
         display: 'none',
     },
     blackLabel: {
-        color: "black",
+        color: '#3a3a3a',
     },
     creamInput: {
-        backgroundColor: '#fffde2',
+        backgroundColor: '#fdfbee',
+    },
+    error: {
+        width: 250,
+        fontSize: '1.1vw',
+        color: '#d32f2fl',
+        marginBottom: 15,
+        marginTop: -15,
+        fontWeight: "bold",
     },
 }));
 
-const Upload = ({isAuthenticated}) => {
+const UploadPage = ({isAuthenticated}) => {
     const classes = useStyles();
     const [caseName, setCaseName] = React.useState('');
     const [selectedState, setSelectedState] = React.useState('');
+    const [errorMessage, setErrorMessage] = React.useState(null);
     const token = localStorage.getItem('access');
 
     const handleUploadClick = (event) => {
@@ -87,7 +104,10 @@ const Upload = ({isAuthenticated}) => {
     };
 
     const handleFileChange = async (event) => {
-        console.log('handleFileChange');  // Using 'console.log' instead of 'print' here.
+        console.log('handleFileChange');
+
+        // Clear any existing error messages
+        setErrorMessage(null);
 
         event.preventDefault();  // Prevent Chrome or any other browser from opening the file.
 
@@ -110,15 +130,28 @@ const Upload = ({isAuthenticated}) => {
                 },
             });
 
-            const data = await response.json();
-            console.log(data);  // Handle the response from the server as needed
+            // If the response is okay, handle the data
+            if (response.ok) {
+                const data = await response.json();
+                console.log(data);
+            } else {
+                // If the response has a problem, set the error message
+                const errorData = await response.json();
+                if (errorData && errorData.detail) {
+                    setErrorMessage(errorData.detail);
+                } else {
+                    setErrorMessage("An unexpected error occurred. Please try again.");
+                }
+            }
         } catch (error) {
             console.error("There was an error uploading the file.", error);
+            setErrorMessage("There was a problem communicating with the server. Please try again.");
         }
 
         // Clear the input value so the same file can be uploaded again if needed.
         event.target.value = null;
     };
+
 
     return (
         <ThemeProvider theme={theme}>
@@ -126,12 +159,16 @@ const Upload = ({isAuthenticated}) => {
                 <div className={classes.homePageContainer}>
                     <Grid container spacing={3} direction="column" alignItems="center">
                         <Grid item xs={12}>
-                            <Typography variant="h5">
-                                First, give a name for your case <br/>
-                                and upload the document(s)
+                            <Typography style={{fontSize: '1.7vw'}}>
+                                Name your case and <br/>
+                                upload your documents
                             </Typography>
                         </Grid>
                         <Grid item xs={12}>
+                            {/*Display errors*/}
+                            {
+                                errorMessage && <div className={classes.error}>{errorMessage}</div>
+                            }
                             <TextField
                                 label="Case Name"
                                 variant="outlined"
@@ -222,12 +259,11 @@ const Upload = ({isAuthenticated}) => {
                             />
                             <Button
                                 variant="contained"
-                                color="primary"
-                                className={classes.button}
+                                className={classes.loginButton}
                                 startIcon={<CloudUploadIcon/>}
                                 onClick={handleUploadClick}
                             >
-                                Upload PDFs
+                                Upload PDF
                             </Button>
                         </Grid>
                     </Grid>
@@ -238,4 +274,4 @@ const Upload = ({isAuthenticated}) => {
     );
 }
 
-export default Upload;
+export default UploadPage;

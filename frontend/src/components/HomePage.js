@@ -4,9 +4,10 @@ import {makeStyles} from '@material-ui/core/styles';
 import Typography from "@material-ui/core/Typography";
 import Footer from "./Footer";
 import theme from './Theme';
-import {Box, ThemeProvider} from "@material-ui/core";
+import {Box, Button, ThemeProvider} from "@material-ui/core";
 import LibraryBooksIcon from "@material-ui/icons/LibraryBooks";
 import AddIcon from '@mui/icons-material/Add';
+import {Link} from 'react-router-dom';
 import config from './config';
 
 const useStyles = makeStyles((theme) => ({
@@ -23,41 +24,55 @@ const useStyles = makeStyles((theme) => ({
         paddingHorizontal: 20,
     },
     mainLogo: {
-        width: '15%',
+        color: '#3a3a3a',
+        width: '12%',
         margin: '0 auto',
         display: 'block',
     },
     textLogo: {
         fontSize: '4.5vw',
+        marginTop: -10,
     },
     subTitle: {
-        fontSize: '2vw',
-        marginBottom: 20,
+        fontSize: '2.2vw',
+        marginBottom: 15,
     },
     description: {
-        fontSize: '1.2vw',
+        fontSize: '1.5vw',
     },
     icon: {
-        fontSize: 80,
-        color: 'black',
+        fontSize: 60,
+        color: '#3a3a3a',
     },
     plusIcon: {
-        fontSize: 40,
-        margin: '0 30px',
+        fontSize: 15,
+        margin: '0 20px',
+        color: '#3a3a3a',
     },
     openAILogo: {
-        height: 80,
-        width: 80,
+        height: 60,
+        color: '#3a3a3a',
     },
     iconContainer: {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
         marginTop: 30,
-    }
+    },
+    loginButton: {
+        backgroundColor: '#80cbc4',
+        color: '#3a3a3a',
+        padding: '10px 30px',
+        '&:hover': {
+            backgroundColor: '#26a69a',  // Darker color on hover
+        },
+        borderRadius: '10px',
+        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
+        textTransform: 'none',
+    },
 }));
 
-const HomePage = () => {
+const HomePage = ({ isAuthenticated }) => {
     const classes = useStyles();
 
     return (
@@ -79,8 +94,9 @@ const HomePage = () => {
 
                         <Grid item xs={12}>
                             <Typography className={classes.description}>
-                                Upload your legal documents, then chat <br/>
-                                with a version of GPT that knows the law and knows your case.
+                                Simply upload your documents. <br/>
+                                Our AI model has been trained on the law<br/>
+                                and knows your case.
                             </Typography>
                         </Grid>
 
@@ -89,10 +105,27 @@ const HomePage = () => {
                                 <LibraryBooksIcon className={classes.icon}/>
                                 <AddIcon className={classes.plusIcon}/>
                                 <img className={classes.openAILogo}
-                                     src={`${config.STATIC_URL}images/logos/OpenAILogo.png`}
+                                     src={`${config.STATIC_URL}images/logos/OpenAILogoGrey.png`}
                                      alt="OpenAI Logo"/>
                             </div>
                         </Grid>
+
+                        <Grid item xs={12}>
+                            {!isAuthenticated && (
+                                <Box display="flex" justifyContent="center" mt={3}>
+                                    <Button
+                                        variant="contained"
+                                        className={classes.loginButton}
+                                        component={Link}
+                                        to="/login"
+                                    >
+                                        Login
+                                    </Button>
+                                </Box>
+                            )}
+                        </Grid>
+
+
                     </Grid>
                 </div>
             </div>

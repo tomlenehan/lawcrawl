@@ -26,7 +26,7 @@ const useStyles = makeStyles((theme) => ({
         alignItems: "center",
     },
     mainLogo: {
-        width: '15%',
+        width: '12%',
         margin: '0 auto',
         display: 'block',
     },
@@ -44,10 +44,13 @@ const useStyles = makeStyles((theme) => ({
         "&:hover": {
             backgroundColor: "#0C7EBF",
         },
+        borderRadius: '10px',
+        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
+        textTransform: 'none',
     },
 }));
 
-const Login = ({isAuthenticated}) => {
+const LoginPage = ({isAuthenticated}) => {
     const loginWithTwitter = async () => {
         // Logic for logging in with Twitter
         try {
@@ -82,7 +85,7 @@ const Login = ({isAuthenticated}) => {
                             Log in
                         </Typography>
                         <Typography className={classes.loginBody} variant="subtitle1">
-                            Log in, then upload your case documents to get started.
+                            to get started.
                         </Typography>
                         <Box mt={2}>
                             <Button
@@ -102,4 +105,4 @@ const Login = ({isAuthenticated}) => {
     );
 };
 
-export default Login;
+export default LoginPage;

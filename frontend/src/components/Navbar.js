@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
     AppBar as MuiAppBar,
     Toolbar,
@@ -12,35 +12,40 @@ import {
     IconButton
 } from '@material-ui/core';
 import MenuIcon from '@material-ui/icons/Menu';
-import { Link } from 'react-router-dom';
-import { connect } from 'react-redux';
-import { logout } from '../actions/auth';
+import {Box} from '@material-ui/core';
+import {Link} from 'react-router-dom';
+import {connect} from 'react-redux';
+import {logout} from '../actions/auth';
 import theme from './Theme';
 import config from './config';
 
 const useStyles = makeStyles((theme) => ({
     menuButton: {
-        fontFamily: 'DMSans, sans-serif',
+        color: '#3a3a3a',
+        textTransform: 'none',
     },
     title: {
         flexGrow: 1,
+        color: '#3a3a3a',
     },
     logo: {
         width: '50px',
         marginRight: '10px',
+        color: '#3a3a3a',
     },
     toolbar: {
         justifyContent: 'space-between', // Adjusted justifyContent
         boxShadow: '0px 1px 5px 0px rgba(0, 0, 0, 0.2)',
     },
     loginButton: {
-        backgroundColor: theme.palette.secondary.main,
+        backgroundColor: '#80cbc4',
+        textTransform: 'none',
+        color: '#3a3a3a',
         '&:hover': {
-            backgroundColor: theme.palette.secondary.dark,
+            backgroundColor: '#26a69a',
         },
     },
 }));
-
 
 
 const Navbar = ({isAuthenticated, logout}) => {
@@ -59,11 +64,21 @@ const Navbar = ({isAuthenticated, logout}) => {
 
     const renderMenuItems = () => (
         <>
-            <Button className={classes.menuButton} color="inherit" component={Link} to="/chat">
-                Chat
-            </Button>
+            {isAuthenticated && (
+                <box>
+                    <Button className={classes.menuButton} color="inherit" component={Link}
+                            to="/upload">
+                        Upload
+                    </Button>
+                    <Button className={classes.menuButton} color="inherit" component={Link}
+                            to="/chat">
+                        Chat
+                    </Button>
+                </box>
+            )}
         </>
     );
+
 
     return (
         <ThemeProvider theme={theme}>
@@ -72,10 +87,11 @@ const Navbar = ({isAuthenticated, logout}) => {
                     <Grid container justifyContent="space-between" alignItems="center">
                         <Grid item>
                             <Button color="inherit" component={Link} to="/">
-                                <img src={`${config.STATIC_URL}images/logos/LawcrawlLogo.png`} className={classes.logo} />
+                                <img src={`${config.STATIC_URL}images/logos/LawcrawlLogo.png`}
+                                     className={classes.logo}/>
                             </Button>
 
-                             {/*Menu for screens larger than xs */}
+                            {/*Menu for screens larger than xs */}
                             <Hidden xsDown>
                                 {renderMenuItems()}
                             </Hidden>
@@ -89,7 +105,7 @@ const Navbar = ({isAuthenticated, logout}) => {
                                     aria-label="menu"
                                     onClick={handleMobileMenuOpen}
                                 >
-                                    <MenuIcon />
+                                    <MenuIcon/>
                                 </IconButton>
                                 <Menu
                                     anchorEl={mobileMenuAnchorEl}
@@ -97,14 +113,34 @@ const Navbar = ({isAuthenticated, logout}) => {
                                     open={Boolean(mobileMenuAnchorEl)}
                                     onClose={handleMobileMenuClose}
                                 >
-                                    <MenuItem onClick={handleMobileMenuClose} component={Link} to="/chat">Chat</MenuItem>
-                                </Menu>
+                                    {isAuthenticated && (
+                                        <Box>
+                                            <MenuItem
+                                                onClick={handleMobileMenuClose}
+                                                component={Link}
+                                                to="/upload"
+                                            >
+                                                Upload
+                                            </MenuItem>
+                                            <MenuItem
+                                                onClick={handleMobileMenuClose}
+                                                component={Link}
+                                                to="/chat"
+                                            >
+                                                Chat
+                                            </MenuItem>
+                                        </Box>
+                                    )
+                                    }
+
+                                < /Menu>
                             </Hidden>
                         </Grid>
 
                         <Grid item>
                             {isAuthenticated ? (
-                                <Button className={classes.menuButton} color="inherit" href="/" onClick={logout}>
+                                <Button className={classes.menuButton} color="inherit"
+                                        href="/" onClick={logout}>
                                     logout
                                 </Button>
                             ) : (
@@ -128,4 +164,6 @@ const Navbar = ({isAuthenticated, logout}) => {
 const mapStateToProps = (state) => ({
     isAuthenticated: state.auth.isAuthenticated,
 });
-export default connect(mapStateToProps, {logout})(Navbar);
+export default connect(mapStateToProps, {
+    logout
+})(Navbar);

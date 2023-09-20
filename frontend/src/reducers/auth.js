@@ -8,7 +8,7 @@ const initialState = {
     access: localStorage.getItem('access'),
     refresh: localStorage.getItem('refresh'),
     isAuthenticated: !!localStorage.getItem("access"),
-    user: localStorage.getItem('user'), // Here 'user' is an email address
+    user: localStorage.getItem('user'),
     token: null,
     secret: null,
 }

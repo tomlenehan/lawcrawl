@@ -8,8 +8,9 @@ import CssBaseline from '@mui/material/CssBaseline';
 import {ThemeProvider} from '@mui/material/styles';
 import {makeStyles} from "@material-ui/core";
 import HomePage from "./components/HomePage";
-import Login from "./components/Login";
-import Chat from "./components/ChatPage";
+import LoginPage from "./components/LoginPage";
+import UploadPage from "./components/UploadPage";
+import ChatPage from "./components/ChatPage";
 
 
 const bodyStyles = makeStyles(() => ({
@@ -44,8 +45,9 @@ export default function App() {
                             <Routes>
                                 <Route path="/" element={<HomePage/>}/>
                                 <Route path="/home" element={<HomePage/>}/>
-                                <Route path="/login" element={<Login/>}/>
-                                <Route path="/chat" element={<Chat/>}/>
+                                <Route path="/login" element={<LoginPage/>}/>
+                                <Route path="/upload" element={<UploadPage/>}/>
+                                <Route path="/chat" element={<ChatPage/>}/>
                             </Routes>
                         </div>
                     </Layout>

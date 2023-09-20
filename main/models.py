@@ -1,6 +1,7 @@
 from lawcrawl import settings
 from django.db import models
 from users.models import User
+from uuid import uuid4
 
 class Case(models.Model):
 
@@ -57,6 +58,7 @@ class Case(models.Model):
         ('WY', 'Wyoming'),
     )
 
+    uid = models.UUIDField(default=uuid4, editable=False, unique=True, verbose_name="UID")
     name = models.CharField(max_length=255)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     uploaded_at = models.DateTimeField(auto_now_add=True)
