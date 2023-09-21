@@ -58,9 +58,9 @@ const useStyles = makeStyles((theme) => ({
         fontFamily: 'DMSans, sans-serif',
     },
     loginButton: {
-        backgroundColor: '#80cbc4',
         color: '#3a3a3a',
         padding: '10px 30px',
+        backgroundColor: '#80cbc4',
         '&:hover': {
             backgroundColor: '#26a69a',  // Darker color on hover
         },
@@ -93,16 +93,16 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 
-function LinearProgressWithLabel(props) {
-    return (
-        <div style={{display: 'flex', alignItems: 'center', flexDirection: 'column'}}>
-            <LinearProgress variant="determinate" {...props} />
-            <Typography variant="body2" color="textSecondary">
-                {`${Math.round(props.value)}%`}
-            </Typography>
-        </div>
-    );
-}
+// function LinearProgressWithLabel(props) {
+//     return (
+//         <div style={{display: 'flex', alignItems: 'center', flexDirection: 'column'}}>
+//             <LinearProgress variant="determinate" {...props} />
+//             <Typography variant="body2" color="textSecondary">
+//                 {`${Math.round(props.value)}%`}
+//             </Typography>
+//         </div>
+//     );
+// }
 
 
 const UploadPage = ({isAuthenticated}) => {
@@ -118,23 +118,23 @@ const UploadPage = ({isAuthenticated}) => {
         fileInput.click();
     };
 
-    function pollForProgress() {
-        // Call this function after initiating the upload
-
-        const intervalId = setInterval(async () => {
-            const response = await fetch("/api/upload/progress/");
-            const data = await response.json();
-
-            const progress = data.progress;
-
-            // Update UI
-            setProgress(progress);
-
-            if (progress >= 100) {
-                clearInterval(intervalId);
-            }
-        }, 1000);
-    }
+    // function pollForProgress() {
+    //     // Call this function after initiating the upload
+    //
+    //     const intervalId = setInterval(async () => {
+    //         const response = await fetch("/api/upload/progress/");
+    //         const data = await response.json();
+    //
+    //         const progress = data.progress;
+    //
+    //         // Update UI
+    //         setProgress(progress);
+    //
+    //         if (progress >= 100) {
+    //             clearInterval(intervalId);
+    //         }
+    //     }, 1000);
+    // }
 
 
     const handleFileChange = async (event) => {

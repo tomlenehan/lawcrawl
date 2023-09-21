@@ -39,6 +39,7 @@ const useStyles = makeStyles((theme) => ({
     },
     twitterButton: {
         backgroundColor: "#1DA1F2",
+        // padding: 1,
         fontFamily: "DMSans, sans-serif",
         color: "white",
         "&:hover": {

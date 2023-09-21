@@ -62,6 +62,7 @@ const useStyles = makeStyles((theme) => ({
     loginButton: {
         backgroundColor: '#80cbc4',
         color: '#3a3a3a',
+        fontSize: '1.6vw',
         padding: '10px 30px',
         '&:hover': {
             backgroundColor: '#26a69a',  // Darker color on hover
@@ -100,7 +101,7 @@ const HomePage = ({ isAuthenticated }) => {
                             </Typography>
                         </Grid>
 
-                        <Grid item xs={12}>
+                        <Grid item xs={12} style={{marginTop: -20}}>
                             <div className={classes.iconContainer}>
                                 <LibraryBooksIcon className={classes.icon}/>
                                 <AddIcon className={classes.plusIcon}/>
