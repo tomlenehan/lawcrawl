@@ -82,7 +82,7 @@ const useStyles = makeStyles((theme) => ({
         backgroundColor: '#fdfbee',
     },
     error: {
-        width: 250,
+        maxWidth: 250,
         fontSize: '1.1vw',
         color: '#d32f2fl',
         marginBottom: 15,

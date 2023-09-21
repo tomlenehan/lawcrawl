@@ -96,22 +96,23 @@ def tiktoken_len(text):
 
 
 def extract_text_from_pdf(pdf_path):
-    """
-    Extract text from a PDF and return it as a string.
-    """
     with open(pdf_path, "rb") as file:
-        # Create a PDF reader
-        pdf_reader = PyPDF2.PdfReader(file)
+        try:
+            # Create a PDF reader
+            pdf_reader = PyPDF2.PdfReader(file)
+        except PyPDF2.utils.PdfReadError:
+            raise ValueError("Invalid PDF file")
 
         # Check the number of pages
-        if pdf_reader.numPages > 5:
+        if len(pdf_reader.pages) > 5:
             raise ValueError("PDF has more than 5 pages!")
 
         # Extract text from each page
         text = ""
-        for page_num in range(pdf_reader.numPages):
-            text += pdf_reader.getPage(page_num).extractText()
+        for page_num in range(len(pdf_reader.pages)):
+            text += pdf_reader.pages[page_num].extract_text()
     return text
+
 
 
 def create_embeddings(file, case, user):
@@ -198,7 +199,7 @@ def create_embeddings(file, case, user):
 
     end = time.time()
     duration = end - start
-    cost_per_token = 0.0004
+    cost_per_token = (0.0004 * .001)  # $0.0004 per 1K tokens for text-embedding-ada-002
     total_cost = (total_tokens * cost_per_token)
 
     print("total_cost=", total_cost)
