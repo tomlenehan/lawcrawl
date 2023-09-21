@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState} from "react";
 import Grid from "@material-ui/core/Grid";
 import {makeStyles} from '@material-ui/core/styles';
 import Typography from "@material-ui/core/Typography";
@@ -11,7 +11,8 @@ import {
     Select,
     MenuItem,
     InputLabel,
-    FormControl
+    FormControl,
+    LinearProgress
 } from "@material-ui/core";
 import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import {useSelector} from 'react-redux';
@@ -91,17 +92,50 @@ const useStyles = makeStyles((theme) => ({
     },
 }));
 
+
+function LinearProgressWithLabel(props) {
+    return (
+        <div style={{display: 'flex', alignItems: 'center', flexDirection: 'column'}}>
+            <LinearProgress variant="determinate" {...props} />
+            <Typography variant="body2" color="textSecondary">
+                {`${Math.round(props.value)}%`}
+            </Typography>
+        </div>
+    );
+}
+
+
 const UploadPage = ({isAuthenticated}) => {
     const classes = useStyles();
     const [caseName, setCaseName] = React.useState('');
     const [selectedState, setSelectedState] = React.useState('');
     const [errorMessage, setErrorMessage] = React.useState(null);
+    const [progress, setProgress] = React.useState(0);
     const token = localStorage.getItem('access');
 
     const handleUploadClick = (event) => {
         const fileInput = document.getElementById('fileInput');
         fileInput.click();
     };
+
+    function pollForProgress() {
+        // Call this function after initiating the upload
+
+        const intervalId = setInterval(async () => {
+            const response = await fetch("/api/upload/progress/");
+            const data = await response.json();
+
+            const progress = data.progress;
+
+            // Update UI
+            setProgress(progress);
+
+            if (progress >= 100) {
+                clearInterval(intervalId);
+            }
+        }, 1000);
+    }
+
 
     const handleFileChange = async (event) => {
         console.log('handleFileChange');
@@ -122,6 +156,7 @@ const UploadPage = ({isAuthenticated}) => {
         formData.append('state', selectedState);
 
         try {
+            // Start the upload
             const response = await fetch('/api/upload/', {
                 method: 'POST',
                 body: formData,
@@ -130,12 +165,13 @@ const UploadPage = ({isAuthenticated}) => {
                 },
             });
 
-            // If the response is okay, handle the data
+            // Begin polling for progress
+            // pollForProgress();
+
             if (response.ok) {
                 const data = await response.json();
                 console.log(data);
             } else {
-                // If the response has a problem, set the error message
                 const errorData = await response.json();
                 if (errorData && errorData.detail) {
                     setErrorMessage(errorData.detail);
@@ -169,6 +205,8 @@ const UploadPage = ({isAuthenticated}) => {
                             {
                                 errorMessage && <div className={classes.error}>{errorMessage}</div>
                             }
+                            { /* Show progress bar if there's progress (change condition as needed) */}
+                            {progress > 0 && <LinearProgressWithLabel value={progress}/>}
                             <TextField
                                 label="Case Name"
                                 variant="outlined"

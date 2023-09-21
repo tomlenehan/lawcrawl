@@ -20,18 +20,35 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import PyPDFLoader
 import PyPDF2
 
+# global progress store
+PROGRESS_STORE = {}
+
+
+def set_progress(user_id, progress):
+    """Set progress for a given user."""
+    PROGRESS_STORE[user_id] = progress
+
+
+def get_progress(user_id):
+    """Get progress for a given user."""
+    return PROGRESS_STORE.get(user_id, 0)
+
 
 def access_token_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        access_token = request.META.get('HTTP_AUTHORIZATION')  # Get the 'Authorization' header
+        access_token = request.META.get(
+            "HTTP_AUTHORIZATION"
+        )  # Get the 'Authorization' header
         if not access_token or not access_token.startswith("Bearer "):
             return JsonResponse({"error": "Access token required"}, status=401)
 
         access_token = access_token[7:]  # Remove the 'Bearer '
 
         try:
-            decoded_token = jwt.decode(access_token, settings.SECRET_KEY, algorithms=["HS256"])
+            decoded_token = jwt.decode(
+                access_token, settings.SECRET_KEY, algorithms=["HS256"]
+            )
             user_id = decoded_token["user_id"]
             User = get_user_model()
             user = User.objects.get(pk=user_id)
@@ -44,21 +61,32 @@ def access_token_required(view_func):
     return _wrapped_view
 
 
+def progress_endpoint(request):
+    user_id = str(request.user.id)
+    progress = get_progress(user_id)
+    return JsonResponse({"progress": progress})
+
+
 @csrf_exempt
 @access_token_required
 def upload_file(request):
     if request.method == "POST" and request.user.is_authenticated:
-        uploaded_file_obj = request.FILES['file']
-        case_name = request.POST.get('case_name', None)
+        # setting progress
+        user_id = request.user.id
+        set_progress(user_id, 10)
+
+        uploaded_file_obj = request.FILES["file"]
+        case_name = request.POST.get("case_name", None)
 
         # Create a temporary directory to store the uploaded file
         temp_dir = tempfile.mkdtemp()
         temp_file_path = os.path.join(temp_dir, uploaded_file_obj.name)
 
         # Save the uploaded file to the temporary location
-        with open(temp_file_path, 'wb+') as destination:
+        with open(temp_file_path, "wb+") as destination:
             for chunk in uploaded_file_obj.chunks():
                 destination.write(chunk)
+        set_progress(user_id, 30)
 
         # Handle case creation
         case, created = Case.objects.get_or_create(name=case_name, user=request.user)
@@ -71,10 +99,14 @@ def upload_file(request):
             shutil.rmtree(temp_dir)
             return JsonResponse({"error": str(e)}, status=400)
 
+        set_progress(user_id, 60)
+
         # Save the file from the temp location to S3
-        with open(temp_file_path, 'rb') as f:
+        with open(temp_file_path, "rb") as f:
             file_name = default_storage.save(uploaded_file_obj.name, f)
         file_url = default_storage.url(file_name)
+
+        set_progress(user_id, 80)
 
         # Save the URL in the database
         uploaded_file = UploadedFile(case=case, file_url=file_url)
@@ -86,7 +118,6 @@ def upload_file(request):
         return JsonResponse({"message": "Success", "file_url": file_url}, status=201)
 
     return JsonResponse({"error": "Bad request or not authenticated"}, status=400)
-
 
 
 def tiktoken_len(text):
@@ -114,9 +145,7 @@ def extract_text_from_pdf(pdf_path):
     return text
 
 
-
 def create_embeddings(file, case, user):
-
     openai_api_key = settings.OPENAI_API_KEY
     model_name = "text-embedding-ada-002"
 
@@ -165,7 +194,8 @@ def create_embeddings(file, case, user):
     metadata = {
         "id": str(uuid4()),
         "created_at": str(timezone.now()),
-        "case_id": str(case.uid),
+        "case_id": str(case.id),
+        "case_uid": str(case.uid),
         "case_name": case.name,
         "user_id": str(user.id),
         "user_email": user.email
@@ -182,8 +212,7 @@ def create_embeddings(file, case, user):
     pdf_texts = text_splitter.split_text(pdf_text)
 
     pdf_metadatas = [
-        {"chunk": j, "text": text, **metadata}
-        for j, text in enumerate(pdf_texts)
+        {"chunk": j, "text": text, **metadata} for j, text in enumerate(pdf_texts)
     ]
 
     total_tokens = 0
@@ -193,14 +222,14 @@ def create_embeddings(file, case, user):
 
     # Process and upsert embeddings in batches
     for i in range(0, len(pdf_texts), batch_limit):
-        batch_texts = pdf_texts[i:i+batch_limit]
-        batch_metadatas = pdf_metadatas[i:i+batch_limit]
+        batch_texts = pdf_texts[i : i + batch_limit]
+        batch_metadatas = pdf_metadatas[i : i + batch_limit]
         total_tokens += upsert_to_pinecone(batch_texts, batch_metadatas)
 
     end = time.time()
     duration = end - start
-    cost_per_token = (0.0004 * .001)  # $0.0004 per 1K tokens for text-embedding-ada-002
-    total_cost = (total_tokens * cost_per_token)
+    cost_per_token = 0.0004 * 0.001  # $0.0004 per 1K tokens for text-embedding-ada-002
+    total_cost = total_tokens * cost_per_token
 
     print("total_cost=", total_cost)
     print("duration=", duration)
