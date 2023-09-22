@@ -76,7 +76,7 @@ const LoginPage = ({isAuthenticated}) => {
                 <Container className={classes.contentContainer}>
                     <Grid container>
                         <Grid item xs={12}>
-                            <img src={`${config.STATIC_URL}images/logos/LawcrawlLogo.png`}
+                            <img src={`${config.STATIC_URL}images/logos/LawcrawlLogoLG.png`}
                                  alt="Lawcrawl Logo"
                                  className={classes.mainLogo}/>
                         </Grid>

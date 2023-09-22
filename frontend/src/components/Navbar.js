@@ -29,8 +29,8 @@ const useStyles = makeStyles((theme) => ({
         color: '#3a3a3a',
     },
     logo: {
-        width: '50px',
-        marginRight: '10px',
+        width: '40px',
+        marginRight: '5px',
         color: '#3a3a3a',
     },
     toolbar: {
@@ -87,7 +87,7 @@ const Navbar = ({isAuthenticated, logout}) => {
                     <Grid container justifyContent="space-between" alignItems="center">
                         <Grid item>
                             <Button color="inherit" component={Link} to="/">
-                                <img src={`${config.STATIC_URL}images/logos/LawcrawlLogo.png`}
+                                <img src={`${config.STATIC_URL}images/logos/LawcrawlLogoSM.png`}
                                      className={classes.logo}/>
                             </Button>
 

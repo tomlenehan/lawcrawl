@@ -25,13 +25,19 @@ const useStyles = makeStyles((theme) => ({
     },
     mainLogo: {
         color: '#3a3a3a',
-        width: '12%',
+        height: 'auto',
+        width: 100,
         margin: '0 auto',
         display: 'block',
     },
+    // textLogo: {
+    //     fontSize: '4.5vw',
+    //     marginTop: -10,
+    // },
     textLogo: {
-        fontSize: '4.5vw',
-        marginTop: -10,
+        height: 'auto',
+        width: 240,
+        marginTop: 20,
     },
     subTitle: {
         fontSize: '2.2vw',
@@ -57,7 +63,7 @@ const useStyles = makeStyles((theme) => ({
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 30,
+        marginTop: 36,
     },
     loginButton: {
         backgroundColor: '#80cbc4',
@@ -65,7 +71,7 @@ const useStyles = makeStyles((theme) => ({
         fontSize: '1.6vw',
         padding: '10px 30px',
         '&:hover': {
-            backgroundColor: '#26a69a',  // Darker color on hover
+            backgroundColor: '#26a69a',  // Darker color on hover   bv
         },
         borderRadius: '10px',
         boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
@@ -82,13 +88,16 @@ const HomePage = ({ isAuthenticated }) => {
                 <div className={classes.chatContainer}>
                     <Grid container>
                         <Grid item xs={12}>
-                            <img src={`${config.STATIC_URL}images/logos/LawcrawlLogo.png`}
+                            <img src={`${config.STATIC_URL}images/logos/LawcrawlLogoLG.png`}
                                  alt="Lawcrawl Logo"
                                  className={classes.mainLogo}/>
                         </Grid>
 
                         <Grid item xs={12}>
-                            <Typography className={classes.textLogo}>Law Crawl</Typography>
+                            <img src={`${config.STATIC_URL}images/logos/LawcrawlText.png`}
+                                 alt="Lawcrawl Logo"
+                                 className={classes.textLogo}/>
+                            {/*<Typography className={classes.textLogo}>Law Crawl</Typography>*/}
                             <Typography className={classes.subTitle}>Your personal AI legal
                                 advisor</Typography>
                         </Grid>
@@ -101,7 +110,7 @@ const HomePage = ({ isAuthenticated }) => {
                             </Typography>
                         </Grid>
 
-                        <Grid item xs={12} style={{marginTop: -20}}>
+                        <Grid item xs={12} style={{marginTop: -25}}>
                             <div className={classes.iconContainer}>
                                 <LibraryBooksIcon className={classes.icon}/>
                                 <AddIcon className={classes.plusIcon}/>

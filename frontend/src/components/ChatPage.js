@@ -8,9 +8,9 @@ import Chat from "./Chat";
 
 const useStyles = makeStyles((theme) => ({
     root: {
-        width: '100%',
-        minHeight: "100vh",
-        display: 'flex',
+    width: '100%',
+    height: 'calc(100vh - 45px)',  // Subtract the navbar height from viewport height
+    display: 'flex',
     },
 }));
 
