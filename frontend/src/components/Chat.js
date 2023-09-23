@@ -3,6 +3,7 @@ import Grid from "@material-ui/core/Grid";
 import {makeStyles} from '@material-ui/core/styles';
 import theme from './Theme';
 // import {Section} from "@material-ui/core";
+import LinearProgress from '@material-ui/core/LinearProgress';
 import Footer from "./Footer";
 
 // Chat Component
@@ -37,14 +38,15 @@ const useStyles = makeStyles((theme) => ({
     },
     chatLog: {
         textAlign: 'left',
+        overflowY: 'scroll',
     },
     chatMessage: {
-        backgroundColor: '#80cbc4',
+        backgroundColor: '#e0f2f1',
         display: 'flex',
         justifyContent: 'center',
     },
     chatMessageGPT: {
-        backgroundColor: '#e0f2f1',
+        backgroundColor: '#80cbc4',
         display: 'flex',
         justifyContent: 'center',
     },
@@ -80,14 +82,14 @@ const useStyles = makeStyles((theme) => ({
     avatar: {
         backgroundColor: '#ffffff',
         borderRadius: '50%',
-        width: 40,
+        minWidth: 40,
         height: 40,
         marginRight: 10,
     },
     avatarGPT: {
         backgroundColor: '#AB67FF',
         borderRadius: '50%',
-        width: 40,
+        minWidth: 40,
         height: 40,
         marginRight: 10,
     },
@@ -100,6 +102,7 @@ const Chat = () => {
     const classes = useStyles();
     const token = localStorage.getItem('access');
     const [input, setInput] = useState('');
+    const [loading, setLoading] = useState(false);
     const [chatLog, setChatLog] = useState([{
         user: "gpt",
         message: "Hello, I am your friendly LawCrawl bot. " +
@@ -112,21 +115,35 @@ const Chat = () => {
 
         console.log('submitting_input')
 
-        setChatLog([...chatLog, {user: "me", message: `${input}`}]);
-        setInput("");
+        const userInput = input;
+        setChatLog([...chatLog, {user: "me", message: input}]);
 
+        setInput("");
+        setLoading(true);
+
+        try {
         const response = await fetch('/api/chat/message/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                message: chatLog.map((message) => message.message).
-                join("")
+                // message: chatLog.map((message) => message.message).
+                // message: `${input}`
+                message: input
             })
         });
         const data = await response.json();
-        console.log(data);
+        console.log('fetching_output');
+        setChatLog(prevChatLog => [
+            ...prevChatLog,
+            // {user: "me", message: userInput},
+            {user: "gpt", message: data.message}
+        ]);
+    } finally {
+            setLoading(false);
+        }
+        // setChatLog([...chatLog, {user: "gpt", message: `${data.message}`}]);
     }
 
     return (
@@ -143,10 +160,12 @@ const Chat = () => {
                     {chatLog.map((chat, index) => (
                         <ChatMessage key={index} message={chat.message} user={chat.user}/>
                     ))}
+                    {loading && <LinearProgress />}
                 </div>
                 <div className={classes.chatInputHolder}>
                     <form onSubmit={handleSubmit}>
                         <input
+                            value={input}
                             onChange={(e) => setInput(e.target.value)}
                             className={classes.chatInputTextArea}
                             placeholder="Type your message here..."

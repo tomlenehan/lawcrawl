@@ -290,5 +290,5 @@ def chat_message(request):
         )
 
         response = qa.run(message)
-        return JsonResponse({'data': response})
+        return JsonResponse({'message': response})
 
