@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState} from "react";
 import Grid from "@material-ui/core/Grid";
 import {makeStyles} from '@material-ui/core/styles';
 import theme from './Theme';
@@ -39,12 +39,12 @@ const useStyles = makeStyles((theme) => ({
         textAlign: 'left',
     },
     chatMessage: {
-        backgroundColor: '#e0f2f1',
+        backgroundColor: '#80cbc4',
         display: 'flex',
         justifyContent: 'center',
     },
     chatMessageGPT: {
-        backgroundColor: '#80cbc4',
+        backgroundColor: '#e0f2f1',
         display: 'flex',
         justifyContent: 'center',
     },
@@ -64,7 +64,7 @@ const useStyles = makeStyles((theme) => ({
         bottom: 0,
     },
     chatInputTextArea: {
-        backgroundColor: '#fdfbee',
+        backgroundColor: '#e0f2f1',
         fontSize: '1.1em',
         width: '90%',
         padding: 12,
@@ -99,6 +99,35 @@ const useStyles = makeStyles((theme) => ({
 const Chat = () => {
     const classes = useStyles();
     const token = localStorage.getItem('access');
+    const [input, setInput] = useState('');
+    const [chatLog, setChatLog] = useState([{
+        user: "gpt",
+        message: "Hello, I am your friendly LawCrawl bot. " +
+            "I'm not a lawyer, but I read your case and I'm here to " +
+            "answer all of your legal questions.",
+    }]);
+
+    async function handleSubmit(e) {
+        e.preventDefault();
+
+        console.log('submitting_input')
+
+        setChatLog([...chatLog, {user: "me", message: `${input}`}]);
+        setInput("");
+
+        const response = await fetch('/api/chat/message/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: chatLog.map((message) => message.message).
+                join("")
+            })
+        });
+        const data = await response.json();
+        console.log(data);
+    }
 
     return (
         <div className={classes.App}>
@@ -109,30 +138,48 @@ const Chat = () => {
             </aside>
             {/*<section className={classes.chatBox}>*/}
             <div className={classes.chatBox}>
-                <div item className={classes.chatLog}>
-                    <div className={classes.chatMessage}>
-                        <div className={classes.chatMessageCenter}>
-                            <div className={classes.avatar}></div>
-                            <div className={classes.message}>this is a user post</div>
-                        </div>
-                    </div>
-                    <div className={classes.chatMessageGPT}>
-                        <div className={classes.chatMessageCenter}>
-                            <div className={classes.avatarGPT}></div>
-                            <div className={classes.message}>this is an AI post</div>
-                        </div>
-                    </div>
+                <div className={classes.chatLog}>
+                    {/*add messages*/}
+                    {chatLog.map((chat, index) => (
+                        <ChatMessage key={index} message={chat.message} user={chat.user}/>
+                    ))}
                 </div>
                 <div className={classes.chatInputHolder}>
-                        <textarea className={classes.chatInputTextArea}
-                                  placeholder="Type your message here..."
-                                  rows="1"
-                        />
+                    <form onSubmit={handleSubmit}>
+                        <input
+                            onChange={(e) => setInput(e.target.value)}
+                            className={classes.chatInputTextArea}
+                            placeholder="Type your message here..."
+                            rows="1"></input>
+                    </form>
                 </div>
             </div>
-            {/*</section>*/}
+
         </div>
     );
+}
+
+const ChatMessage = ({message, user}) => {
+    const classes = useStyles();
+    if (user === "gpt") {
+        return (
+            <div className={classes.chatMessageGPT}>
+                <div className={classes.chatMessageCenter}>
+                    <div className={classes.avatarGPT}></div>
+                    <div className={classes.message}>{message}</div>
+                </div>
+            </div>
+        );
+    } else {
+        return (
+            <div className={classes.chatMessage}>
+                <div className={classes.chatMessageCenter}>
+                    <div className={classes.avatar}></div>
+                    <div className={classes.message}>{message}</div>
+                </div>
+            </div>
+        );
+    }
 }
 
 export default Chat;

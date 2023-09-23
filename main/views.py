@@ -3,6 +3,7 @@ import time
 from uuid import uuid4
 import tempfile
 import shutil
+import json
 from django.utils import timezone
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -18,6 +19,14 @@ import tiktoken
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import PyPDFLoader
+from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.vectorstores import Pinecone
+from langchain.chat_models import ChatOpenAI
+# from langchain.chains.conversation.memory import ConversationBufferWindowMemory
+from langchain.chains import RetrievalQA
+# from langchain.agents import Tool
+# from langchain.agents import initialize_agent
+import pinecone
 import PyPDF2
 
 # global progress store
@@ -234,3 +243,52 @@ def create_embeddings(file, case, user):
     print("total_cost=", total_cost)
     print("duration=", duration)
     print(index.describe_index_stats())
+
+
+@csrf_exempt
+def chat_message(request):
+
+    if request.method == 'POST':
+        body_unicode = request.body.decode('utf-8')
+        body = json.loads(body_unicode)
+        message = body.get('message')
+
+        openai_api_key = settings.OPENAI_API_KEY
+        model_name = 'text-embedding-ada-002'
+
+        pinecone_api_key = settings.PINECONE_API_KEY
+        pinecone_env = settings.PINECONE_ENV
+        index_name = 'lawcrawl'
+
+        llm = ChatOpenAI(
+            openai_api_key=openai_api_key,
+            model_name='gpt-3.5-turbo',
+            temperature=0.3
+        )
+
+        embed = OpenAIEmbeddings(
+            model=model_name,
+            openai_api_key=openai_api_key
+        )
+
+        pinecone.init(
+            api_key=pinecone_api_key,
+            environment=pinecone_env
+        )
+        index = pinecone.Index(index_name)
+
+        text_field = "text"
+
+        vectorstore = Pinecone(
+            index, embed.embed_query, text_field, 'lawcrawl_cases'
+        )
+
+        qa = RetrievalQA.from_chain_type(
+            llm=llm,
+            chain_type="stuff",
+            retriever=vectorstore.as_retriever()
+        )
+
+        response = qa.run(message)
+        return JsonResponse({'data': response})
+
