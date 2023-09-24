@@ -9,6 +9,10 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import default_storage
 from django.contrib.auth import get_user_model
+from django.forms.models import model_to_dict
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
 from lawcrawl import settings
 from .models import Case, UploadedFile
 import jwt
@@ -28,6 +32,11 @@ from langchain.chains import RetrievalQA
 # from langchain.agents import initialize_agent
 import pinecone
 import PyPDF2
+
+from main.models import Case
+from main.serializers import CaseSerializer
+from django.contrib.auth.models import User
+
 
 # global progress store
 PROGRESS_STORE = {}
@@ -70,6 +79,16 @@ def access_token_required(view_func):
     return _wrapped_view
 
 
+@csrf_exempt
+@access_token_required
+def get_user_cases(request):
+    if request.method == "GET" and request.user.is_authenticated:
+
+        cases = Case.objects.filter(user=request.user).order_by('-uploaded_at')
+        serializer = CaseSerializer(cases, many=True)
+        return JsonResponse(serializer.data, safe=False)
+
+
 def progress_endpoint(request):
     user_id = str(request.user.id)
     progress = get_progress(user_id)
@@ -95,7 +114,7 @@ def upload_file(request):
         with open(temp_file_path, "wb+") as destination:
             for chunk in uploaded_file_obj.chunks():
                 destination.write(chunk)
-        set_progress(user_id, 30)
+        # set_progress(user_id, 30)
 
         # Handle case creation
         case, created = Case.objects.get_or_create(name=case_name, user=request.user)
@@ -108,14 +127,14 @@ def upload_file(request):
             shutil.rmtree(temp_dir)
             return JsonResponse({"error": str(e)}, status=400)
 
-        set_progress(user_id, 60)
+        # set_progress(user_id, 60)
 
         # Save the file from the temp location to S3
         with open(temp_file_path, "rb") as f:
             file_name = default_storage.save(uploaded_file_obj.name, f)
         file_url = default_storage.url(file_name)
 
-        set_progress(user_id, 80)
+        # set_progress(user_id, 80)
 
         # Save the URL in the database
         uploaded_file = UploadedFile(case=case, file_url=file_url)
@@ -124,7 +143,11 @@ def upload_file(request):
         # Clean up: Remove the temporary directory and file
         shutil.rmtree(temp_dir)
 
-        return JsonResponse({"message": "Success", "file_url": file_url}, status=201)
+        case_dict = model_to_dict(case)
+
+        return JsonResponse(
+            {"message": "Success", "case": case_dict, "file_url": file_url}, status=201
+        )
 
     return JsonResponse({"error": "Bad request or not authenticated"}, status=400)
 

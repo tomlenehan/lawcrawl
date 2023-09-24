@@ -1,6 +1,7 @@
 import React, {useState} from "react";
 import Grid from "@material-ui/core/Grid";
 import {makeStyles} from '@material-ui/core/styles';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Typography from "@material-ui/core/Typography";
 import Footer from "./Footer";
 import theme from './Theme';
@@ -107,11 +108,15 @@ const useStyles = makeStyles((theme) => ({
 
 const UploadPage = ({isAuthenticated}) => {
     const classes = useStyles();
+    const [loading, setLoading] = React.useState(false);
     const [caseName, setCaseName] = React.useState('');
+    const [caseUID, setCaseUID] = React.useState('');
     const [selectedState, setSelectedState] = React.useState('');
     const [errorMessage, setErrorMessage] = React.useState(null);
-    const [progress, setProgress] = React.useState(0);
+    // const [progress, setProgress] = React.useState(0);
     const token = localStorage.getItem('access');
+    const navigate = useNavigate();
+    const location = useLocation();
 
     const handleUploadClick = (event) => {
         const fileInput = document.getElementById('fileInput');
@@ -142,6 +147,8 @@ const UploadPage = ({isAuthenticated}) => {
 
         // Clear any existing error messages
         setErrorMessage(null);
+        // Set loading to true
+        setLoading(true);
 
         event.preventDefault();  // Prevent Chrome or any other browser from opening the file.
 
@@ -171,6 +178,8 @@ const UploadPage = ({isAuthenticated}) => {
             if (response.ok) {
                 const data = await response.json();
                 console.log(data);
+                // Redirect to the chat page with the appropriate uid
+                navigate(`/chat?uid=${data.case.uid}`);
             } else {
                 const errorData = await response.json();
                 if (errorData && errorData.detail) {
@@ -182,6 +191,9 @@ const UploadPage = ({isAuthenticated}) => {
         } catch (error) {
             console.error("There was an error uploading the file.", error);
             setErrorMessage("There was a problem communicating with the server. Please try again.");
+        } finally {
+            // Set loading back to false once upload is complete or if there is an error
+            setLoading(false);
         }
 
         // Clear the input value so the same file can be uploaded again if needed.
@@ -201,12 +213,14 @@ const UploadPage = ({isAuthenticated}) => {
                             </Typography>
                         </Grid>
                         <Grid item xs={12}>
+                            {/*show progress*/}
+                            {loading && <LinearProgress/>}
                             {/*Display errors*/}
                             {
                                 errorMessage && <div className={classes.error}>{errorMessage}</div>
                             }
                             { /* Show progress bar if there's progress (change condition as needed) */}
-                            {progress > 0 && <LinearProgressWithLabel value={progress}/>}
+                            {/*{progress > 0 && <LinearProgressWithLabel value={progress}/>}*/}
                             <TextField
                                 label="Case Name"
                                 variant="outlined"
@@ -218,11 +232,12 @@ const UploadPage = ({isAuthenticated}) => {
                                 onChange={e => setCaseName(e.target.value)}
                                 className={`${classes.textField}`}
                                 helperText="Provide a name for easy reference."
+                                disabled={loading}
                             />
                         </Grid>
 
                         <Grid item xs={12}>
-                            <FormControl variant="outlined" className={classes.textField}>
+                            <FormControl variant="outlined" className={classes.textField} disabled={loading}>
                                 <InputLabel id="state-label"
                                             className={classes.blackLabel}>State</InputLabel>
                                 <Select
@@ -300,6 +315,7 @@ const UploadPage = ({isAuthenticated}) => {
                                 className={classes.loginButton}
                                 startIcon={<CloudUploadIcon/>}
                                 onClick={handleUploadClick}
+                                disabled={loading}
                             >
                                 Upload PDF
                             </Button>
