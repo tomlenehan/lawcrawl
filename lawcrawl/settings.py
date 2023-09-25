@@ -125,8 +125,7 @@ SIMPLE_JWT = {
 DJOSER = {
     'LOGIN_FIELD': 'email',
     'SOCIAL_AUTH_TOKEN_STRATEGY': 'djoser.social.token.jwt.TokenStrategy',
-    'SOCIAL_AUTH_ALLOWED_REDIRECT_URIS': ['http://127.0.0.1:8000', 'http://127.0.0.1:8000/chat', 'http://127.0.0.1:8000/login'
-                                          'http://lawcrawl.com', 'http://lawcrawl.com/chat', 'http://lawcrawl.com/login'],
+        'SOCIAL_AUTH_ALLOWED_REDIRECT_URIS': ['http://127.0.0.1:8000', 'http://127.0.0.1:8000/upload', 'http://127.0.0.1:8000/login'],
     'SERIALIZERS': {},
 }
 AUTHENTICATION_BACKENDS = (
@@ -168,6 +167,23 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Login settings
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'logs/django.log',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+        },
+    },
+}
 
 WEBPACK_LOADER = {
     'DEFAULT': {
@@ -208,14 +224,19 @@ STATICFILES_DIRS = [
 
 # Dev
 STATIC_URL = '/frontend/static/'
+# STATIC_URL = '/static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+# STATIC_ROOT = os.path.join(BASE_DIR, 'frontend', 'static')
+
 # AI API credentials
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
 PINECONE_ENV = os.getenv('PINECONE_ENV')
 
+BASE_URL = 'http://127.0.0.1:8000'

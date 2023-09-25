@@ -162,7 +162,7 @@ const UploadPage = ({isAuthenticated}) => {
 
         try {
             // Start the upload
-            const response = await fetch('/api/upload/', {
+            const response = await fetch('/api/upload/file/', {
                 method: 'POST',
                 body: formData,
                 headers: {

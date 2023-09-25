@@ -26,7 +26,7 @@ const useStyles = makeStyles((theme) => ({
         alignItems: "center",
     },
     mainLogo: {
-        width: '12%',
+        width: 100,
         margin: '0 auto',
         display: 'block',
     },
@@ -56,7 +56,7 @@ const LoginPage = ({isAuthenticated}) => {
         // Logic for logging in with Twitter
         try {
             console.log("REACT_APP_API_URL:", process.env.REACT_APP_API_URL);
-            const res = await axios.get(`/auth/o/twitter/?redirect_uri=${process.env.REACT_APP_API_URL}/chat`)
+            const res = await axios.get(`/auth/o/twitter/?redirect_uri=${process.env.REACT_APP_API_URL}/upload`)
             window.location.replace(res.data.authorization_url)
 
         } catch (err) {

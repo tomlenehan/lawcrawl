@@ -77,6 +77,7 @@ const useStyles = makeStyles((theme) => ({
         borderRadius: '10px',
         boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
         textTransform: 'none',
+        marginTop: 40,
     },
 }));
 
