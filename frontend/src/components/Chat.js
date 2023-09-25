@@ -137,8 +137,7 @@ const Chat = () => {
                 const response = await fetch(`/api/user/cases/`, {
                     method: 'GET',
                     headers: {
-                        // 'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`, // Assuming you are using token-based authentication
+                        'Authorization': `Bearer ${token}`,
                     },
                 });
 
@@ -169,16 +168,7 @@ const Chat = () => {
         fetchUserCases();
 
     }, [token, location]);
-    // });
 
-
-    //     useEffect(() => {
-    //         // Check the url for a caseuid, if it does not exist, set the first one
-    //         .catch(error => {
-    //             console.error('Error fetching bill actions:', error);
-    //         });
-    //
-    // }, [bill_id]);
 
     async function handleSubmit(e) {
         e.preventDefault();
@@ -195,19 +185,18 @@ const Chat = () => {
             const response = await fetch('/api/chat/message/', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                    // message: chatLog.map((message) => message.message).
-                    // message: `${input}`
-                    message: input
+                    message: userInput,
+                    chat_log: chatLog,
+                    case_uid: currentCase.uid
                 })
             });
             const data = await response.json();
             console.log('fetching_output');
             setChatLog(prevChatLog => [
                 ...prevChatLog,
-                // {user: "me", message: userInput},
                 {user: "gpt", message: data.message}
             ]);
         } finally {
@@ -291,7 +280,7 @@ const ChatMessage = ({message, user}) => {
             <div className={classes.chatMessage}>
                 <div className={classes.chatMessageCenter}>
                     <div className={classes.avatarME}>
-                        ME
+                        YOU
                     </div>
                     <div className={classes.message}>{message}</div>
                 </div>

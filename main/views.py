@@ -14,7 +14,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from lawcrawl import settings
-from .models import Case, UploadedFile
+from .models import CaseConversation, UploadedFile
 import jwt
 from functools import wraps
 
@@ -26,8 +26,11 @@ from langchain.document_loaders import PyPDFLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Pinecone
 from langchain.chat_models import ChatOpenAI
+# from langchain.vectorstores.utils import PineconeFilter
+
 # from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from langchain.chains import RetrievalQA
+
 # from langchain.agents import Tool
 # from langchain.agents import initialize_agent
 import pinecone
@@ -36,20 +39,22 @@ import PyPDF2
 from main.models import Case
 from main.serializers import CaseSerializer
 from django.contrib.auth.models import User
+from uuid import UUID
+from django.core.exceptions import ObjectDoesNotExist
 
 
 # global progress store
 PROGRESS_STORE = {}
 
 
-def set_progress(user_id, progress):
-    """Set progress for a given user."""
-    PROGRESS_STORE[user_id] = progress
+# def set_progress(user_id, progress):
+#     """Set progress for a given user."""
+#     PROGRESS_STORE[user_id] = progress
 
 
-def get_progress(user_id):
-    """Get progress for a given user."""
-    return PROGRESS_STORE.get(user_id, 0)
+# def get_progress(user_id):
+#     """Get progress for a given user."""
+#     return PROGRESS_STORE.get(user_id, 0)
 
 
 def access_token_required(view_func):
@@ -89,10 +94,10 @@ def get_user_cases(request):
         return JsonResponse(serializer.data, safe=False)
 
 
-def progress_endpoint(request):
-    user_id = str(request.user.id)
-    progress = get_progress(user_id)
-    return JsonResponse({"progress": progress})
+# def progress_endpoint(request):
+#     user_id = str(request.user.id)
+#     progress = get_progress(user_id)
+#     return JsonResponse({"progress": progress})
 
 
 @csrf_exempt
@@ -101,7 +106,6 @@ def upload_file(request):
     if request.method == "POST" and request.user.is_authenticated:
         # setting progress
         user_id = request.user.id
-        set_progress(user_id, 10)
 
         uploaded_file_obj = request.FILES["file"]
         case_name = request.POST.get("case_name", None)
@@ -114,7 +118,6 @@ def upload_file(request):
         with open(temp_file_path, "wb+") as destination:
             for chunk in uploaded_file_obj.chunks():
                 destination.write(chunk)
-        # set_progress(user_id, 30)
 
         # Handle case creation
         case, created = Case.objects.get_or_create(name=case_name, user=request.user)
@@ -127,14 +130,10 @@ def upload_file(request):
             shutil.rmtree(temp_dir)
             return JsonResponse({"error": str(e)}, status=400)
 
-        # set_progress(user_id, 60)
-
         # Save the file from the temp location to S3
         with open(temp_file_path, "rb") as f:
             file_name = default_storage.save(uploaded_file_obj.name, f)
         file_url = default_storage.url(file_name)
-
-        # set_progress(user_id, 80)
 
         # Save the URL in the database
         uploaded_file = UploadedFile(case=case, file_url=file_url)
@@ -184,6 +183,7 @@ def create_embeddings(file, case, user):
     pinecone_api_key = settings.PINECONE_API_KEY
     pinecone_env = settings.PINECONE_ENV
     index_name = "lawcrawl"
+    namespace = "lawcrawl_cases"
 
     embed = OpenAIEmbeddings(
         model=model_name,
@@ -250,7 +250,6 @@ def create_embeddings(file, case, user):
     total_tokens = 0
     start = time.time()
     batch_limit = 50
-    namespace = "lawcrawl_cases"
 
     # Process and upsert embeddings in batches
     for i in range(0, len(pdf_texts), batch_limit):
@@ -272,9 +271,17 @@ def create_embeddings(file, case, user):
 def chat_message(request):
 
     if request.method == 'POST':
+
         body_unicode = request.body.decode('utf-8')
         body = json.loads(body_unicode)
         message = body.get('message')
+        case_uid = body.get('case_uid')
+        chat_log = body.get('chat_log')
+
+        try:
+            case = Case.objects.get(uid=UUID(case_uid))
+        except ObjectDoesNotExist:
+            return JsonResponse({'error': 'Invalid case UID'}, status=400)
 
         openai_api_key = settings.OPENAI_API_KEY
         model_name = 'text-embedding-ada-002'
@@ -282,6 +289,7 @@ def chat_message(request):
         pinecone_api_key = settings.PINECONE_API_KEY
         pinecone_env = settings.PINECONE_ENV
         index_name = 'lawcrawl'
+        namespace = 'lawcrawl_cases'
 
         llm = ChatOpenAI(
             openai_api_key=openai_api_key,
@@ -303,15 +311,42 @@ def chat_message(request):
         text_field = "text"
 
         vectorstore = Pinecone(
-            index, embed.embed_query, text_field, 'lawcrawl_cases'
+            index, embed.embed_query, text_field, namespace
+        )
+
+        # filter the index by case_uid
+        filter_query = {"case_uid": case_uid}
+        retriever = vectorstore.as_retriever(
+            search_kwargs={"filter": filter_query},
+            retriever_kwargs={"search_kwargs": {"filter": filter_query}},
+            include_values=True,
         )
 
         qa = RetrievalQA.from_chain_type(
             llm=llm,
             chain_type="stuff",
-            retriever=vectorstore.as_retriever()
+            retriever=retriever
         )
 
         response = qa.run(message)
+
+        # Append the response to the chat_log
+        if chat_log is None:
+            chat_log = []
+        
+        chat_log.extend(
+            [{"user": "me", "message": message},
+             {"user": "gpt", "message": response}]
+        )
+
+        conversation, created = CaseConversation.objects.update_or_create(
+            case=case,
+            defaults={
+                "conversation": chat_log,
+                "is_active": True,
+                "updated_at": timezone.now(),
+            },
+        )
+
         return JsonResponse({'message': response})
 

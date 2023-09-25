@@ -58,7 +58,7 @@ class Case(models.Model):
         ('WY', 'Wyoming'),
     )
 
-    uid = models.UUIDField(default=uuid4, editable=False, unique=True, verbose_name="UID")
+    uid = models.UUIDField(default=uuid4, unique=True, verbose_name="UID")
     name = models.CharField(max_length=255)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     uploaded_at = models.DateTimeField(auto_now_add=True)
@@ -68,3 +68,11 @@ class Case(models.Model):
 class UploadedFile(models.Model):
     case = models.ForeignKey(Case, on_delete=models.CASCADE, related_name='uploaded_files')
     file_url = models.URLField()
+
+
+class CaseConversation(models.Model):
+    case = models.ForeignKey(Case, on_delete=models.CASCADE)
+    conversation = models.JSONField()
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
