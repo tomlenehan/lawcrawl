@@ -10,8 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import default_storage
 from django.contrib.auth import get_user_model
 from django.forms.models import model_to_dict
-from rest_framework.views import APIView
-from rest_framework.response import Response
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from lawcrawl import settings
 from .models import CaseConversation, UploadedFile
@@ -26,7 +25,6 @@ from langchain.document_loaders import PyPDFLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Pinecone
 from langchain.chat_models import ChatOpenAI
-# from langchain.vectorstores.utils import PineconeFilter
 
 # from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from langchain.chains import RetrievalQA
@@ -349,4 +347,19 @@ def chat_message(request):
         )
 
         return JsonResponse({'message': response})
+
+
+@csrf_exempt
+@access_token_required
+def fetch_case_conversation(request, case_uid):
+    case = get_object_or_404(Case, uid=case_uid)
+    # Check if the requested case belongs to the logged-in user
+    if request.user != case.user:
+        return JsonResponse({"error": "Unauthorized access"}, status=401)
+
+    try:
+        conversation = CaseConversation.objects.get(case=case)
+        return JsonResponse({"conversation": conversation.conversation})
+    except CaseConversation.DoesNotExist:
+        return JsonResponse({"error": "Conversation does not exist"}, status=404)
 

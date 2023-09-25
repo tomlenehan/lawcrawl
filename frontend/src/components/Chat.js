@@ -170,6 +170,33 @@ const Chat = () => {
     }, [token, location]);
 
 
+    useEffect(() => {
+        const fetchCaseConversation = async () => {
+            if (currentCase) {
+                try {
+                    setLoading(true);
+                    const response = await axios.get(`/api/conversation/${currentCase.uid}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                        },
+                    });
+                    if (response.status === 200) {
+                        setChatLog(response.data.conversation);
+                    } else {
+                        console.error('Error fetching CaseConversation:', response.status, response.data);
+                    }
+                } catch (error) {
+                    console.error('Error fetching CaseConversation:', error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+
+        fetchCaseConversation();
+    }, [currentCase, token]);
+
+
     async function handleSubmit(e) {
         e.preventDefault();
 
@@ -226,7 +253,8 @@ const Chat = () => {
                         >
                             <Box display="flex" alignItems="center" justifyContent="space-between"
                                  width="100%">
-                                <ChatBubbleOutlineIcon style={{marginRight: '8px', fontSize: '1.2rem'}}/>
+                                <ChatBubbleOutlineIcon
+                                    style={{marginRight: '8px', fontSize: '1.2rem'}}/>
                                 <Box textAlign="center" flexGrow={1}>
                                     {userCase.name}
                                 </Box>
@@ -269,7 +297,12 @@ const ChatMessage = ({message, user}) => {
                     <div className={classes.avatarGPT}>
                         <img src={`${config.STATIC_URL}images/logos/BotChatLogo.png`}
                              alt="Bot Avatar"
-                             style={{width: 35, borderRadius: '50%', marginTop: 7, marginLeft: 2}} />
+                             style={{
+                                 width: 35,
+                                 borderRadius: '50%',
+                                 marginTop: 7,
+                                 marginLeft: 2
+                             }}/>
                     </div>
                     <div className={classes.message}>{message}</div>
                 </div>
