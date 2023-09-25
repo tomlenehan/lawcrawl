@@ -2,12 +2,15 @@ import React, {useEffect, useState} from "react";
 import Grid from "@material-ui/core/Grid";
 import {makeStyles} from '@material-ui/core/styles';
 import {Link} from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
+import {useLocation} from 'react-router-dom';
 import theme from './Theme';
 // import {Section} from "@material-ui/core";
 import LinearProgress from '@material-ui/core/LinearProgress';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import Footer from "./Footer";
 import axios from "axios";
+import {Box} from "@material-ui/core";
+import config from "./config";
 
 // Chat Component
 const useStyles = makeStyles((theme) => ({
@@ -27,9 +30,7 @@ const useStyles = makeStyles((theme) => ({
         padding: 15,
         border: '1px solid #fdfbee',
         marginTop: 4,
-        width: "90%",
         color: '#fdfbee !important',
-        textAlign: "center",
         textDecoration: "none",
         cursor: "pointer",
         borderRadius: 4,
@@ -72,6 +73,10 @@ const useStyles = makeStyles((theme) => ({
         padding: 12,
         // Remove absolute positioning styles
     },
+    chatIcon: {
+        marginRight: '8px',
+        fontSize: '1.2rem',
+    },
     chatInputTextArea: {
         backgroundColor: '#e0f2f1',
         fontSize: '1.1em',
@@ -86,19 +91,24 @@ const useStyles = makeStyles((theme) => ({
         boxShadow: '0 0 5px #3a3a3a',
         resize: 'none',
     },
-    avatar: {
-        backgroundColor: '#ffffff',
+    avatarGPT: {
+        backgroundColor: '#B2DFDB',
         borderRadius: '50%',
         minWidth: 40,
         height: 40,
         marginRight: 10,
     },
-    avatarGPT: {
-        backgroundColor: '#AB67FF',
+    avatarME: {
+        backgroundColor: '#ffffff',
         borderRadius: '50%',
         minWidth: 40,
         height: 40,
         marginRight: 10,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#80cbc4',
+        fontWeight: 'bold',
     },
     message: {
         alignSelf: 'center',
@@ -213,19 +223,25 @@ const Chat = () => {
                     <div key={index}>
                         <Link
                             to={`/chat?uid=${userCase.uid}`}
-                            className={classes.sideMenuButton}
                             onClick={() => {
-                                setCurrentCase(userCase); // Update currentCase on click
+                                setCurrentCase(userCase);
                                 setChatLog(chatLogBaseline);
                             }}
                             style={{
-                                backgroundColor: currentCase && userCase.uid === currentCase.uid ? '#2a2a2a' : 'transparent', // Change the background color if it is the current case
+                                backgroundColor: currentCase && userCase.uid === currentCase.uid ? '#2a2a2a' : 'transparent',
                                 textDecoration: 'none',
-                                display: 'inline-block',
-                                color: 'inherit'
+                                color: 'inherit',
+                                display: 'block',
                             }}
+                            className={classes.sideMenuButton}
                         >
-                            {userCase.name}
+                            <Box display="flex" alignItems="center" justifyContent="space-between"
+                                 width="100%">
+                                <ChatBubbleOutlineIcon style={{marginRight: '8px', fontSize: '1.2rem'}}/>
+                                <Box textAlign="center" flexGrow={1}>
+                                    {userCase.name}
+                                </Box>
+                            </Box>
                         </Link>
                     </div>
                 ))}
@@ -261,7 +277,11 @@ const ChatMessage = ({message, user}) => {
         return (
             <div className={classes.chatMessageGPT}>
                 <div className={classes.chatMessageCenter}>
-                    <div className={classes.avatarGPT}></div>
+                    <div className={classes.avatarGPT}>
+                        <img src={`${config.STATIC_URL}images/logos/BotChatLogo.png`}
+                             alt="Bot Avatar"
+                             style={{width: 35, borderRadius: '50%', marginTop: 7, marginLeft: 2}} />
+                    </div>
                     <div className={classes.message}>{message}</div>
                 </div>
             </div>
@@ -270,7 +290,9 @@ const ChatMessage = ({message, user}) => {
         return (
             <div className={classes.chatMessage}>
                 <div className={classes.chatMessageCenter}>
-                    <div className={classes.avatar}></div>
+                    <div className={classes.avatarME}>
+                        ME
+                    </div>
                     <div className={classes.message}>{message}</div>
                 </div>
             </div>

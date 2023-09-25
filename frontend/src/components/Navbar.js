@@ -87,7 +87,7 @@ const Navbar = ({isAuthenticated, logout}) => {
                     <Grid container justifyContent="space-between" alignItems="center">
                         <Grid item>
                             <Button color="inherit" component={Link} to="/">
-                                <img src={`${config.STATIC_URL}images/logos/LawcrawlLogoSM.png`}
+                                <img src={`${config.STATIC_URL}images/logos/LogoMD.png`}
                                      className={classes.logo}/>
                             </Button>
 

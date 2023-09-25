@@ -9,6 +9,7 @@ import LibraryBooksIcon from "@material-ui/icons/LibraryBooks";
 import AddIcon from '@mui/icons-material/Add';
 import {Link} from 'react-router-dom';
 import config from './config';
+import {connect} from "react-redux";
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -41,7 +42,7 @@ const useStyles = makeStyles((theme) => ({
     },
     subTitle: {
         fontSize: '2.2vw',
-        marginBottom: 15,
+        marginBottom: 25,
     },
     description: {
         fontSize: '1.5vw',
@@ -63,7 +64,7 @@ const useStyles = makeStyles((theme) => ({
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: 36,
+        marginTop: 50,
     },
     loginButton: {
         backgroundColor: '#80cbc4',
@@ -88,13 +89,13 @@ const HomePage = ({ isAuthenticated }) => {
                 <div className={classes.chatContainer}>
                     <Grid container>
                         <Grid item xs={12}>
-                            <img src={`${config.STATIC_URL}images/logos/LawcrawlLogoLG.png`}
+                            <img src={`${config.STATIC_URL}images/logos/LogoLG.png`}
                                  alt="Lawcrawl Logo"
                                  className={classes.mainLogo}/>
                         </Grid>
 
                         <Grid item xs={12}>
-                            <img src={`${config.STATIC_URL}images/logos/LawcrawlText.png`}
+                            <img src={`${config.STATIC_URL}images/logos/TextLogoLG.png`}
                                  alt="Lawcrawl Logo"
                                  className={classes.textLogo}/>
                             {/*<Typography className={classes.textLogo}>Law Crawl</Typography>*/}
@@ -110,7 +111,7 @@ const HomePage = ({ isAuthenticated }) => {
                             </Typography>
                         </Grid>
 
-                        <Grid item xs={12} style={{marginTop: -25}}>
+                        <Grid item xs={12} style={{marginTop: -45}}>
                             <div className={classes.iconContainer}>
                                 <LibraryBooksIcon className={classes.icon}/>
                                 <AddIcon className={classes.plusIcon}/>
@@ -144,4 +145,7 @@ const HomePage = ({ isAuthenticated }) => {
     );
 }
 
-export default HomePage;
+const mapStateToProps = (state) => ({
+    isAuthenticated: state.auth.isAuthenticated,
+});
+export default connect(mapStateToProps)(HomePage);

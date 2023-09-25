@@ -143,8 +143,6 @@ const UploadPage = ({isAuthenticated}) => {
 
 
     const handleFileChange = async (event) => {
-        console.log('handleFileChange');
-
         // Clear any existing error messages
         setErrorMessage(null);
         // Set loading to true
@@ -179,6 +177,7 @@ const UploadPage = ({isAuthenticated}) => {
                 const data = await response.json();
                 console.log(data);
                 // Redirect to the chat page with the appropriate uid
+                console.log('handleFileSubmit');
                 navigate(`/chat?uid=${data.case.uid}`);
             } else {
                 const errorData = await response.json();
