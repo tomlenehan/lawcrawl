@@ -14,6 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from lawcrawl import settings
 from .models import CaseConversation, UploadedFile
+from lawcrawl.storages import UploadStorage
 import jwt
 from functools import wraps
 
@@ -43,16 +44,6 @@ from django.core.exceptions import ObjectDoesNotExist
 
 # global progress store
 PROGRESS_STORE = {}
-
-
-# def set_progress(user_id, progress):
-#     """Set progress for a given user."""
-#     PROGRESS_STORE[user_id] = progress
-
-
-# def get_progress(user_id):
-#     """Get progress for a given user."""
-#     return PROGRESS_STORE.get(user_id, 0)
 
 
 def access_token_required(view_func):
@@ -92,12 +83,6 @@ def get_user_cases(request):
         return JsonResponse(serializer.data, safe=False)
 
 
-# def progress_endpoint(request):
-#     user_id = str(request.user.id)
-#     progress = get_progress(user_id)
-#     return JsonResponse({"progress": progress})
-
-
 @csrf_exempt
 @access_token_required
 def upload_file(request):
@@ -129,9 +114,11 @@ def upload_file(request):
             return JsonResponse({"error": str(e)}, status=400)
 
         # Save the file from the temp location to S3
+        case_document_storage = UploadStorage()
+
         with open(temp_file_path, "rb") as f:
-            file_name = default_storage.save(uploaded_file_obj.name, f)
-        file_url = default_storage.url(file_name)
+            file_name = case_document_storage.save(uploaded_file_obj.name, f)
+        file_url = case_document_storage.url(file_name)
 
         # Save the URL in the database
         uploaded_file = UploadedFile(case=case, file_url=file_url)

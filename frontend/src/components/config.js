@@ -1,6 +1,7 @@
 // const env = process.env.NODE_ENV || 'development';
 // const env = 'production';
-const env = 'development';
+// const env = 'development';
+const env = 'production';
 
 const config = {
     development: {

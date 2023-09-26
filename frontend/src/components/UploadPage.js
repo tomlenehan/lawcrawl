@@ -62,6 +62,7 @@ const useStyles = makeStyles((theme) => ({
         color: '#3a3a3a',
         padding: '10px 30px',
         backgroundColor: '#80cbc4',
+        marginTop: 10,
         '&:hover': {
             backgroundColor: '#26a69a',  // Darker color on hover
         },
@@ -86,7 +87,7 @@ const useStyles = makeStyles((theme) => ({
     error: {
         maxWidth: 250,
         fontSize: '1.1vw',
-        color: '#d32f2fl',
+        color: '#ff1744',
         marginBottom: 15,
         marginTop: -15,
         fontWeight: "bold",
@@ -148,7 +149,7 @@ const UploadPage = ({isAuthenticated}) => {
         // Set loading to true
         setLoading(true);
 
-        event.preventDefault();  // Prevent Chrome or any other browser from opening the file.
+        event.preventDefault();
 
         const files = event.target.files;
         const formData = new FormData();
@@ -169,9 +170,6 @@ const UploadPage = ({isAuthenticated}) => {
                     'Authorization': `Bearer ${token}`
                 },
             });
-
-            // Begin polling for progress
-            // pollForProgress();
 
             if (response.ok) {
                 const data = await response.json();

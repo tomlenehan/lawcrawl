@@ -39,7 +39,6 @@ const useStyles = makeStyles((theme) => ({
     },
     twitterButton: {
         backgroundColor: "#1DA1F2",
-        // padding: 1,
         fontFamily: "DMSans, sans-serif",
         color: "white",
         "&:hover": {
@@ -95,7 +94,9 @@ const LoginPage = ({isAuthenticated}) => {
                                 onClick={loginWithTwitter}
                                 startIcon={<TwitterIcon/>}
                             >
-                                Twitter
+                                <Box style={{padding: 4}}>
+                                    Twitter
+                                </Box>
                             </Button>
                         </Box>
                     </Box>
