@@ -21,6 +21,7 @@ from functools import wraps
 import pinecone
 import tiktoken
 from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain.callbacks import get_openai_callback
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import PyPDFLoader
 from langchain.embeddings.openai import OpenAIEmbeddings
@@ -151,7 +152,7 @@ def extract_text_from_pdf(pdf_path):
             raise ValueError("Invalid PDF file")
 
         # Check the number of pages
-        if len(pdf_reader.pages) > 5:
+        if len(pdf_reader.pages) > 100:
             raise ValueError("PDF has more than 5 pages!")
 
         # Extract text from each page
@@ -176,8 +177,8 @@ def create_embeddings(file, case, user):
     )
 
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=3800,
-        chunk_overlap=200,
+        chunk_size=700,
+        chunk_overlap=100,
         length_function=tiktoken_len,
         separators=["\n\n", "\n", " ", ""],
     )
@@ -299,10 +300,10 @@ def chat_message(request):
             index, embed.embed_query, text_field, namespace
         )
 
-        # filter the index by case_uid
+        # filter the index by case_uid, return top K documents
         filter_query = {"case_uid": case_uid}
         retriever = vectorstore.as_retriever(
-            search_kwargs={"filter": filter_query},
+            search_kwargs={"filter": filter_query, "k": 4},
             retriever_kwargs={"search_kwargs": {"filter": filter_query}},
             include_values=True,
         )

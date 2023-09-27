@@ -118,7 +118,7 @@ const useStyles = makeStyles((theme) => ({
 const Chat = () => {
     const chatLogBaseline = [{
         user: "gpt",
-        message: "Hello, I am your friendly LawCrawl bot. " +
+        message: "Hello, I am your friendly Lawbot. " +
             "I'm not a lawyer, but I read your case and I'm here to " +
             "answer all of your legal questions.",
     }];

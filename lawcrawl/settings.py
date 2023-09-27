@@ -127,7 +127,8 @@ SIMPLE_JWT = {
 DJOSER = {
     'LOGIN_FIELD': 'email',
     'SOCIAL_AUTH_TOKEN_STRATEGY': 'djoser.social.token.jwt.TokenStrategy',
-        'SOCIAL_AUTH_ALLOWED_REDIRECT_URIS': ['http://127.0.0.1:8000', 'http://127.0.0.1:8000/upload', 'http://127.0.0.1:8000/login'],
+        'SOCIAL_AUTH_ALLOWED_REDIRECT_URIS': ['http://127.0.0.1:8000', 'http://127.0.0.1:8000/upload', 'http://127.0.0.1:8000/login',
+                                              'https://lawcrawl.com', 'https://lawcrawl.com/upload'],
     'SERIALIZERS': {},
 }
 AUTHENTICATION_BACKENDS = (
@@ -191,7 +192,7 @@ LOGGING = {
 WEBPACK_LOADER = {
     'DEFAULT': {
         'CACHE': not DEBUG,
-        'BUNDLE_DIR_NAME': 'frontend/static/',  # Make sure this ends with a slash
+        'BUNDLE_DIR_NAME': 'frontend/static/',
         'STATS_FILE': os.path.join(BASE_DIR, 'frontend/webpack-stats.json'),
         'POLL_INTERVAL': 0.1,
         'TIMEOUT': None,

@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import {Provider} from "react-redux";
 import {Routes, Route, BrowserRouter, useLocation, RouterProvider} from "react-router-dom";
+// import PasswordProtectedRoute from './components/PasswordProtectedRoute';
 import Layout from "./components/Layout";
 import store from "./store";
 import theme from './components/Theme';
@@ -48,6 +49,13 @@ export default function App() {
                                 <Route path="/login" element={<LoginPage/>}/>
                                 <Route path="/upload" element={<UploadPage/>}/>
                                 <Route path="/chat" element={<ChatPage/>}/>
+
+                                {/*<PasswordProtectedRoute path="/" element={<HomePage/>}/>*/}
+                                {/*<PasswordProtectedRoute path="/home" element={<HomePage/>}/>*/}
+                                {/*<PasswordProtectedRoute path="/login" element={<LoginPage/>}/>*/}
+                                {/*<PasswordProtectedRoute path="/upload" element={<UploadPage/>}/>*/}
+                                {/*<PasswordProtectedRoute path="/chat" element={<ChatPage/>}/>*/}
+
                             </Routes>
                         </div>
                     </Layout>
