@@ -1,9 +1,7 @@
 import {
-
     TWITTER_AUTH_FAIL,
     TWITTER_AUTH_SUCCESS,
     LOGOUT,
-
 } from "./types";
 
 import axios from "axios";

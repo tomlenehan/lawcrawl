@@ -1,7 +1,8 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
+import { connect } from 'react-redux';
 import Grid from "@material-ui/core/Grid";
 import {makeStyles} from '@material-ui/core/styles';
-import { useNavigate, useLocation } from 'react-router-dom';
+import {useNavigate, useLocation} from 'react-router-dom';
 import Typography from "@material-ui/core/Typography";
 import Footer from "./Footer";
 import theme from './Theme';
@@ -17,6 +18,8 @@ import {
 } from "@material-ui/core";
 import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import {useSelector} from 'react-redux';
+import {useDispatch} from 'react-redux';
+import {addUserCase} from '../actions/user';
 import config from './config';
 
 const useStyles = makeStyles((theme) => ({
@@ -107,17 +110,17 @@ const useStyles = makeStyles((theme) => ({
 // }
 
 
-const UploadPage = ({isAuthenticated}) => {
+const UploadPage = ({isAuthenticated, userCases}) => {
     const classes = useStyles();
     const [loading, setLoading] = React.useState(false);
     const [caseName, setCaseName] = React.useState('');
-    const [caseUID, setCaseUID] = React.useState('');
     const [selectedState, setSelectedState] = React.useState('');
     const [errorMessage, setErrorMessage] = React.useState(null);
     // const [progress, setProgress] = React.useState(0);
     const token = localStorage.getItem('access');
     const navigate = useNavigate();
     const location = useLocation();
+    const dispatch = useDispatch();
 
     const handleUploadClick = (event) => {
         const fileInput = document.getElementById('fileInput');
@@ -142,6 +145,34 @@ const UploadPage = ({isAuthenticated}) => {
     //     }, 1000);
     // }
 
+    useEffect(() => {
+        const fetchUserCases = async () => {
+            try {
+                const response = await fetch('/api/user/cases/', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log("API Response:", data);
+                if(data){
+                    dispatch(addUserCase(data));
+                }
+            } catch (error) {
+                console.error('Error fetching user cases:', error);
+            }
+        };
+
+        // Check if userCases is not set before fetching
+        if (!userCases || userCases.length === 0) {
+            fetchUserCases();
+        }
+    }, [dispatch, token]);
 
     const handleFileChange = async (event) => {
         // Clear any existing error messages
@@ -175,7 +206,8 @@ const UploadPage = ({isAuthenticated}) => {
                 const data = await response.json();
                 console.log(data);
                 // Redirect to the chat page with the appropriate uid
-                console.log('handleFileSubmit');
+                console.log('set_user_cases');
+                dispatch(addUserCase(data.case));
                 navigate(`/chat?uid=${data.case.uid}`);
             } else {
                 const errorData = await response.json();
@@ -234,7 +266,8 @@ const UploadPage = ({isAuthenticated}) => {
                         </Grid>
 
                         <Grid item xs={12}>
-                            <FormControl variant="outlined" className={classes.textField} disabled={loading}>
+                            <FormControl variant="outlined" className={classes.textField}
+                                         disabled={loading}>
                                 <InputLabel id="state-label"
                                             className={classes.blackLabel}>State</InputLabel>
                                 <Select
@@ -325,4 +358,9 @@ const UploadPage = ({isAuthenticated}) => {
     );
 }
 
-export default UploadPage;
+const mapStateToProps = (state) => ({
+    isAuthenticated: state.auth.isAuthenticated,
+    userCases: state.userCases,
+});
+
+export default connect(mapStateToProps)(UploadPage);

@@ -48,7 +48,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 
-const Navbar = ({isAuthenticated, logout}) => {
+const Navbar = ({isAuthenticated, logout, userCases}) => {
 
     const classes = useStyles();
 
@@ -70,10 +70,12 @@ const Navbar = ({isAuthenticated, logout}) => {
                             to="/upload">
                         Upload
                     </Button>
-                    <Button className={classes.menuButton} color="inherit" component={Link}
-                            to="/chat">
-                        Chat
-                    </Button>
+                    {userCases && userCases.length > 0 && (
+                        <Button className={classes.menuButton} color="inherit" component={Link}
+                                to="/chat">
+                            Chat
+                        </Button>
+                    )}
                 </box>
             )}
         </>
@@ -122,16 +124,18 @@ const Navbar = ({isAuthenticated, logout}) => {
                                             >
                                                 Upload
                                             </MenuItem>
-                                            <MenuItem
-                                                onClick={handleMobileMenuClose}
-                                                component={Link}
-                                                to="/chat"
-                                            >
-                                                Chat
-                                            </MenuItem>
+
+                                            {userCases && userCases.length > 0 && (
+                                                <MenuItem
+                                                    onClick={handleMobileMenuClose}
+                                                    component={Link}
+                                                    to="/chat"
+                                                >
+                                                    Chat
+                                                </MenuItem>
+                                            )}
                                         </Box>
-                                    )
-                                    }
+                                    )}
 
                                 < /Menu>
                             </Hidden>
@@ -163,6 +167,7 @@ const Navbar = ({isAuthenticated, logout}) => {
 
 const mapStateToProps = (state) => ({
     isAuthenticated: state.auth.isAuthenticated,
+    userCases: state.userCases,
 });
 export default connect(mapStateToProps, {
     logout
