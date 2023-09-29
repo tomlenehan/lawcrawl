@@ -106,7 +106,7 @@ const HomePage = ({ isAuthenticated }) => {
 
                         <Grid item xs={12}>
                             <Typography className={classes.description}>
-                                Simply upload your documents. <br/>
+                                Simply upload your documents and chat.<br/>
                                 Our AI model has been trained on the law<br/>
                                 and knows your case.
                             </Typography>

@@ -1,13 +1,9 @@
-import React, {useEffect, useState} from "react";
-import Grid from "@material-ui/core/Grid";
+import React, {useEffect, useRef, useState} from "react";
 import {makeStyles} from '@material-ui/core/styles';
 import {Link} from 'react-router-dom';
-import {useLocation} from 'react-router-dom';
-import theme from './Theme';
 // import {Section} from "@material-ui/core";
 import LinearProgress from '@material-ui/core/LinearProgress';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-import Footer from "./Footer";
 import axios from "axios";
 import {Box} from "@material-ui/core";
 import config from "./config";
@@ -129,6 +125,7 @@ const Chat = () => {
     const [userCases, setUserCases] = useState([]);
     const [currentCase, setCurrentCase] = useState(null);
     const [chatLog, setChatLog] = useState(chatLogBaseline);
+    const chatLogRef = useRef(null);
 
 
     useEffect(() => {
@@ -232,6 +229,18 @@ const Chat = () => {
         // setChatLog([...chatLog, {user: "gpt", message: `${data.message}`}]);
     }
 
+    // Scroll the chat log to the bottom whenever the chatLog state changes
+    useEffect(() => {
+        if (chatLogRef.current) {
+            console.log('scrolling_to_bottom');
+            console.log('Before:', chatLogRef.current.scrollTop, chatLogRef.current.scrollHeight);
+                    setTimeout(() => {
+            chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
+        }, 100);
+            console.log('After:', chatLogRef.current.scrollTop);
+        }
+    }, [chatLog]);
+
     return (
         <div className={classes.App}>
             <aside className={classes.sideMenu}>
@@ -265,7 +274,7 @@ const Chat = () => {
             </aside>
             {/*<section className={classes.chatBox}>*/}
             <div className={classes.chatBox}>
-                <div className={classes.chatLog}>
+                <div className={classes.chatLog} ref={chatLogRef}>
                     {/*add messages*/}
                     {chatLog.map((chat, index) => (
                         <ChatMessage key={index} message={chat.message} user={chat.user}/>
