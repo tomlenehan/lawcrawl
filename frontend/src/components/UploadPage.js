@@ -169,7 +169,7 @@ const UploadPage = ({isAuthenticated, userCases}) => {
         };
 
         // Check if userCases is not set before fetching
-        if (!userCases || userCases.length === 0) {
+        if (token && (!userCases || userCases.length === 0)) {
             fetchUserCases();
         }
     }, [dispatch, token]);

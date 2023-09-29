@@ -50,13 +50,11 @@ PROGRESS_STORE = {}
 def access_token_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        access_token = request.META.get(
-            "HTTP_AUTHORIZATION"
-        )  # Get the 'Authorization' header
+        access_token = request.META.get("HTTP_AUTHORIZATION")
         if not access_token or not access_token.startswith("Bearer "):
             return JsonResponse({"error": "Access token required"}, status=401)
 
-        access_token = access_token[7:]  # Remove the 'Bearer '
+        access_token = access_token[7:]
 
         try:
             decoded_token = jwt.decode(
@@ -66,7 +64,7 @@ def access_token_required(view_func):
             User = get_user_model()
             user = User.objects.get(pk=user_id)
             request.user = user
-        except (jwt.InvalidTokenError, User.DoesNotExist):
+        except (jwt.InvalidTokenError, User.DoesNotExist, NameError):
             return JsonResponse({"error": "Invalid access token"}, status=401)
 
         return view_func(request, *args, **kwargs)
