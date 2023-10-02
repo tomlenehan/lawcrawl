@@ -31,13 +31,13 @@ export default function(state=initialState,action){
         case LOGOUT:
             localStorage.removeItem('access');
             localStorage.removeItem('refresh');
-            localStorage.removeItem('user'); // Remove the user email from localStorage
+            localStorage.removeItem('user');
             return{
                 ...state,
                 isAuthenticated: false,
                 access: null,
                 refresh: null,
-                user: null, // Set user to null in state
+                user: null,
             }
         default:
             return state

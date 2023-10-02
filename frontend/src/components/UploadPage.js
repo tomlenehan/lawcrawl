@@ -127,24 +127,6 @@ const UploadPage = ({isAuthenticated, userCases}) => {
         fileInput.click();
     };
 
-    // function pollForProgress() {
-    //     // Call this function after initiating the upload
-    //
-    //     const intervalId = setInterval(async () => {
-    //         const response = await fetch("/api/upload/progress/");
-    //         const data = await response.json();
-    //
-    //         const progress = data.progress;
-    //
-    //         // Update UI
-    //         setProgress(progress);
-    //
-    //         if (progress >= 100) {
-    //             clearInterval(intervalId);
-    //         }
-    //     }, 1000);
-    // }
-
     useEffect(() => {
         const fetchUserCases = async () => {
             try {
@@ -204,10 +186,10 @@ const UploadPage = ({isAuthenticated, userCases}) => {
 
             if (response.ok) {
                 const data = await response.json();
-                console.log(data);
                 // Redirect to the chat page with the appropriate uid
-                console.log('set_user_cases');
-                dispatch(addUserCase(data.case));
+                console.log('updating_user_cases');
+                const updatedUserCases = [data.case, ...userCases];
+                dispatch(addUserCase(updatedUserCases));
                 navigate(`/chat?uid=${data.case.uid}`);
             } else {
                 const errorData = await response.json();

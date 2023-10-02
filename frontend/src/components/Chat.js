@@ -1,13 +1,14 @@
 import React, {useEffect, useRef, useState} from "react";
 import {makeStyles} from '@material-ui/core/styles';
 import {Link} from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 // import {Section} from "@material-ui/core";
 import LinearProgress from '@material-ui/core/LinearProgress';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import axios from "axios";
 import {Box} from "@material-ui/core";
 import config from "./config";
+import {addUserCase} from "../actions/user";
 
 // Chat Component
 const useStyles = makeStyles((theme) => ({
@@ -127,32 +128,59 @@ const Chat = () => {
     const [currentCase, setCurrentCase] = useState(null);
     const [chatLog, setChatLog] = useState(chatLogBaseline);
     const chatLogRef = useRef(null);
+    const dispatch = useDispatch();
 
 
+    const fetchUserCases = async () => {
+        try {
+            const response = await fetch('/api/user/cases/', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            console.log("API Response:", data);
+            if (data) {
+                dispatch(addUserCase(data));
+            }
+        } catch (error) {
+            console.error('Error fetching user cases:', error);
+        }
+    };
 
     useEffect(() => {
-        const fetchUserCases = async () => {
+        const setCurrentCaseFromLocation = () => {
             try {
                 console.log('getting_current_case');
-                // Check for 'caseuid' in the URL
-                const queryParams = new URLSearchParams(location.search);
+                const queryParams = new URLSearchParams(window.location.search);
                 const urlCaseUid = queryParams.get('uid');
 
                 if (urlCaseUid) {
-                    // Set the case with the matching 'caseuid' from the URL as the current case
-                    const urlCase = userCases.find(userCases => userCases.uid === urlCaseUid);
-                    if (urlCase) setCurrentCase(urlCase);
-                } else if (userCases.length > 0) {
-                    // If 'caseuid' does not exist in the URL, set the most recent case as the current case
-                    setCurrentCase(userCases[0]); // Assuming the most recent case is the first in the array
+                    const urlCase = userCases.find(userCase => userCase.uid === urlCaseUid);
+                    if (urlCase && (!currentCase || currentCase.uid !== urlCase.uid)) {
+                        setCurrentCase(urlCase);
+                    }
+                } else if (userCases.length > 0 && !currentCase) {
+                    setCurrentCase(userCases[0]);
                 }
             } catch (error) {
-                console.error('Error fetching user cases:', error);
+                console.error('Error setting current case:', error);
             }
         };
-        fetchUserCases();
 
-    }, [location]);
+        if (userCases.length === 0) {
+            fetchUserCases().then(() => {
+                setCurrentCaseFromLocation();
+            });
+        } else {
+            setCurrentCaseFromLocation();
+        }
+    }, [userCases]);
 
 
     useEffect(() => {
@@ -179,7 +207,7 @@ const Chat = () => {
         };
 
         fetchCaseConversation();
-    }, [currentCase, token]);
+    }, [token]);
 
 
     async function handleSubmit(e) {
@@ -222,9 +250,9 @@ const Chat = () => {
         if (chatLogRef.current) {
             console.log('scrolling_to_bottom');
             console.log('Before:', chatLogRef.current.scrollTop, chatLogRef.current.scrollHeight);
-                    setTimeout(() => {
-            chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
-        }, 100);
+            setTimeout(() => {
+                chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
+            }, 100);
             console.log('After:', chatLogRef.current.scrollTop);
         }
     }, [chatLog]);
