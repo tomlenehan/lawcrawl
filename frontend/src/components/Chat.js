@@ -117,7 +117,7 @@ const Chat = () => {
     const chatLogBaseline = [{
         user: "gpt",
         message: "Hello, I am your friendly Lawbot. " +
-            "I'm not a lawyer, but I read your case and I'm here to " +
+            "I'm not a lawyer, but I read your documents and I'm here to " +
             "answer all of your legal questions.",
     }];
     const classes = useStyles();
@@ -180,7 +180,7 @@ const Chat = () => {
         } else {
             setCurrentCaseFromLocation();
         }
-    }, [userCases]);
+    }, [userCases, location.search]);
 
 
     useEffect(() => {
@@ -207,7 +207,7 @@ const Chat = () => {
         };
 
         fetchCaseConversation();
-    }, [token]);
+    }, [token, currentCase]);
 
 
     async function handleSubmit(e) {

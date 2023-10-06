@@ -24,9 +24,22 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.callbacks import get_openai_callback
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import PyPDFLoader
+from langchain.chains import ConversationalRetrievalChain
+from langchain.memory import (
+    ConversationBufferMemory,
+    ConversationSummaryMemory,
+    ConversationBufferWindowMemory,
+)
+from langchain.schema import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage
+)
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Pinecone
 from langchain.chat_models import ChatOpenAI
+
 
 # from langchain.chains.conversation.memory import ConversationBufferWindowMemory
 from langchain.chains import RetrievalQA
@@ -76,8 +89,7 @@ def access_token_required(view_func):
 @access_token_required
 def get_user_cases(request):
     if request.method == "GET" and request.user.is_authenticated:
-
-        cases = Case.objects.filter(user=request.user).order_by('-uploaded_at')
+        cases = Case.objects.filter(user=request.user).order_by("-uploaded_at")
         serializer = CaseSerializer(cases, many=True)
         return JsonResponse(serializer.data, safe=False)
 
@@ -214,7 +226,7 @@ def create_embeddings(file, case, user):
         "case_uid": str(case.uid),
         "case_name": case.name,
         "user_id": str(user.id),
-        "user_email": user.email
+        "user_email": user.email,
     }
 
     # get PDF text and check page number limit
@@ -253,50 +265,46 @@ def create_embeddings(file, case, user):
 
 @csrf_exempt
 def chat_message(request):
-
-    if request.method == 'POST':
-
-        body_unicode = request.body.decode('utf-8')
+    if request.method == "POST":
+        body_unicode = request.body.decode("utf-8")
         body = json.loads(body_unicode)
-        message = body.get('message')
-        case_uid = body.get('case_uid')
-        chat_log = body.get('chat_log')
+        message = body.get("message")
+        case_uid = body.get("case_uid")
+        chat_log = body.get("chat_log")
 
         try:
             case = Case.objects.get(uid=UUID(case_uid))
         except ObjectDoesNotExist:
-            return JsonResponse({'error': 'Invalid case UID'}, status=400)
+            return JsonResponse({"error": "Invalid case UID"}, status=400)
 
         openai_api_key = settings.OPENAI_API_KEY
-        model_name = 'text-embedding-ada-002'
+        model_name = "text-embedding-ada-002"
 
         pinecone_api_key = settings.PINECONE_API_KEY
         pinecone_env = settings.PINECONE_ENV
-        index_name = 'lawcrawl'
-        namespace = 'lawcrawl_cases'
+        index_name = "lawcrawl"
+        namespace = "lawcrawl_cases"
 
         llm = ChatOpenAI(
             openai_api_key=openai_api_key,
-            model_name='gpt-3.5-turbo',
-            temperature=0.3
+            model_name="gpt-3.5-turbo",
+            temperature=0.7,
+            streaming=True
         )
 
-        embed = OpenAIEmbeddings(
-            model=model_name,
-            openai_api_key=openai_api_key
-        )
+        embed = OpenAIEmbeddings(model=model_name,
+                                 openai_api_key=openai_api_key)
 
-        pinecone.init(
-            api_key=pinecone_api_key,
-            environment=pinecone_env
-        )
+        pinecone.init(api_key=pinecone_api_key,
+                      environment=pinecone_env)
         index = pinecone.Index(index_name)
 
         text_field = "text"
 
-        vectorstore = Pinecone(
-            index, embed.embed_query, text_field, namespace
-        )
+        vectorstore = Pinecone(index,
+                               embed.embed_query,
+                               text_field,
+                               namespace)
 
         # filter the index by case_uid, return top K documents
         filter_query = {"case_uid": case_uid}
@@ -306,21 +314,38 @@ def chat_message(request):
             include_values=True,
         )
 
+        qa = ConversationalRetrievalChain.from_llm(
+            llm,
+            retriever,
+            # memory=memory
+        )
+
+        # Truncate chat_log to only the last 8 entries (4 Q&A pairs)
+        truncated_chat_log = chat_log[-8:]
+        
+        # Transforming to the expected format
+        chat_history = [
+            (entry["message"], truncated_chat_log[i + 1]["message"])
+            for i, entry in enumerate(truncated_chat_log)
+            if entry["user"] == "me" and i + 1 < len(truncated_chat_log)
+        ]
+
         qa = RetrievalQA.from_chain_type(
             llm=llm,
             chain_type="stuff",
             retriever=retriever
         )
-
-        response = qa.run(message)
+        with get_openai_callback() as cb:
+            # response = qa({"question": message, "chat_history": []})
+            response = qa(message)
+            print(f"Spent a total of {cb.total_tokens} tokens")
 
         # Append the response to the chat_log
         if chat_log is None:
             chat_log = []
-        
+
         chat_log.extend(
-            [{"user": "me", "message": message},
-             {"user": "gpt", "message": response}]
+            [{"user": "me", "message": message}, {"user": "gpt", "message": response}]
         )
 
         conversation, created = CaseConversation.objects.update_or_create(
@@ -332,7 +357,7 @@ def chat_message(request):
             },
         )
 
-        return JsonResponse({'message': response})
+        return JsonResponse({"message": response['answer']})
 
 
 @csrf_exempt
@@ -348,4 +373,3 @@ def fetch_case_conversation(request, case_uid):
         return JsonResponse({"conversation": conversation.conversation})
     except CaseConversation.DoesNotExist:
         return JsonResponse({"error": "Conversation does not exist"}, status=404)
-
