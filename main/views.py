@@ -12,6 +12,8 @@ from django.contrib.auth import get_user_model
 from django.forms.models import model_to_dict
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
+from langchain.llms.openai import OpenAI
+
 from lawcrawl import settings
 from .models import CaseConversation, UploadedFile
 from lawcrawl.storages import UploadStorage
@@ -22,36 +24,21 @@ import pinecone
 import tiktoken
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.callbacks import get_openai_callback
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.text_splitter import (
+    RecursiveCharacterTextSplitter,
+    CharacterTextSplitter,
+)
 from langchain.document_loaders import PyPDFLoader
-from langchain.chains import ConversationalRetrievalChain
-from langchain.memory import (
-    ConversationBufferMemory,
-    ConversationSummaryMemory,
-    ConversationBufferWindowMemory,
-)
-from langchain.schema import (
-    AIMessage,
-    HumanMessage,
-    SystemMessage
-)
-from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Pinecone
 from langchain.chat_models import ChatOpenAI
-
-
-# from langchain.chains.conversation.memory import ConversationBufferWindowMemory
-from langchain.chains import RetrievalQA
-
-# from langchain.agents import Tool
-# from langchain.agents import initialize_agent
+from langchain.chains.summarize import load_summarize_chain
+from langchain.chains import RetrievalQA, ConversationalRetrievalChain
 import pinecone
 import PyPDF2
 
 from main.models import Case
 from main.serializers import CaseSerializer
-from django.contrib.auth.models import User
 from uuid import UUID
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -63,11 +50,13 @@ PROGRESS_STORE = {}
 def access_token_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
-        access_token = request.META.get("HTTP_AUTHORIZATION")
+        access_token = request.META.get(
+            "HTTP_AUTHORIZATION"
+        )  # Get the 'Authorization' header
         if not access_token or not access_token.startswith("Bearer "):
             return JsonResponse({"error": "Access token required"}, status=401)
 
-        access_token = access_token[7:]
+        access_token = access_token[7:]  # Remove the 'Bearer '
 
         try:
             decoded_token = jwt.decode(
@@ -77,7 +66,7 @@ def access_token_required(view_func):
             User = get_user_model()
             user = User.objects.get(pk=user_id)
             request.user = user
-        except (jwt.InvalidTokenError, User.DoesNotExist, NameError):
+        except (jwt.InvalidTokenError, User.DoesNotExist):
             return JsonResponse({"error": "Invalid access token"}, status=401)
 
         return view_func(request, *args, **kwargs)
@@ -127,6 +116,8 @@ def upload_file(request):
         # Save the file from the temp location to S3
         case_document_storage = UploadStorage()
 
+        generate_case_summary(temp_file_path, case.uid)
+
         with open(temp_file_path, "rb") as f:
             file_name = case_document_storage.save(uploaded_file_obj.name, f)
         file_url = case_document_storage.url(file_name)
@@ -162,8 +153,9 @@ def extract_text_from_pdf(pdf_path):
             raise ValueError("Invalid PDF file")
 
         # Check the number of pages
-        if len(pdf_reader.pages) > 100:
-            raise ValueError("PDF has more than 5 pages!")
+        if len(pdf_reader.pages) > 5:
+            if len(pdf_reader.pages) > 100:
+                raise ValueError("PDF has more than 5 pages!")
 
         # Extract text from each page
         text = ""
@@ -187,7 +179,7 @@ def create_embeddings(file, case, user):
     )
 
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=700,
+        chunk_size=500,
         chunk_overlap=100,
         length_function=tiktoken_len,
         separators=["\n\n", "\n", " ", ""],
@@ -286,25 +278,17 @@ def chat_message(request):
         namespace = "lawcrawl_cases"
 
         llm = ChatOpenAI(
-            openai_api_key=openai_api_key,
-            model_name="gpt-3.5-turbo",
-            temperature=0.7,
-            streaming=True
+            openai_api_key=openai_api_key, model_name="gpt-3.5-turbo", temperature=0.8
         )
 
-        embed = OpenAIEmbeddings(model=model_name,
-                                 openai_api_key=openai_api_key)
+        embed = OpenAIEmbeddings(model=model_name, openai_api_key=openai_api_key)
 
-        pinecone.init(api_key=pinecone_api_key,
-                      environment=pinecone_env)
+        pinecone.init(api_key=pinecone_api_key, environment=pinecone_env)
         index = pinecone.Index(index_name)
 
         text_field = "text"
 
-        vectorstore = Pinecone(index,
-                               embed.embed_query,
-                               text_field,
-                               namespace)
+        vectorstore = Pinecone(index, embed.embed_query, text_field, namespace)
 
         # filter the index by case_uid, return top K documents
         filter_query = {"case_uid": case_uid}
@@ -314,15 +298,13 @@ def chat_message(request):
             include_values=True,
         )
 
-        qa = ConversationalRetrievalChain.from_llm(
-            llm,
-            retriever,
-            # memory=memory
+        qa = RetrievalQA.from_chain_type(
+            llm=llm, chain_type="stuff", retriever=retriever
         )
 
-        # Truncate chat_log to only the last 8 entries (4 Q&A pairs)
-        truncated_chat_log = chat_log[-8:]
-        
+        # Truncate chat_log to only the last 4 entries (4 Q&A pairs) but always include the first entry
+        truncated_chat_log = [chat_log[0]] + chat_log[-7:]
+
         # Transforming to the expected format
         chat_history = [
             (entry["message"], truncated_chat_log[i + 1]["message"])
@@ -330,22 +312,13 @@ def chat_message(request):
             if entry["user"] == "me" and i + 1 < len(truncated_chat_log)
         ]
 
-        qa = RetrievalQA.from_chain_type(
-            llm=llm,
-            chain_type="stuff",
-            retriever=retriever
-        )
-        with get_openai_callback() as cb:
-            # response = qa({"question": message, "chat_history": []})
-            response = qa(message)
-            print(f"Spent a total of {cb.total_tokens} tokens")
+        response = qa({"query": message, "chat_history": chat_history})
 
-        # Append the response to the chat_log
         if chat_log is None:
             chat_log = []
 
         chat_log.extend(
-            [{"user": "me", "message": message}, {"user": "gpt", "message": response}]
+            [{"user": "me", "message": message}, {"user": "gpt", "message": response["result"]}]
         )
 
         conversation, created = CaseConversation.objects.update_or_create(
@@ -357,8 +330,49 @@ def chat_message(request):
             },
         )
 
-        return JsonResponse({"message": response['answer']})
+        return JsonResponse({"message": response["result"]})
 
+
+def generate_case_summary(pdf_url, case_uid):
+    case = get_object_or_404(Case, uid=case_uid)
+
+    openai_api_key = settings.OPENAI_API_KEY
+
+    llm = OpenAI(temperature=0.8, openai_api_key=openai_api_key)
+
+    loader = PyPDFLoader(pdf_url)
+    data = loader.load()
+
+    text_splitter = CharacterTextSplitter(
+        separator="\n\n", chunk_size=1000, chunk_overlap=200, length_function=len
+    )
+
+    docs = text_splitter.split_documents(data)
+
+    try:
+        chain = load_summarize_chain(llm, chain_type="map_reduce", verbose=True)
+        summary = chain.run(docs)
+    except Exception as e:
+        summary = str(e)
+
+    chat_log = [{"user": "gpt", "message": summary}]
+    chat_log.append(
+        {
+            "user": "gpt",
+            "message": "As your friendly chatbot, I'm happy to answer any question you may have.",
+        }
+    )
+
+    conversation, created = CaseConversation.objects.update_or_create(
+        case=case,
+        defaults={
+            "conversation": chat_log,
+            "is_active": True,
+            "updated_at": timezone.now(),
+        },
+    )
+
+    return JsonResponse({"message": summary})
 
 @csrf_exempt
 @access_token_required

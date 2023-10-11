@@ -1,7 +1,10 @@
 import React, {useEffect, useState} from "react";
-import { connect } from 'react-redux';
+import {connect} from 'react-redux';
 import Grid from "@material-ui/core/Grid";
+import Modal from '@material-ui/core/Modal';
+import {Checkbox, FormControlLabel, Link} from '@material-ui/core';
 import {makeStyles} from '@material-ui/core/styles';
+import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import {useNavigate, useLocation} from 'react-router-dom';
 import Typography from "@material-ui/core/Typography";
 import Footer from "./Footer";
@@ -16,10 +19,11 @@ import {
     FormControl,
     LinearProgress
 } from "@material-ui/core";
-import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 import {useSelector} from 'react-redux';
 import {useDispatch} from 'react-redux';
 import {addUserCase} from '../actions/user';
+
+
 import config from './config';
 
 const useStyles = makeStyles((theme) => ({
@@ -95,6 +99,30 @@ const useStyles = makeStyles((theme) => ({
         marginTop: -15,
         fontWeight: "bold",
     },
+    termsOfServiceLink: {
+        color: '#26a69a',
+        cursor: 'pointer',
+    },
+    customCheckbox: {
+        '&$checked': {
+            color: '#26a69a',
+        },
+    },
+    checked: {},
+    modalText: {
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        position: 'absolute',
+        width: '80%', // Use a percentage for responsiveness
+        maxWidth: 400, // Maximum width
+        backgroundColor: '#fdfbee',
+        padding: 20,
+        border: '2px solid #80cbc4',
+        borderRadius: '10px',
+        overflowY: 'auto',
+        maxHeight: '80vh',
+    }
 }));
 
 
@@ -116,7 +144,8 @@ const UploadPage = ({isAuthenticated, userCases}) => {
     const [caseName, setCaseName] = React.useState('');
     const [selectedState, setSelectedState] = React.useState('');
     const [errorMessage, setErrorMessage] = React.useState(null);
-    // const [progress, setProgress] = React.useState(0);
+    const [termsAccepted, setTermsAccepted] = useState(false);
+    const [openModal, setOpenModal] = useState(false);
     const token = localStorage.getItem('access');
     const navigate = useNavigate();
     const location = useLocation();
@@ -142,7 +171,7 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                 }
                 const data = await response.json();
                 console.log("API Response:", data);
-                if(data){
+                if (data) {
                     dispatch(addUserCase(data));
                 }
             } catch (error) {
@@ -157,6 +186,11 @@ const UploadPage = ({isAuthenticated, userCases}) => {
     }, [dispatch, token]);
 
     const handleFileChange = async (event) => {
+
+        if (!termsAccepted) {
+            setErrorMessage("Please agree to the Terms of Service before proceeding.");
+            return;
+        }
         // Clear any existing error messages
         setErrorMessage(null);
         // Set loading to true
@@ -211,6 +245,13 @@ const UploadPage = ({isAuthenticated, userCases}) => {
         event.target.value = null;
     };
 
+    const handleOpenModal = () => {
+        setOpenModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setOpenModal(false);
+    };
 
     return (
         <ThemeProvider theme={theme}>
@@ -230,8 +271,6 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                             {
                                 errorMessage && <div className={classes.error}>{errorMessage}</div>
                             }
-                            { /* Show progress bar if there's progress (change condition as needed) */}
-                            {/*{progress > 0 && <LinearProgressWithLabel value={progress}/>}*/}
                             <TextField
                                 label="Case Name"
                                 variant="outlined"
@@ -313,6 +352,25 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                             </FormControl>
                         </Grid>
 
+                        <Grid item xs={12} style={{display: 'flex', alignItems: 'center'}}>
+                            <Checkbox
+                                checked={termsAccepted}
+                                onChange={(e) => setTermsAccepted(e.target.checked)}
+                                name="termsAccepted"
+                                classes={{root: classes.customCheckbox, checked: classes.checked}}
+                            />
+
+                            <Typography variant="body2" component="span">
+                                I agree to the
+                            </Typography>
+                            <Typography variant="body2" display="block">
+                                <span className={classes.termsOfServiceLink}
+                                      onClick={handleOpenModal}>
+                                    Terms of Service
+                                </span>.
+                            </Typography>
+                        </Grid>
+
                         <Grid item xs={12}>
                             <input
                                 accept="application/pdf"
@@ -332,12 +390,82 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                                 Upload PDF
                             </Button>
                         </Grid>
+
                     </Grid>
                 </div>
             </div>
             <Footer/>
+
+            <Modal
+                open={openModal}
+                onClose={handleCloseModal}
+                aria-labelledby="simple-modal-title"
+                aria-describedby="simple-modal-description"
+            >
+                <div className={classes.modalText}>
+                    <h2 id="simple-modal-title" style={{color: '#3a3a3a'}}>Terms of Service</h2>
+
+                    <p style={{color: '#3a3a3a'}}>
+                        Terms of Service for LawCrawl
+                    </p>
+
+                    <p style={{color: '#3a3a3a'}}>
+                        1. Introduction<br/><br/>
+                        Welcome to LawCrawl. By using our platform, you are agreeing to the
+                        following terms and conditions. Please read them carefully.
+                    </p>
+
+                    <p style={{color: '#3a3a3a'}}>
+                        2. Services Provided<br/><br/>
+                        LawCrawl offers users the ability to upload legal documents and interact
+                        with an AI chatbot for legal advice. Our goal is to assist you in
+                        understanding and navigating legal matters, but our responses should not be
+                        considered as a substitute for professional legal advice.
+                    </p>
+
+                    <p style={{color: '#3a3a3a'}}>
+                        3. Document Storage<br/><br/>
+                        When you upload documents to LawCrawl, we store them on our secure servers.
+                        These documents are accessible only through your account. We take your
+                        privacy seriously and implement robust security measures to protect your
+                        data. However, it's essential to understand that no system can be entirely
+                        secure. If you have sensitive or confidential documents, please ensure you
+                        are comfortable with this level of risk before using our services.
+                    </p>
+
+                    <p style={{color: '#3a3a3a'}}>
+                        4. Privacy<br/><br/>
+                        Your privacy is of utmost importance to us. While we store the documents
+                        you upload, we will not share, sell, or distribute your personal
+                        information or documents to third parties without your explicit consent,
+                        except as required by law.
+                    </p>
+
+                    <p style={{color: '#3a3a3a'}}>
+                        5. Limitation of Liability<br/><br/>
+                        While we strive to provide accurate and timely legal insights through our
+                        AI chatbot, the advice given should not be considered as a replacement for
+                        professional legal counsel. LawCrawl will not be held responsible for any
+                        decisions made based on the advice provided by our platform.
+                    </p>
+
+                    <p style={{color: '#3a3a3a'}}>
+                        6. Changes to the Terms<br/><br/>
+                        We may update our Terms of Service from time to time. We will notify you of
+                        any changes by posting the new Terms of Service on this page. It is advised
+                        to review this Terms of Service periodically for any changes.
+                    </p>
+
+                    <p style={{color: '#3a3a3a'}}>
+                        7. Contact Us<br/><br/>
+                        If you have any questions about these Terms of Service, please contact us.
+                    </p>
+                </div>
+            </Modal>
+
+
         </ThemeProvider>
-    );
+    )
 }
 
 const mapStateToProps = (state) => ({

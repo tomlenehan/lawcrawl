@@ -111,6 +111,9 @@ const useStyles = makeStyles((theme) => ({
     message: {
         alignSelf: 'center',
     },
+    lineBreak: {
+        whiteSpace: "pre-line",
+    },
 }));
 
 const Chat = () => {
@@ -293,7 +296,7 @@ const Chat = () => {
                 <div className={classes.chatLog} ref={chatLogRef}>
                     {/*add messages*/}
                     {chatLog.map((chat, index) => (
-                        <ChatMessage key={index} message={chat.message} user={chat.user}/>
+                        <ChatMessage className={classes.lineBreak} key={index} message={chat.message} user={chat.user}/>
                     ))}
                     {loading && <LinearProgress/>}
                 </div>
