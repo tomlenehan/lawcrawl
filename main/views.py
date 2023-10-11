@@ -303,14 +303,14 @@ def chat_message(request):
         )
 
         # Truncate chat_log to only the last 4 entries (4 Q&A pairs) but always include the first entry
-        truncated_chat_log = [chat_log[0]] + chat_log[-7:]
+        truncated_chat_log = [chat_log[0]] + chat_log[-6:]
 
         # Transforming to the expected format
-        chat_history = [
-            (entry["message"], truncated_chat_log[i + 1]["message"])
-            for i, entry in enumerate(truncated_chat_log)
-            if entry["user"] == "me" and i + 1 < len(truncated_chat_log)
-        ]
+        chat_history = []
+        for i, entry in enumerate(
+            truncated_chat_log[:-1]
+        ):  # Exclude the last entry for pairing
+            chat_history.append((entry["message"], truncated_chat_log[i + 1]["message"]))
 
         response = qa({"query": message, "chat_history": chat_history})
 
