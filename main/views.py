@@ -13,6 +13,7 @@ from django.forms.models import model_to_dict
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
 from langchain.llms.openai import OpenAI
+from langchain.prompts import PromptTemplate
 
 from lawcrawl import settings
 from .models import CaseConversation, UploadedFile
@@ -347,19 +348,28 @@ def generate_case_summary(pdf_url, case_uid):
         separator="\n\n", chunk_size=1000, chunk_overlap=200, length_function=len
     )
 
-    docs = text_splitter.split_documents(data)
+    docs = text_splitter.split_documents(data)[:3]
 
     try:
-        chain = load_summarize_chain(llm, chain_type="map_reduce", verbose=True)
+        key_points_prompt = """
+        You are an AI legal assistant tasked with giving answers to the user's legal document.
+        Please give a summary of the document delimited by triple backquotes in 4 sentences or less.
+        ```{text}```
+        SUMMARY:
+        """
+        prompt = PromptTemplate(template=key_points_prompt, input_variables=["text"])
+        chain = load_summarize_chain(
+            llm, chain_type="map_reduce", combine_prompt=prompt, verbose=True
+        )
         summary = chain.run(docs)
     except Exception as e:
-        summary = str(e)
+        summary= str(e)
 
     chat_log = [{"user": "gpt", "message": summary}]
     chat_log.append(
         {
             "user": "gpt",
-            "message": "As your friendly chatbot, I'm happy to answer any question you may have.",
+            "message": "As your friendly lawbot, I'm happy to answer any question you may have.",
         }
     )
 

@@ -242,6 +242,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 # STATIC_ROOT = os.path.join(BASE_DIR, 'frontend', 'static')
 
+# Google API credentials
+GOOGLE_ANALYTICS_MEASUREMENT_ID = os.getenv('GOOGLE_ANALYTICS_MEASUREMENT_ID')
+
 # AI API credentials
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')

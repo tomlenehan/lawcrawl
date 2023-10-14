@@ -353,11 +353,13 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                         </Grid>
 
                         <Grid item xs={12} style={{display: 'flex', alignItems: 'center'}}>
+
                             <Checkbox
                                 checked={termsAccepted}
                                 onChange={(e) => setTermsAccepted(e.target.checked)}
                                 name="termsAccepted"
                                 classes={{root: classes.customCheckbox, checked: classes.checked}}
+                                disabled={loading}
                             />
 
                             <Typography variant="body2" component="span">
