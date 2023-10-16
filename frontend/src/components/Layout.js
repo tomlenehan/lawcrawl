@@ -4,7 +4,7 @@ import {twitterAuthenticate} from "../actions/auth";
 import {connect} from "react-redux";
 import {useLocation} from "react-router-dom";
 import queryString from "query-string";
-
+import {GATrackPageViews} from "./GATrackPageViews";
 
 const Layout = (props) => {
     const location = useLocation()
@@ -27,6 +27,7 @@ const Layout = (props) => {
     return (
         <div className="container">
             <Navbar/>
+            <GATrackPageViews />
             {props.children}
         </div>
     )
