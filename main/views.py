@@ -7,11 +7,11 @@ import json
 from django.utils import timezone
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.core.files.storage import default_storage
 from django.contrib.auth import get_user_model
 from django.forms.models import model_to_dict
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
+from langchain.chains.question_answering import load_qa_chain
 from langchain.llms.openai import OpenAI
 from langchain.prompts import PromptTemplate
 
@@ -34,7 +34,7 @@ from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Pinecone
 from langchain.chat_models import ChatOpenAI
 from langchain.chains.summarize import load_summarize_chain
-from langchain.chains import RetrievalQA, ConversationalRetrievalChain
+from langchain.chains import RetrievalQA, ConversationalRetrievalChain, LLMChain
 import pinecone
 import PyPDF2
 
@@ -279,7 +279,9 @@ def chat_message(request):
         namespace = "lawcrawl_cases"
 
         llm = ChatOpenAI(
-            openai_api_key=openai_api_key, model_name="gpt-3.5-turbo", temperature=0.8
+            openai_api_key=openai_api_key,
+            model_name="gpt-3.5-turbo",
+            temperature=0.8,
         )
 
         embed = OpenAIEmbeddings(model=model_name, openai_api_key=openai_api_key)
@@ -299,8 +301,22 @@ def chat_message(request):
             include_values=True,
         )
 
-        qa = RetrievalQA.from_chain_type(
-            llm=llm, chain_type="stuff", retriever=retriever
+        template = (
+            "You are friendly AI legal assistant tasked with giving "
+            "helpful answers to questions about the user's legal matter "
+            "Combine the chat history and follow up question into "
+            "a standalone question. Chat History: {chat_history}"
+            "Follow up question: {question}"
+        )
+        prompt = PromptTemplate.from_template(template)
+        # llm = OpenAI()
+        question_generator_chain = LLMChain(llm=llm, prompt=prompt)
+        doc_chain = load_qa_chain(llm, chain_type="stuff")
+
+        qa = ConversationalRetrievalChain(
+            combine_docs_chain=doc_chain,
+            retriever=retriever,
+            question_generator=question_generator_chain,
         )
 
         # Truncate chat_log to only the last 4 entries (4 Q&A pairs) but always include the first entry
@@ -313,13 +329,15 @@ def chat_message(request):
         ):  # Exclude the last entry for pairing
             chat_history.append((entry["message"], truncated_chat_log[i + 1]["message"]))
 
-        response = qa({"query": message, "chat_history": chat_history})
+        # response = qa({"query": message, "chat_history": chat_history})
+        response = qa({"question": message, "chat_history": chat_history})
 
         if chat_log is None:
             chat_log = []
 
         chat_log.extend(
-            [{"user": "me", "message": message}, {"user": "gpt", "message": response["result"]}]
+            # [{"user": "me", "message": message}, {"user": "gpt", "message": response["result"]}]
+            [{"user": "me", "message": message}, {"user": "gpt", "message": response["answer"]}]
         )
 
         conversation, created = CaseConversation.objects.update_or_create(
@@ -331,7 +349,8 @@ def chat_message(request):
             },
         )
 
-        return JsonResponse({"message": response["result"]})
+        # return JsonResponse({"message": response["result"]})
+        return JsonResponse({"message": response["answer"]})
 
 
 def generate_case_summary(pdf_url, case_uid):
