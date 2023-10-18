@@ -10,6 +10,7 @@ import {Box} from "@material-ui/core";
 import config from "./config";
 import {addUserCase} from "../actions/user";
 import AdComponent from "./AdComponent"
+import AdSenseAd from './AdSenseAd';
 
 // Chat Component
 const useStyles = makeStyles((theme) => ({
@@ -133,7 +134,7 @@ const Chat = () => {
     const [chatLog, setChatLog] = useState(chatLogBaseline);
     const chatLogRef = useRef(null);
     const dispatch = useDispatch();
-    const ad_interval = 1;
+    const ad_interval = 6;
 
 
     const fetchUserCases = async () => {
@@ -302,7 +303,8 @@ const Chat = () => {
                             <ChatMessage className={classes.lineBreak} message={chat.message}
                                          user={chat.user}/>
                             {/*Display an ad every x messages */}
-                            {(index + 1) % ad_interval === 0 && <AdComponent/>}
+                            {/*{(index + 1) % ad_interval === 0 && <AdComponent/>}*/}
+                            {(index + 1) % ad_interval === 0 && <AdSenseAd />}
                         </React.Fragment>
                     ))}
                     {loading && <LinearProgress/>}
