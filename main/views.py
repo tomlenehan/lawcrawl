@@ -11,12 +11,14 @@ from django.contrib.auth import get_user_model
 from django.forms.models import model_to_dict
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404
+from django.core import serializers
+
 from langchain.chains.question_answering import load_qa_chain
 from langchain.llms.openai import OpenAI
 from langchain.prompts import PromptTemplate
 
 from lawcrawl import settings
-from .models import CaseConversation, UploadedFile
+from .models import CaseConversation, UploadedFile, Ad
 from lawcrawl.storages import UploadStorage
 import jwt
 from functools import wraps
@@ -42,6 +44,8 @@ from main.models import Case
 from main.serializers import CaseSerializer
 from uuid import UUID
 from django.core.exceptions import ObjectDoesNotExist
+
+from .models import Ad
 
 
 # global progress store
@@ -416,3 +420,20 @@ def fetch_case_conversation(request, case_uid):
         return JsonResponse({"conversation": conversation.conversation})
     except CaseConversation.DoesNotExist:
         return JsonResponse({"error": "Conversation does not exist"}, status=404)
+
+
+@csrf_exempt
+def ad_view(request):
+    if request.method == "GET":
+        ads = Ad.objects.all()
+        data = [
+            {
+                'id': ad.id,
+                'title': ad.title,
+                'text': ad.text,
+                'url': ad.url,
+                'user': ad.user_id
+            }
+            for ad in ads
+        ]
+        return JsonResponse(data, safe=False)

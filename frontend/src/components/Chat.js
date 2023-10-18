@@ -9,6 +9,7 @@ import axios from "axios";
 import {Box} from "@material-ui/core";
 import config from "./config";
 import {addUserCase} from "../actions/user";
+import AdComponent from "./AdComponent"
 
 // Chat Component
 const useStyles = makeStyles((theme) => ({
@@ -132,6 +133,7 @@ const Chat = () => {
     const [chatLog, setChatLog] = useState(chatLogBaseline);
     const chatLogRef = useRef(null);
     const dispatch = useDispatch();
+    const ad_interval = 1;
 
 
     const fetchUserCases = async () => {
@@ -296,10 +298,16 @@ const Chat = () => {
                 <div className={classes.chatLog} ref={chatLogRef}>
                     {/*add messages*/}
                     {chatLog.map((chat, index) => (
-                        <ChatMessage className={classes.lineBreak} key={index} message={chat.message} user={chat.user}/>
+                        <React.Fragment key={index}>
+                            <ChatMessage className={classes.lineBreak} message={chat.message}
+                                         user={chat.user}/>
+                            {/*Display an ad every x messages */}
+                            {(index + 1) % ad_interval === 0 && <AdComponent/>}
+                        </React.Fragment>
                     ))}
                     {loading && <LinearProgress/>}
                 </div>
+
                 <div className={classes.chatInputHolder}>
                     <form onSubmit={handleSubmit}>
                         <input

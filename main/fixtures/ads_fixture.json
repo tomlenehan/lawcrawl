@@ -1,0 +1,32 @@
+[
+    {
+        "model": "main.ad",
+        "pk": 1,
+        "fields": {
+            "title": "Need Legal Advice?",
+            "text": "Our experienced attorneys are here to help. Contact us for a free consultation today!",
+            "url": "https://lawfirm.example.com",
+            "user": 1
+        }
+    },
+    {
+        "model": "main.ad",
+        "pk": 2,
+        "fields": {
+            "title": "Facing a Legal Issue?",
+            "text": "Don't face it alone. Our skilled lawyers are ready to assist you. Reach out now for professional legal support.",
+            "url": "https://legalhelp.example.com",
+            "user": 1
+        }
+    },
+    {
+        "model": "main.ad",
+        "pk": 3,
+        "fields": {
+            "title": "Expert Legal Assistance",
+            "text": "Navigate the legal landscape with confidence. Our seasoned lawyers provide comprehensive legal solutions tailored to your needs.",
+            "url": "https://lawexpert.example.com",
+            "user": 1
+        }
+    }
+]
