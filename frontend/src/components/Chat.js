@@ -5,12 +5,16 @@ import {useDispatch, useSelector} from 'react-redux';
 // import {Section} from "@material-ui/core";
 import LinearProgress from '@material-ui/core/LinearProgress';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import DescriptionIcon from '@mui/icons-material/Description';
+import PrivacyTip from '@mui/icons-material/PrivacyTip';
 import axios from "axios";
 import {Box} from "@material-ui/core";
 import config from "./config";
 import {addUserCase} from "../actions/user";
 import AdComponent from "./AdComponent"
 import AdSenseAd from './AdSenseAd';
+import TermsOfService from "./TermsOfService";
+import Modal from "@material-ui/core/Modal";
 
 // Chat Component
 const useStyles = makeStyles((theme) => ({
@@ -116,6 +120,29 @@ const useStyles = makeStyles((theme) => ({
     lineBreak: {
         whiteSpace: "pre-line",
     },
+    termsLink: {
+        marginTop: 4,
+        marginBottom: 10,
+        marginLeft: 5,
+        color: '#fdfbee',
+        textDecoration: "none",
+        fontSize: '1.1vw',
+        cursor: "pointer",
+        position: 'absolute',
+        bottom: 0,
+        display: 'flex',
+        alignItems: 'center',
+        width: 170,
+    },
+    modalText: {
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        position: 'absolute',
+        maxWidth: 400,
+        overflowY: 'auto',
+        maxHeight: '80vh',
+    }
 }));
 
 const Chat = () => {
@@ -131,6 +158,7 @@ const Chat = () => {
     const [loading, setLoading] = useState(false);
     const userCases = useSelector((state) => state.userCases);
     const [currentCase, setCurrentCase] = useState(null);
+    const [termsOpen, setTermsOpen] = useState(false);
     const [chatLog, setChatLog] = useState(chatLogBaseline);
     const chatLogRef = useRef(null);
     const dispatch = useDispatch();
@@ -251,6 +279,14 @@ const Chat = () => {
         // setChatLog([...chatLog, {user: "gpt", message: `${data.message}`}]);
     }
 
+    const handleTermsOpen = () => {
+        setTermsOpen(true);
+    };
+
+    const handleTermsClose = () => {
+        setTermsOpen(false);
+    };
+
     // Scroll the chat log to the bottom whenever the chatLog state changes
     useEffect(() => {
         if (chatLogRef.current) {
@@ -293,6 +329,26 @@ const Chat = () => {
                         </Link>
                     </div>
                 ))}
+                <Link
+                    to="#"
+                    className={classes.termsLink}
+                    onClick={handleTermsOpen}
+                >
+                    <PrivacyTip style={{marginRight: 8, fontSize: '1.6vw'}}/>
+                    <span>Privacy & Terms</span>
+                </Link>
+
+                <Modal
+                    open={termsOpen}
+                    onClose={handleTermsClose}
+                    aria-labelledby="simple-modal-title"
+                    aria-describedby="simple-modal-description"
+                    className={classes.modal}
+                >
+                    <div className={classes.modalText} >
+                        <TermsOfService/>
+                    </div>
+                </Modal>
             </aside>
             {/*<section className={classes.chatBox}>*/}
             <div className={classes.chatBox}>
@@ -304,7 +360,7 @@ const Chat = () => {
                                          user={chat.user}/>
                             {/*Display an ad every x messages */}
                             {/*{(index + 1) % ad_interval === 0 && <AdComponent/>}*/}
-                            {(index + 1) % ad_interval === 0 && <AdSenseAd />}
+                            {(index + 1) % ad_interval === 0 && <AdSenseAd/>}
                         </React.Fragment>
                     ))}
                     {loading && <LinearProgress/>}

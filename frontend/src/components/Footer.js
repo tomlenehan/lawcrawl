@@ -28,6 +28,7 @@ const Footer = (props) => {
         <ThemeProvider theme={theme}>
             <footer className={classes.footer}>
                 Copyright &copy; {new Date().getFullYear()} Lawcrawl:
+                <Link to="/terms" className={classes.link}>Privacy Policy & Terms of Service</Link>
             </footer>
         </ThemeProvider>
     )

@@ -22,9 +22,7 @@ import {
 import {useSelector} from 'react-redux';
 import {useDispatch} from 'react-redux';
 import {addUserCase} from '../actions/user';
-
-
-import config from './config';
+import TermsOfService from "./TermsOfService";
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -114,12 +112,7 @@ const useStyles = makeStyles((theme) => ({
         left: '50%',
         transform: 'translate(-50%, -50%)',
         position: 'absolute',
-        width: '80%', // Use a percentage for responsiveness
-        maxWidth: 400, // Maximum width
-        backgroundColor: '#fdfbee',
-        padding: 20,
-        border: '2px solid #80cbc4',
-        borderRadius: '10px',
+        maxWidth: 400,
         overflowY: 'auto',
         maxHeight: '80vh',
     }
@@ -403,68 +396,12 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                 onClose={handleCloseModal}
                 aria-labelledby="simple-modal-title"
                 aria-describedby="simple-modal-description"
+                className={classes.modal}
             >
-                <div className={classes.modalText}>
-                    <h2 id="simple-modal-title" style={{color: '#3a3a3a'}}>Terms of Service</h2>
-
-                    <p style={{color: '#3a3a3a'}}>
-                        Terms of Service for LawCrawl
-                    </p>
-
-                    <p style={{color: '#3a3a3a'}}>
-                        1. Introduction<br/><br/>
-                        Welcome to LawCrawl. By using our platform, you are agreeing to the
-                        following terms and conditions. Please read them carefully.
-                    </p>
-
-                    <p style={{color: '#3a3a3a'}}>
-                        2. Services Provided<br/><br/>
-                        LawCrawl offers users the ability to upload legal documents and interact
-                        with an AI chatbot for legal advice. Our goal is to assist you in
-                        understanding and navigating legal matters, but our responses should not be
-                        considered as a substitute for professional legal advice.
-                    </p>
-
-                    <p style={{color: '#3a3a3a'}}>
-                        3. Document Storage<br/><br/>
-                        When you upload documents to LawCrawl, we store them on our secure servers.
-                        These documents are accessible only through your account. We take your
-                        privacy seriously and implement robust security measures to protect your
-                        data. However, it's essential to understand that no system can be entirely
-                        secure. If you have sensitive or confidential documents, please ensure you
-                        are comfortable with this level of risk before using our services.
-                    </p>
-
-                    <p style={{color: '#3a3a3a'}}>
-                        4. Privacy<br/><br/>
-                        Your privacy is of utmost importance to us. While we store the documents
-                        you upload, we will not share, sell, or distribute your personal
-                        information or documents to third parties without your explicit consent,
-                        except as required by law.
-                    </p>
-
-                    <p style={{color: '#3a3a3a'}}>
-                        5. Limitation of Liability<br/><br/>
-                        While we strive to provide accurate and timely legal insights through our
-                        AI chatbot, the advice given should not be considered as a replacement for
-                        professional legal counsel. LawCrawl will not be held responsible for any
-                        decisions made based on the advice provided by our platform.
-                    </p>
-
-                    <p style={{color: '#3a3a3a'}}>
-                        6. Changes to the Terms<br/><br/>
-                        We may update our Terms of Service from time to time. We will notify you of
-                        any changes by posting the new Terms of Service on this page. It is advised
-                        to review this Terms of Service periodically for any changes.
-                    </p>
-
-                    <p style={{color: '#3a3a3a'}}>
-                        7. Contact Us<br/><br/>
-                        If you have any questions about these Terms of Service, please contact us.
-                    </p>
+                <div className={classes.modalText} >
+                    <TermsOfService />
                 </div>
             </Modal>
-
 
         </ThemeProvider>
     )

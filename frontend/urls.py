@@ -7,4 +7,5 @@ urlpatterns = [
     path('login', index),
     path('chat', index),
     path('upload', index),
+    path('terms', index),
 ]

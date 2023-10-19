@@ -21,7 +21,6 @@ const ChatPage = ({isAuthenticated}) => {
 
     return (
         <div className={classes.root}>
-        {/*<div>*/}
             <Chat/>
         </div>
     );

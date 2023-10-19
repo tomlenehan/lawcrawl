@@ -12,6 +12,7 @@ import HomePage from "./components/HomePage";
 import LoginPage from "./components/LoginPage";
 import UploadPage from "./components/UploadPage";
 import ChatPage from "./components/ChatPage";
+import TermsOfServicePage from "./components/TermsOfServicePage";
 
 
 const bodyStyles = makeStyles(() => ({
@@ -49,6 +50,7 @@ export default function App() {
                                 <Route path="/login" element={<LoginPage/>}/>
                                 <Route path="/upload" element={<UploadPage/>}/>
                                 <Route path="/chat" element={<ChatPage/>}/>
+                                <Route path="/terms" element={<TermsOfServicePage/>}/>
 
                                 {/*<PasswordProtectedRoute path="/" element={<HomePage/>}/>*/}
                                 {/*<PasswordProtectedRoute path="/home" element={<HomePage/>}/>*/}
