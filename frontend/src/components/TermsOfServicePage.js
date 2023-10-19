@@ -6,6 +6,7 @@ import Footer from "./Footer";
 import theme from './Theme';
 import { Box, ThemeProvider } from "@material-ui/core";
 import TermsOfService from "./TermsOfService";
+import {connect} from "react-redux";
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -46,4 +47,9 @@ const TermsOfServicePage = () => {
     );
 }
 
-export default TermsOfServicePage;
+const mapStateToProps = (state) => ({
+    isAuthenticated: state.auth.isAuthenticated,
+    userCases: state.userCases,
+});
+
+export default connect(mapStateToProps)(TermsOfServicePage);

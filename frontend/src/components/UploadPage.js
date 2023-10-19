@@ -119,18 +119,6 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 
-// function LinearProgressWithLabel(props) {
-//     return (
-//         <div style={{display: 'flex', alignItems: 'center', flexDirection: 'column'}}>
-//             <LinearProgress variant="determinate" {...props} />
-//             <Typography variant="body2" color="textSecondary">
-//                 {`${Math.round(props.value)}%`}
-//             </Typography>
-//         </div>
-//     );
-// }
-
-
 const UploadPage = ({isAuthenticated, userCases}) => {
     const classes = useStyles();
     const [loading, setLoading] = React.useState(false);
