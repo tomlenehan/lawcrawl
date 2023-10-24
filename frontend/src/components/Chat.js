@@ -165,7 +165,7 @@ const Chat = () => {
     const fetchUserCases = useFetchUserCases();
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const ad_interval = 6;
+    const ad_interval = 0;
 
     const handleLogout = () => {
         dispatch(logout());
