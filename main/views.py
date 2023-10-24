@@ -62,16 +62,16 @@ def access_token_required(view_func):
             return JsonResponse({"error": "Access token required"}, status=401)
 
         access_token = access_token[7:]  # Remove the 'Bearer '
+        user = get_user_model()
 
         try:
             decoded_token = jwt.decode(
                 access_token, settings.SECRET_KEY, algorithms=["HS256"]
             )
             user_id = decoded_token["user_id"]
-            User = get_user_model()
-            user = User.objects.get(pk=user_id)
+            user = user.objects.get(pk=user_id)
             request.user = user
-        except (jwt.InvalidTokenError, User.DoesNotExist):
+        except (jwt.InvalidTokenError, user.DoesNotExist):
             return JsonResponse({"error": "Invalid access token"}, status=401)
 
         return view_func(request, *args, **kwargs)

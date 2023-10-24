@@ -1,8 +1,7 @@
 import React, {useEffect, useRef, useState} from "react";
 import {makeStyles} from '@material-ui/core/styles';
-import {Link} from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 import {useDispatch, useSelector} from 'react-redux';
-// import {Section} from "@material-ui/core";
 import LinearProgress from '@material-ui/core/LinearProgress';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -14,7 +13,9 @@ import {addUserCase} from "../actions/user";
 import AdComponent from "./AdComponent"
 import AdSenseAd from './AdSenseAd';
 import TermsOfService from "./TermsOfService";
+import useFetchUserCases from './hooks/useFetchUserCases';
 import Modal from "@material-ui/core/Modal";
+import {logout} from "../actions/auth";
 
 // Chat Component
 const useStyles = makeStyles((theme) => ({
@@ -161,30 +162,14 @@ const Chat = () => {
     const [termsOpen, setTermsOpen] = useState(false);
     const [chatLog, setChatLog] = useState(chatLogBaseline);
     const chatLogRef = useRef(null);
+    const fetchUserCases = useFetchUserCases();
+    const navigate = useNavigate();
     const dispatch = useDispatch();
     const ad_interval = 6;
 
-
-    const fetchUserCases = async () => {
-        try {
-            const response = await fetch('/api/user/cases/', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            console.log("API Response:", data);
-            if (data) {
-                dispatch(addUserCase(data));
-            }
-        } catch (error) {
-            console.error('Error fetching user cases:', error);
-        }
+    const handleLogout = () => {
+        dispatch(logout());
+        navigate('/login');
     };
 
     useEffect(() => {
@@ -208,9 +193,14 @@ const Chat = () => {
         };
 
         if (userCases.length === 0) {
-            fetchUserCases().then(() => {
-                setCurrentCaseFromLocation();
-            });
+            fetchUserCases(token, dispatch)
+                .then(() => {
+                    setCurrentCaseFromLocation();
+                })
+                .catch(error => {
+                    console.error('Error fetching user cases:', error);
+                    handleLogout();
+                });
         } else {
             setCurrentCaseFromLocation();
         }

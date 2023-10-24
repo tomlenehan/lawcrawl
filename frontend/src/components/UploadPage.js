@@ -9,6 +9,7 @@ import {useNavigate, useLocation} from 'react-router-dom';
 import Typography from "@material-ui/core/Typography";
 import Footer from "./Footer";
 import theme from './Theme';
+import {logout} from "../actions/auth";
 import {
     Button,
     ThemeProvider,
@@ -19,10 +20,10 @@ import {
     FormControl,
     LinearProgress
 } from "@material-ui/core";
-import {useSelector} from 'react-redux';
 import {useDispatch} from 'react-redux';
 import {addUserCase} from '../actions/user';
 import TermsOfService from "./TermsOfService";
+import useFetchUserCases from './hooks/useFetchUserCases';
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -129,42 +130,27 @@ const UploadPage = ({isAuthenticated, userCases}) => {
     const [openModal, setOpenModal] = useState(false);
     const token = localStorage.getItem('access');
     const navigate = useNavigate();
-    const location = useLocation();
     const dispatch = useDispatch();
+    const fetchUserCases = useFetchUserCases();
 
     const handleUploadClick = (event) => {
         const fileInput = document.getElementById('fileInput');
         fileInput.click();
     };
 
+    const handleLogout = () => {
+        dispatch(logout());
+        navigate('/login');
+    };
+
     useEffect(() => {
-        const fetchUserCases = async () => {
-            try {
-                const response = await fetch('/api/user/cases/', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    },
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                console.log("API Response:", data);
-                if (data) {
-                    dispatch(addUserCase(data));
-                }
-            } catch (error) {
-                console.error('Error fetching user cases:', error);
-            }
-        };
-
-        // Check if userCases is not set before fetching
         if (token && (!userCases || userCases.length === 0)) {
-            fetchUserCases();
+            useFetchUserCases()(token, dispatch).catch(error => {
+                console.error('Error fetching user cases:', error);
+                handleLogout();
+            });
         }
-    }, [dispatch, token]);
+    }, [fetchUserCases, token]);
 
     const handleFileChange = async (event) => {
 
