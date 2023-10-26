@@ -18,7 +18,7 @@ from langchain.llms.openai import OpenAI
 from langchain.prompts import PromptTemplate
 
 from lawcrawl import settings
-from .models import CaseConversation, UploadedFile, Ad
+from .models import CaseConversation, UploadedFile, Case
 from lawcrawl.storages import UploadStorage
 import jwt
 from functools import wraps
@@ -40,12 +40,9 @@ from langchain.chains import RetrievalQA, ConversationalRetrievalChain, LLMChain
 import pinecone
 import PyPDF2
 
-from main.models import Case
 from main.serializers import CaseSerializer
 from uuid import UUID
 from django.core.exceptions import ObjectDoesNotExist
-
-from .models import Ad
 
 
 # global progress store
@@ -108,7 +105,7 @@ def upload_file(request):
                 destination.write(chunk)
 
         # Handle case creation
-        case, created = Case.objects.get_or_create(name=case_name, user=request.user)
+        case = Case.objects.create(name=case_name, user=request.user)
 
         try:
             # Create embeddings using the file saved in the temporary location
@@ -422,18 +419,18 @@ def fetch_case_conversation(request, case_uid):
         return JsonResponse({"error": "Conversation does not exist"}, status=404)
 
 
-@csrf_exempt
-def ad_view(request):
-    if request.method == "GET":
-        ads = Ad.objects.all()
-        data = [
-            {
-                'id': ad.id,
-                'title': ad.title,
-                'text': ad.text,
-                'url': ad.url,
-                'user': ad.user_id
-            }
-            for ad in ads
-        ]
-        return JsonResponse(data, safe=False)
+# @csrf_exempt
+# def ad_view(request):
+#     if request.method == "GET":
+#         ads = Ad.objects.all()
+#         data = [
+#             {
+#                 'id': ad.id,
+#                 'title': ad.title,
+#                 'text': ad.text,
+#                 'url': ad.url,
+#                 'user': ad.user_id
+#             }
+#             for ad in ads
+#         ]
+#         return JsonResponse(data, safe=False)

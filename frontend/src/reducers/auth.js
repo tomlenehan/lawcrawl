@@ -2,6 +2,8 @@ import {
     TWITTER_AUTH_FAIL,
     TWITTER_AUTH_SUCCESS,
     LOGOUT,
+    GOOGLE_AUTH_FAIL,
+    GOOGLE_AUTH_SUCCESS,
 } from "../actions/types";
 
 const initialState = {
@@ -28,6 +30,16 @@ export default function(state=initialState,action){
                 user: action.payload.user, // Update the user in state
             }
         case TWITTER_AUTH_FAIL:
+        case GOOGLE_AUTH_SUCCESS:
+            console.log(action.payload)
+            localStorage.setItem('access',action.payload.access)
+            return{
+                ...state,
+                isAuthenticated: true,
+                access: action.payload.access,
+                refresh: action.payload.refresh
+            }
+        case GOOGLE_AUTH_FAIL:
         case LOGOUT:
             localStorage.removeItem('access');
             localStorage.removeItem('refresh');

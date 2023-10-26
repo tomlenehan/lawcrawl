@@ -1,6 +1,7 @@
 import React, {useEffect} from 'react'
 import Navbar from "./Navbar";
 import {twitterAuthenticate} from "../actions/auth";
+import {googleAuthenticate} from "../actions/auth";
 import {connect} from "react-redux";
 import {useLocation} from "react-router-dom";
 import queryString from "query-string";
@@ -14,6 +15,7 @@ const Layout = (props) => {
         window.scrollTo(0, 0);
     }, [location]);
 
+    // Twitter authentication effect
     useEffect(() => {
         const values = queryString.parse(location.search);
         const state = values.redirect_state ? values.redirect_state : null;
@@ -22,7 +24,17 @@ const Layout = (props) => {
         if (state && code && verifier) {
             props.twitterAuthenticate(state, code, verifier);
         }
-    }, [location])
+    }, [location]);
+
+    // Google authentication effect
+    useEffect(() => {
+        const values = queryString.parse(location.search);
+        const state = values.state ? values.state : null;
+        const code = values.code ? values.code : null;
+        if (state && code) {
+            props.googleAuthenticate(state, code);
+        }
+    }, [location]);
 
     return (
         <div className="container">
@@ -33,4 +45,4 @@ const Layout = (props) => {
     )
 }
 
-export default connect(null, {twitterAuthenticate})(Layout)
+export default connect(null, {twitterAuthenticate, googleAuthenticate})(Layout)

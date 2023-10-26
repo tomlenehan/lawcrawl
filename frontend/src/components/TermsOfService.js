@@ -115,6 +115,17 @@ const TermsOfService = ({open, onClose}) => {
                 users. For more detailed information on our data handling practices, please refer
                 to our Privacy Policy.
             </Typography>
+
+            <Typography variant="subtitle1" className={classes.heading}>
+                10. Google Account Management and Data Sharing
+            </Typography>
+            <Typography variant="body2" className={classes.paragraph}>
+                Users can manage access to their Google Account at any time through their Google
+                Account settings. We adhere to strict data privacy standards to ensure the security
+                of our users' data. Learn more about how Google helps users share their data safely
+                via this <Link href="https://support.google.com/accounts/answer/7675428?hl=en"
+                               target="_blank" rel="noopener noreferrer">Google article</Link>.
+            </Typography>
         </div>
     );
 };
