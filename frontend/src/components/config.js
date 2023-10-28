@@ -10,5 +10,4 @@ const config = {
     }
 };
 
-console.log('Current Environment:', env)
 export default config[env];

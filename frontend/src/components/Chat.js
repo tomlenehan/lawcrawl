@@ -13,9 +13,12 @@ import {addUserCase} from "../actions/user";
 import AdComponent from "./AdComponent"
 import AdSenseAd from './AdSenseAd';
 import TermsOfService from "./TermsOfService";
+import PdfViewer from "./PdfViewer";
+import "react-pdf/dist/Page/AnnotationLayer.css";
 import useFetchUserCases from './hooks/useFetchUserCases';
 import Modal from "@material-ui/core/Modal";
 import {logout} from "../actions/auth";
+import {Grid} from "@mui/material";
 
 // Chat Component
 const useStyles = makeStyles((theme) => ({
@@ -43,28 +46,17 @@ const useStyles = makeStyles((theme) => ({
             backgroundColor: '#2a2a2a',
         },
     },
-    chatBox: {
-        display: 'flex',
-        flexDirection: 'column', // Stack the chatLog and chatInputHolder vertically
-        flex: 1,
-        border: '1px solid #3a3a3a',
-        backgroundColor: '#B2DFDB',
-        position: 'relative',
-    },
-    chatLog: {
-        textAlign: 'left',
-        overflowY: 'auto',
-        flex: 1,
-    },
     chatMessage: {
         backgroundColor: '#e0f2f1',
         display: 'flex',
         justifyContent: 'center',
+        borderRadius: 40,
     },
     chatMessageGPT: {
         backgroundColor: '#80cbc4',
         display: 'flex',
         justifyContent: 'center',
+        borderRadius: 40,
     },
     chatMessageCenter: {
         maxWidth: 640,
@@ -74,13 +66,29 @@ const useStyles = makeStyles((theme) => ({
         paddingLeft: 24,
         paddingRight: 24,
     },
-    chatInputHolder: {
-        padding: 12,
-        // Remove absolute positioning styles
+    chatBox: {
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+        border: '1px solid #3a3a3a',
+        backgroundColor: '#B2DFDB',
+        height: 'calc(100vh - 46px)', // height minus navbar height
     },
-    chatIcon: {
-        marginRight: '8px',
-        fontSize: '1.2rem',
+    chatContentContainer: {
+        flex: 8,
+        display: 'flex',
+        overflowY: 'scroll',
+    },
+    chatLog: {
+        width: '50%',
+        textAlign: 'left',
+        // overflowY: 'scroll',
+        flex: 1,
+    },
+    pdfViewerContainer: {
+        width: '50%',
+        // overflowY: 'scroll',
+        flex: 1,
     },
     chatInputTextArea: {
         backgroundColor: '#e0f2f1',
@@ -95,6 +103,10 @@ const useStyles = makeStyles((theme) => ({
         border: "none",
         boxShadow: '0 0 5px #3a3a3a',
         resize: 'none',
+    },
+    chatInputHolder: {
+        flex: 1,
+        padding: 12,
     },
     avatarGPT: {
         backgroundColor: '#B2DFDB',
@@ -129,7 +141,7 @@ const useStyles = makeStyles((theme) => ({
         textDecoration: "none",
         fontSize: '1.1vw',
         cursor: "pointer",
-        position: 'absolute',
+        position: 'fixed',
         bottom: 0,
         display: 'flex',
         alignItems: 'center',
@@ -161,6 +173,7 @@ const Chat = () => {
     const [currentCase, setCurrentCase] = useState(null);
     const [termsOpen, setTermsOpen] = useState(false);
     const [chatLog, setChatLog] = useState(chatLogBaseline);
+    const [file, setFile] = useState(null);
     const chatLogRef = useRef(null);
     const fetchUserCases = useFetchUserCases();
     const navigate = useNavigate();
@@ -219,6 +232,7 @@ const Chat = () => {
                     });
                     if (response.status === 200) {
                         setChatLog(response.data.conversation);
+                        setFile(response.data.file_url);
                     } else {
                         console.error('Error fetching CaseConversation:', response.status, response.data);
                     }
@@ -335,27 +349,30 @@ const Chat = () => {
                     aria-describedby="simple-modal-description"
                     className={classes.modal}
                 >
-                    <div className={classes.modalText} >
+                    <div className={classes.modalText}>
                         <TermsOfService/>
                     </div>
                 </Modal>
             </aside>
-            {/*<section className={classes.chatBox}>*/}
+            {/* CHATBOX */}
             <div className={classes.chatBox}>
-                <div className={classes.chatLog} ref={chatLogRef}>
-                    {/*add messages*/}
-                    {chatLog.map((chat, index) => (
-                        <React.Fragment key={index}>
-                            <ChatMessage className={classes.lineBreak} message={chat.message}
-                                         user={chat.user}/>
-                            {/*Display an ad every x messages */}
-                            {/*{(index + 1) % ad_interval === 0 && <AdComponent/>}*/}
-                            {(index + 1) % ad_interval === 0 && <AdSenseAd/>}
-                        </React.Fragment>
-                    ))}
-                    {loading && <LinearProgress/>}
+                <div className={classes.chatContentContainer}>
+                    <div className={classes.chatLog} ref={chatLogRef}>
+                        {/* Chat messages */}
+                        {chatLog.map((chat, index) => (
+                            <React.Fragment key={index}>
+                                <ChatMessage className={classes.lineBreak}
+                                             message={chat.message}
+                                             user={chat.user}/>
+                                {(index + 1) % ad_interval === 0 && <AdSenseAd/>}
+                            </React.Fragment>
+                        ))}
+                        {loading && <LinearProgress/>}
+                    </div>
+                    <div className={classes.pdfViewerContainer}>
+                        {file && <PdfViewer file={file}/>}
+                    </div>
                 </div>
-
                 <div className={classes.chatInputHolder}>
                     <form onSubmit={handleSubmit}>
                         <input

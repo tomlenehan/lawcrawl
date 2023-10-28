@@ -39,6 +39,7 @@ from langchain.chains.summarize import load_summarize_chain
 from langchain.chains import RetrievalQA, ConversationalRetrievalChain, LLMChain
 import pinecone
 import PyPDF2
+import boto3
 
 from main.serializers import CaseSerializer
 from uuid import UUID
@@ -125,7 +126,7 @@ def upload_file(request):
         file_url = case_document_storage.url(file_name)
 
         # Save the URL in the database
-        uploaded_file = UploadedFile(case=case, file_url=file_url)
+        uploaded_file = UploadedFile(case=case, object_key=file_name)
         uploaded_file.save()
 
         # Clean up: Remove the temporary directory and file
@@ -138,6 +139,21 @@ def upload_file(request):
         )
 
     return JsonResponse({"error": "Bad request or not authenticated"}, status=400)
+
+
+def generate_signed_url(object_key):
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+    )
+    bucket_name = UploadStorage.bucket_name
+    signed_url = s3_client.generate_presigned_url(
+        'get_object',
+        Params={'Bucket': bucket_name, 'Key': object_key},
+        ExpiresIn=3600  # expires in 1 hour
+    )
+    return signed_url
 
 
 def tiktoken_len(text):
@@ -414,7 +430,10 @@ def fetch_case_conversation(request, case_uid):
 
     try:
         conversation = CaseConversation.objects.get(case=case)
-        return JsonResponse({"conversation": conversation.conversation})
+        uploaded_file = UploadedFile.objects.filter(case=case).first()
+        file_url = generate_signed_url(uploaded_file.object_key)
+
+        return JsonResponse({"conversation": conversation.conversation, "file_url": file_url})
     except CaseConversation.DoesNotExist:
         return JsonResponse({"error": "Conversation does not exist"}, status=404)
 

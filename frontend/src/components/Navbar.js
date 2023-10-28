@@ -20,6 +20,9 @@ import theme from './Theme';
 import config from './config';
 
 const useStyles = makeStyles((theme) => ({
+    appBar: {
+        height: 50,
+    },
     menuButton: {
         color: '#3a3a3a',
         textTransform: 'none',
@@ -84,7 +87,7 @@ const Navbar = ({isAuthenticated, logout, userCases}) => {
 
     return (
         <ThemeProvider theme={theme}>
-            <MuiAppBar position="static">
+            <MuiAppBar position="static" className={classes.appBar} >
                 <Toolbar className={classes.toolbar} variant="dense">
                     <Grid container justifyContent="space-between" alignItems="center">
                         <Grid item>

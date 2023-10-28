@@ -68,7 +68,7 @@ class UploadedFile(models.Model):
     case = models.ForeignKey(
         Case, on_delete=models.CASCADE, related_name="uploaded_files"
     )
-    file_url = models.URLField()
+    object_key = models.CharField(max_length=255)
 
 
 class CaseConversation(models.Model):
