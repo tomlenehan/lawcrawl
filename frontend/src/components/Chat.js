@@ -328,10 +328,11 @@ const Chat = () => {
                 })
             });
             const data = await response.json();
+            console.log("setting_chat_log");
             setChatLog(prevChatLog => [
                 ...prevChatLog,
-                // {user: "gpt", message: data.message}
-                data.message
+                {user: "gpt", message: data.message}
+                // data.message
             ]);
         } finally {
             setLoadingChatLog(false);

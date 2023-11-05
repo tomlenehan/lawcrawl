@@ -198,7 +198,7 @@ def chat_message(request):
             result = processor.process_chat_message(
                 case_uid, message, tmp_file, chat_log
             )
-            return JsonResponse({"message": message})
+            return JsonResponse({"message": result["answer"]})
         except ValueError as e:
             return JsonResponse({"error": str(e)}, status=400)
 
@@ -403,7 +403,7 @@ class DocumentProcessor:
             },
         )
 
-        return conversation
+        return {"conversation": conversation, "answer": response["answer"]}
 
 
     def clear_highlights(self, file_name):
