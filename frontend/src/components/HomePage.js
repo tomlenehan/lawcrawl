@@ -66,10 +66,10 @@ const useStyles = makeStyles((theme) => ({
     loginButton: {
         backgroundColor: '#80cbc4',
         color: '#3a3a3a',
-        fontSize: '1.6vw',
-        padding: '6px 24px',
+        fontSize: '1.4vw',
+        padding: '8px 30px',
         '&:hover': {
-            backgroundColor: '#26a69a',  // Darker color on hover   bv
+            backgroundColor: '#26a69a',
         },
         borderRadius: '10px',
         boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
@@ -104,12 +104,11 @@ const HomePage = ({ isAuthenticated }) => {
                         </Grid>
 
                         <Grid item xs={12}>
-                            {/*<Typography className={classes.description}>*/}
-                            <Typography style={{fontSize: '1.2vw'}}>
-                                Simply login, then upload your <br/> documents and chat.
-                                {/*Our AI model has been trained on the law<br/>*/}
-                                {/*and knows your case.*/}
-                            </Typography>
+                            {!isAuthenticated && (
+                                <Typography style={{fontSize: '1.2vw'}}>
+                                    Simply login, then upload your <br/> documents and chat.
+                                </Typography>
+                            )}
                         </Grid>
 
                         {/*<Grid item xs={12} style={{marginTop: -45}}>*/}

@@ -74,6 +74,7 @@ class UploadedFile(models.Model):
 class CaseConversation(models.Model):
     case = models.ForeignKey(Case, on_delete=models.CASCADE)
     conversation = models.JSONField()
+    temp_file = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

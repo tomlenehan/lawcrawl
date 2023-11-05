@@ -15,7 +15,7 @@ const useFetchUserCases = () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
-            console.log("API Response:", data);
+
             if (data) {
                 dispatch(addUserCase(data));
             }

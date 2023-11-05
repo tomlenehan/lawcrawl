@@ -82,12 +82,12 @@ const useStyles = makeStyles((theme) => ({
     chatLog: {
         width: '50%',
         textAlign: 'left',
-        // overflowY: 'scroll',
+        overflowY: 'scroll',
+        borderRadius: 15,
         flex: 1,
     },
     pdfViewerContainer: {
         width: '50%',
-        // overflowY: 'scroll',
         flex: 1,
     },
     chatInputTextArea: {
@@ -155,7 +155,13 @@ const useStyles = makeStyles((theme) => ({
         maxWidth: 400,
         overflowY: 'auto',
         maxHeight: '80vh',
-    }
+    },
+    progressContainer: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%', // Take up all the available height
+    },
 }));
 
 const Chat = () => {
@@ -168,7 +174,8 @@ const Chat = () => {
     const classes = useStyles();
     const token = localStorage.getItem('access');
     const [input, setInput] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [loadingChatLog, setLoadingChatLog] = useState(false);
+    const [loadingPDF, setLoadingPDF] = useState(false);
     const userCases = useSelector((state) => state.userCases);
     const [currentCase, setCurrentCase] = useState(null);
     const [termsOpen, setTermsOpen] = useState(false);
@@ -184,6 +191,55 @@ const Chat = () => {
         dispatch(logout());
         navigate('/login');
     };
+
+
+    const processPDF = async (currentCase, authToken) => {
+        setLoadingPDF(true);
+        if (currentCase) {
+            try {
+                const response = await axios.get(`/api/process_pdf/${currentCase.uid}`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                    },
+                    responseType: 'blob',
+                });
+                console.log('processing_pdf');
+                const pdfBlob = new Blob([response.data], {type: 'application/pdf'});
+                setFile(pdfBlob);
+            } catch (error) {
+                console.error('Error processing PDF:', error);
+            } finally {
+                setLoadingPDF(false);
+            }
+        }
+    };
+
+    useEffect(() => {
+        processPDF(currentCase, token);
+    }, [token, currentCase]);
+
+    // useEffect(() => {
+    //     const processPDF = async () => {
+    //         setLoadingPDF(true);
+    //         if (currentCase) {
+    //             try {
+    //                 const response = await axios.get(`/api/process_pdf/${currentCase.uid}`, {
+    //                     headers: {
+    //                         'Authorization': `Bearer ${token}`,
+    //                     },
+    //                     responseType: 'blob',
+    //                 });
+    //                 // const data = await response;
+    //                 console.log('processing_pdf');
+    //                 const pdfBlob = new Blob([response.data], {type: 'application/pdf'});
+    //                 setFile(pdfBlob);
+    //             } finally {
+    //                 setLoadingPDF(false);
+    //             }
+    //         }
+    //     };
+    //     processPDF();
+    // }, [token, currentCase]);
 
     useEffect(() => {
         const setCurrentCaseFromLocation = () => {
@@ -224,7 +280,7 @@ const Chat = () => {
         const fetchCaseConversation = async () => {
             if (currentCase) {
                 try {
-                    setLoading(true);
+                    setLoadingChatLog(true);
                     const response = await axios.get(`/api/conversation/${currentCase.uid}`, {
                         headers: {
                             'Authorization': `Bearer ${token}`,
@@ -232,14 +288,13 @@ const Chat = () => {
                     });
                     if (response.status === 200) {
                         setChatLog(response.data.conversation);
-                        setFile(response.data.file_url);
                     } else {
                         console.error('Error fetching CaseConversation:', response.status, response.data);
                     }
                 } catch (error) {
                     console.error('Error fetching CaseConversation:', error);
                 } finally {
-                    setLoading(false);
+                    setLoadingChatLog(false);
                 }
             }
         };
@@ -257,7 +312,8 @@ const Chat = () => {
         setChatLog([...chatLog, {user: "me", message: input}]);
 
         setInput("");
-        setLoading(true);
+        setLoadingChatLog(true);
+        setLoadingPDF(true);
 
         try {
             const response = await fetch('/api/chat/message/', {
@@ -272,15 +328,15 @@ const Chat = () => {
                 })
             });
             const data = await response.json();
-            console.log('fetching_output');
             setChatLog(prevChatLog => [
                 ...prevChatLog,
-                {user: "gpt", message: data.message}
+                // {user: "gpt", message: data.message}
+                data.message
             ]);
         } finally {
-            setLoading(false);
+            setLoadingChatLog(false);
         }
-        // setChatLog([...chatLog, {user: "gpt", message: `${data.message}`}]);
+        processPDF(currentCase, token);
     }
 
     const handleTermsOpen = () => {
@@ -341,6 +397,7 @@ const Chat = () => {
                     <PrivacyTip style={{marginRight: 8, fontSize: '1.6vw'}}/>
                     <span>Privacy & Terms</span>
                 </Link>
+                <Box style={{height: '100vh'}}/>
 
                 <Modal
                     open={termsOpen}
@@ -358,20 +415,32 @@ const Chat = () => {
             <div className={classes.chatBox}>
                 <div className={classes.chatContentContainer}>
                     <div className={classes.chatLog} ref={chatLogRef}>
-                        {/* Chat messages */}
-                        {chatLog.map((chat, index) => (
-                            <React.Fragment key={index}>
-                                <ChatMessage className={classes.lineBreak}
-                                             message={chat.message}
-                                             user={chat.user}/>
-                                {(index + 1) % ad_interval === 0 && <AdSenseAd/>}
-                            </React.Fragment>
-                        ))}
-                        {loading && <LinearProgress/>}
-                    </div>
+                        {/*<div style={{ height: '100%', overflowY: 'scroll', borderRadius: 15 }} >*/}
+                            {/* Chat messages */}
+                            {chatLog.map((chat, index) => (
+                                index === 0 ? null : ( // Return null for the first element
+                                    <React.Fragment key={index}>
+                                        <ChatMessage className={classes.lineBreak}
+                                                     message={chat.message}
+                                                     user={chat.user}/>
+                                        {(index + 1) % ad_interval === 0 && <AdSenseAd/>}
+                                    </React.Fragment>
+                                )
+                            ))}
+                            {loadingChatLog && <LinearProgress/>}
+                        </div>
+                    {/*</div>*/}
+
                     <div className={classes.pdfViewerContainer}>
-                        {file && <PdfViewer file={file}/>}
+                        {loadingPDF ? (
+                            <div className={classes.progressContainer}>
+                                <LinearProgress style={{width: '50%'}}/>
+                            </div>
+                        ) : (
+                            file && <PdfViewer file={file}/>
+                        )}
                     </div>
+
                 </div>
                 <div className={classes.chatInputHolder}>
                     <form onSubmit={handleSubmit}>

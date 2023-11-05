@@ -66,7 +66,7 @@ const useStyles = makeStyles((theme) => ({
     },
     loginButton: {
         color: '#3a3a3a',
-        padding: '10px 30px',
+        padding: '8px 30px',
         backgroundColor: '#80cbc4',
         marginTop: 10,
         '&:hover': {
@@ -150,7 +150,7 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                 handleLogout();
             });
         }
-    }, [fetchUserCases, token]);
+    }, [token]);
 
     const handleFileChange = async (event) => {
 
@@ -188,7 +188,7 @@ const UploadPage = ({isAuthenticated, userCases}) => {
             if (response.ok) {
                 const data = await response.json();
                 // Redirect to the chat page with the appropriate uid
-                console.log('updating_user_cases');
+                // console.log('updating_user_cases');
                 const updatedUserCases = [data.case, ...userCases];
                 dispatch(addUserCase(updatedUserCases));
                 navigate(`/chat?uid=${data.case.uid}`);

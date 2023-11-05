@@ -244,6 +244,8 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'frontend', 'static')
 ]
 
+# store for temp docs
+TMP_DIR = os.getenv('TMP_DIR')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

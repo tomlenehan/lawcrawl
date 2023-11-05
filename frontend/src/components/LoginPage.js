@@ -57,15 +57,15 @@ const useStyles = makeStyles((theme) => ({
         textTransform: 'none',
         maxWidth: 200,
         width: '200px',
-        marginTop: 25,
+        marginTop: 15,
     },
     twitterButton: {
         backgroundColor: "#1DA1F2",
-        paddingTop: 0,
-        paddingBottom: 0,
         borderRadius: '50px',
         color: "white",
         textTransform: 'none',
+        padding: '4px 25px',
+        maxWidth: 150,
         "&:hover": {
             backgroundColor: "#0C7EBF",
         },
@@ -73,17 +73,16 @@ const useStyles = makeStyles((theme) => ({
     googleButton: {
         backgroundColor: "#4285F4",
         color: "white",
-        paddingTop: 0,
-        paddingBottom: 0,
         textTransform: 'none',
+        padding: '4px 25px',
         "&:hover": {
             backgroundColor: "#357abd",
         },
         borderRadius: '50px',
         boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
         margin: theme.spacing(1, 0),
-        maxWidth: 200,
-        marginTop: 25,
+        maxWidth: 150,
+        marginTop: 20,
     },
 }));
 
@@ -155,7 +154,7 @@ const LoginPage = ({isAuthenticated}) => {
                                 onClick={loginWithTwitter}
                                 startIcon={<TwitterIcon/>}
                             >
-                                <Box style={{padding: 4, textDecoration: 'None'}}>
+                                <Box style={{padding: 4, textDecoration: 'none !important'}}>
                                     Twitter
                                 </Box>
                             </Button>
