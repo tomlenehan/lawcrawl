@@ -33,6 +33,8 @@ const useStyles = makeStyles((theme) => ({
         padding: 10,
         overflowY: "scroll",
         backgroundColor: '#3a3a3a',
+        display: 'flex',
+        flexDirection: 'column',
     },
     sideMenuButton: {
         padding: 15,
@@ -82,6 +84,7 @@ const useStyles = makeStyles((theme) => ({
     chatLog: {
         width: '50%',
         textAlign: 'left',
+        whiteSpace: 'pre-wrap',
         overflowY: 'scroll',
         borderRadius: 15,
         flex: 1,
@@ -134,14 +137,16 @@ const useStyles = makeStyles((theme) => ({
         whiteSpace: "pre-line",
     },
     termsLink: {
-        marginTop: 4,
+        marginTop: 10,
         marginBottom: 10,
         marginLeft: 5,
         color: '#fdfbee',
         textDecoration: "none",
         fontSize: '1.1vw',
         cursor: "pointer",
-        position: 'fixed',
+        position: 'relative',
+        alignSelf: 'flex-end',
+        marginRight: 60,
         bottom: 0,
         display: 'flex',
         alignItems: 'center',
@@ -313,7 +318,6 @@ const Chat = () => {
 
         setInput("");
         setLoadingChatLog(true);
-        setLoadingPDF(true);
 
         try {
             const response = await fetch('/api/chat/message/', {
@@ -390,6 +394,9 @@ const Chat = () => {
                         </Link>
                     </div>
                 ))}
+
+                {/*<Box style={{height: '100vh'}}/>*/}
+                <div style={{ flexGrow: 1 }}></div>
                 <Link
                     to="#"
                     className={classes.termsLink}
@@ -398,7 +405,6 @@ const Chat = () => {
                     <PrivacyTip style={{marginRight: 8, fontSize: '1.6vw'}}/>
                     <span>Privacy & Terms</span>
                 </Link>
-                <Box style={{height: '100vh'}}/>
 
                 <Modal
                     open={termsOpen}
@@ -417,19 +423,19 @@ const Chat = () => {
                 <div className={classes.chatContentContainer}>
                     <div className={classes.chatLog} ref={chatLogRef}>
                         {/*<div style={{ height: '100%', overflowY: 'scroll', borderRadius: 15 }} >*/}
-                            {/* Chat messages */}
-                            {chatLog.map((chat, index) => (
-                                index === 0 ? null : ( // Return null for the first element
-                                    <React.Fragment key={index}>
-                                        <ChatMessage className={classes.lineBreak}
-                                                     message={chat.message}
-                                                     user={chat.user}/>
-                                        {(index + 1) % ad_interval === 0 && <AdSenseAd/>}
-                                    </React.Fragment>
-                                )
-                            ))}
-                            {loadingChatLog && <LinearProgress/>}
-                        </div>
+                        {/* Chat messages */}
+                        {chatLog.map((chat, index) => (
+                            index === 0 ? null : ( // Return null for the first element
+                                <React.Fragment key={index}>
+                                    <ChatMessage className={classes.lineBreak}
+                                                 message={chat.message}
+                                                 user={chat.user}/>
+                                    {(index + 1) % ad_interval === 0 && <AdSenseAd/>}
+                                </React.Fragment>
+                            )
+                        ))}
+                        {loadingChatLog && <LinearProgress/>}
+                    </div>
                     {/*</div>*/}
 
                     <div className={classes.pdfViewerContainer}>
@@ -449,7 +455,7 @@ const Chat = () => {
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             className={classes.chatInputTextArea}
-                            placeholder="Type your message here..."
+                            placeholder="Type your question here..."
                             rows="1"></input>
                     </form>
                 </div>

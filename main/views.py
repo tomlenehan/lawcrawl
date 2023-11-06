@@ -214,7 +214,9 @@ def generate_doc_summary(tmp_file, case_uid):
 
     # process the summary and save the new convo
     processor = DocumentProcessor(case_uid)
-    conversation = processor.process_chat_message(case_uid, message, tmp_file, [])
+    result = processor.process_chat_message(case_uid, message, tmp_file, [])
+    conversation = result["conversation"]
+
     chat_log = conversation.conversation
     chat_log.append(
         {

@@ -227,9 +227,15 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                     <Grid container spacing={3} direction="column" alignItems="center">
                         <Grid item xs={12}>
                             <Typography style={{fontSize: '1.7vw'}}>
-                                Name your case and <br/>
-                                upload your documents
+                                {loading ? "Processing Document..." : (
+                                    "Upload your document"
+                                )}
                             </Typography>
+                            {loading &&
+                                <Typography style={{fontSize: '1.2vw'}}>
+                                    This will take a moment
+                                </Typography>
+                            }
                         </Grid>
                         <Grid item xs={12}>
                             {/*show progress*/}
@@ -372,8 +378,8 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                 aria-describedby="simple-modal-description"
                 className={classes.modal}
             >
-                <div className={classes.modalText} >
-                    <TermsOfService />
+                <div className={classes.modalText}>
+                    <TermsOfService/>
                 </div>
             </Modal>
 

@@ -99,8 +99,11 @@ const HomePage = ({ isAuthenticated }) => {
                             {/*<Typography className={classes.textLogo}>Law Crawl</Typography>*/}
                             <Typography className={classes.subTitle}>The AI legal
                                 assistant</Typography>
-                            <Typography style={{fontSize: '1.8vw'}}>That knows the law</Typography>
-                            <Typography style={{fontSize: '1.7vw', marginBottom:14}}>and knows your case</Typography>
+                            {/*<Typography style={{fontSize: '1.8vw'}}>That knows the law</Typography>*/}
+                            {/*<Typography style={{fontSize: '1.7vw', marginBottom:14}}>and knows your case</Typography>*/}
+
+                            {/*<Typography style={{fontSize: '1.8vw'}}>That knows the law</Typography>*/}
+                            <Typography style={{fontSize: '1.7vw', marginBottom:14}}>Find what may be hidden <br/>in your legal documents</Typography>
                         </Grid>
 
                         <Grid item xs={12}>
