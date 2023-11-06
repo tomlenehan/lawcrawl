@@ -4,7 +4,8 @@ import {Link, useNavigate} from 'react-router-dom';
 import {useDispatch, useSelector} from 'react-redux';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
-import DescriptionIcon from '@mui/icons-material/Description';
+import {Button, IconButton, TextField} from '@material-ui/core';
+import SendIcon from '@material-ui/icons/Send';
 import PrivacyTip from '@mui/icons-material/PrivacyTip';
 import axios from "axios";
 import {Box} from "@material-ui/core";
@@ -18,7 +19,7 @@ import "react-pdf/dist/Page/AnnotationLayer.css";
 import useFetchUserCases from './hooks/useFetchUserCases';
 import Modal from "@material-ui/core/Modal";
 import {logout} from "../actions/auth";
-import {Grid} from "@mui/material";
+import {InputAdornment} from "@mui/material";
 
 // Chat Component
 const useStyles = makeStyles((theme) => ({
@@ -97,7 +98,6 @@ const useStyles = makeStyles((theme) => ({
         backgroundColor: '#e0f2f1',
         fontSize: '1.1em',
         width: '90%',
-        padding: 12,
         borderRadius: 5,
         '&:hover': {
             outline: 'none',
@@ -166,6 +166,12 @@ const useStyles = makeStyles((theme) => ({
         alignItems: 'center',
         justifyContent: 'center',
         height: '100%', // Take up all the available height
+    },
+    chatInputForm: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
     },
 }));
 
@@ -396,7 +402,7 @@ const Chat = () => {
                 ))}
 
                 {/*<Box style={{height: '100vh'}}/>*/}
-                <div style={{ flexGrow: 1 }}></div>
+                <div style={{flexGrow: 1}}></div>
                 <Link
                     to="#"
                     className={classes.termsLink}
@@ -450,13 +456,26 @@ const Chat = () => {
 
                 </div>
                 <div className={classes.chatInputHolder}>
-                    <form onSubmit={handleSubmit}>
-                        <input
+                    <form onSubmit={handleSubmit} className={classes.chatInputForm}>
+                        <TextField
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             className={classes.chatInputTextArea}
                             placeholder="Type your question here..."
-                            rows="1"></input>
+                            variant="outlined"
+                            fullWidth
+                            InputProps={{
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton type="submit" className={classes.sendButton}>
+                                            <SendIcon/>
+                                        </IconButton>
+                                    </InputAdornment>
+                                ),
+                            }}
+                            multiline
+                            rows={1}
+                        />
                     </form>
                 </div>
             </div>

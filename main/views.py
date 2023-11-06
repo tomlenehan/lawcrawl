@@ -434,8 +434,9 @@ class DocumentProcessor:
         doc = fitz.open(file_path)
 
         phrases = [
-            phrase for phrase in text_to_highlight.strip().splitlines()
-            if phrase.strip() and valid_phrase_pattern.search(phrase)
+            phrase
+            for phrase in text_to_highlight.strip().splitlines()
+            if len(phrase.strip()) > 20 and valid_phrase_pattern.search(phrase)
         ]
 
         for page in doc:
@@ -449,7 +450,7 @@ class DocumentProcessor:
                         highlight = page.add_highlight_annot(area)
                         highlight.set_colors(
                             {
-                                "stroke": (0.501, 0.796, 0.768)
+                                "stroke": (0.698, 0.874, 0.858)
                             }
                         )
                         highlight.update()

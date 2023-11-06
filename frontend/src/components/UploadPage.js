@@ -101,6 +101,7 @@ const useStyles = makeStyles((theme) => ({
     termsOfServiceLink: {
         color: '#26a69a',
         cursor: 'pointer',
+        marginLeft: 10,
     },
     customCheckbox: {
         '&$checked': {
@@ -325,26 +326,37 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                             </FormControl>
                         </Grid>
 
-                        <Grid item xs={12} style={{display: 'flex', alignItems: 'center'}}>
+                        <Grid item xs={12} style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'flex-start'
+                        }}>
 
-                            <Checkbox
-                                checked={termsAccepted}
-                                onChange={(e) => setTermsAccepted(e.target.checked)}
-                                name="termsAccepted"
-                                classes={{root: classes.customCheckbox, checked: classes.checked}}
-                                disabled={loading}
-                            />
+                            <div style={{display: 'flex', alignItems: 'center'}}>
+                                <Checkbox
+                                    checked={termsAccepted}
+                                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                                    name="termsAccepted"
+                                    classes={{
+                                        root: classes.customCheckbox,
+                                        checked: classes.checked
+                                    }}
+                                    disabled={loading}
+                                />
 
-                            <Typography variant="body2" component="span">
-                                I agree to the
+                                <Typography variant="body2" component="span">
+                                    I agree to the
+                                </Typography>
+                            </div>
+
+                            <Typography variant="body2" component="div"
+                                        className={classes.termsOfServiceLink}
+                                        onClick={handleOpenModal}>
+                                Terms of Service.
                             </Typography>
-                            <Typography variant="body2" display="block">
-                                <span className={classes.termsOfServiceLink}
-                                      onClick={handleOpenModal}>
-                                    Terms of Service
-                                </span>.
-                            </Typography>
+
                         </Grid>
+
 
                         <Grid item xs={12}>
                             <input
