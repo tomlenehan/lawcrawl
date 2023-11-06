@@ -169,7 +169,8 @@ const useStyles = makeStyles((theme) => ({
     },
     chatInputForm: {
         display: 'flex',
-        justifyContent: 'space-between',
+        // justifyContent: 'space-between',
+        justifyContent: 'center',
         alignItems: 'center',
         width: '100%',
     },
