@@ -372,7 +372,7 @@ const Chat = () => {
 
     const handleKeyPress = (e) => {
         console.log("key_pressed");
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key === 'Enter' && !e.shiftKey && input.trim()) {
             handleSubmit(e);
         }
     }
