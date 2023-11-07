@@ -4,6 +4,8 @@ import {Link, useNavigate} from 'react-router-dom';
 import {useDispatch, useSelector} from 'react-redux';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import ThumbUpIcon from '@material-ui/icons/ThumbUp';
+import ThumbDownIcon from '@material-ui/icons/ThumbDown';
 import {Button, IconButton, TextField} from '@material-ui/core';
 import SendIcon from '@material-ui/icons/Send';
 import PrivacyTip from '@mui/icons-material/PrivacyTip';
@@ -174,6 +176,15 @@ const useStyles = makeStyles((theme) => ({
         alignItems: 'center',
         width: '100%',
     },
+    sendButton: {
+        borderRadius: 10,
+    },
+    sendButtonEnabled: {
+        backgroundColor: '#B2DFDB',
+        '&:hover': {
+            backgroundColor: '#80cbc4',
+        },
+    }
 }));
 
 const Chat = () => {
@@ -198,6 +209,8 @@ const Chat = () => {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const ad_interval = 0;
+    const [feedback, setFeedback] = useState({});
+
 
     const handleLogout = () => {
         dispatch(logout());
@@ -314,6 +327,12 @@ const Chat = () => {
         fetchCaseConversation();
     }, [token, currentCase]);
 
+    const handleFeedback = (messageIndex, type) => {
+        setFeedback(prevFeedback => ({
+            ...prevFeedback,
+            [messageIndex]: type
+        }));
+    };
 
     async function handleSubmit(e) {
         e.preventDefault();
@@ -349,6 +368,13 @@ const Chat = () => {
             setLoadingChatLog(false);
         }
         processPDF(currentCase, token);
+    }
+
+    const handleKeyPress = (e) => {
+        console.log("key_pressed");
+        if (e.key === 'Enter' && !e.shiftKey) {
+            handleSubmit(e);
+        }
     }
 
     const handleTermsOpen = () => {
@@ -441,14 +467,14 @@ const Chat = () => {
                                 </React.Fragment>
                             )
                         ))}
-                        {loadingChatLog && <LinearProgress/>}
+                        {loadingChatLog && <LinearProgress color="primary" size="lg"/>}
                     </div>
                     {/*</div>*/}
 
                     <div className={classes.pdfViewerContainer}>
                         {loadingPDF ? (
                             <div className={classes.progressContainer}>
-                                <LinearProgress style={{width: '50%'}}/>
+                                <LinearProgress color="primary" size="lg" style={{width: '50%'}}/>
                             </div>
                         ) : (
                             file && <PdfViewer file={file}/>
@@ -461,6 +487,7 @@ const Chat = () => {
                         <TextField
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={handleKeyPress}
                             className={classes.chatInputTextArea}
                             placeholder="Type your question here..."
                             variant="outlined"
@@ -468,7 +495,13 @@ const Chat = () => {
                             InputProps={{
                                 endAdornment: (
                                     <InputAdornment position="end">
-                                        <IconButton type="submit" className={classes.sendButton}>
+                                        <IconButton
+                                            type="submit"
+                                            className={
+                                                input.trim() ? `${classes.sendButton} ${classes.sendButtonEnabled}` : classes.sendButton
+                                              }
+                                            disabled={!input.trim()} // Button disabled when input is empty or just whitespace
+                                        >
                                             <SendIcon/>
                                         </IconButton>
                                     </InputAdornment>
@@ -502,6 +535,16 @@ const ChatMessage = ({message, user}) => {
                              }}/>
                     </div>
                     <div className={classes.message}>{message}</div>
+
+                    {/*<div className={classes.feedbackButtons}>*/}
+                    {/*    <IconButton onClick={() => onFeedback(index, 'up')}>*/}
+                    {/*        <ThumbUpIcon/>*/}
+                    {/*    </IconButton>*/}
+                    {/*    <IconButton onClick={() => onFeedback(index, 'down')}>*/}
+                    {/*        <ThumbDownIcon/>*/}
+                    {/*    </IconButton>*/}
+                    {/*</div>*/}
+
                 </div>
             </div>
         );

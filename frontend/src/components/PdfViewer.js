@@ -1,7 +1,7 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Document, Page} from 'react-pdf';
 // import { Page, Text, View, Document, StyleSheet } from '@react-pdf/renderer';
-import { StyleSheet } from '@react-pdf/renderer';
+import {StyleSheet} from '@react-pdf/renderer';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
@@ -12,11 +12,11 @@ import {SizeMe} from 'react-sizeme';
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
 const styles = StyleSheet.create({
-  page: {
-      backgroundColor: '#e0f2f1',
-      color: '#3a3a3a',
-  }
-  // section: { color: 'white', textAlign: 'center', margin: 30 }
+    page: {
+        backgroundColor: '#e0f2f1',
+        color: '#3a3a3a',
+    }
+    // section: { color: 'white', textAlign: 'center', margin: 30 }
 });
 
 const useStyles = makeStyles({
@@ -24,6 +24,7 @@ const useStyles = makeStyles({
         height: '100%',
         overflowY: 'scroll',
         borderRadius: 15,
+        position: 'relative',
     },
     pdfPage: {
         color: '#3a3a3a',
@@ -36,6 +37,7 @@ const PdfViewer = ({file}) => {
     const [numPages, setNumPages] = useState(null);
     const [searchText, setSearchText] = useState('');
     const [loaded, setLoaded] = useState(false);
+    const [scrolledToHighlight, setScrolledToHighlight] = useState(false);
     const containerRef = useRef();
     // const textRenderer = useCallback(
     //     (textItem) => highlightPattern(textItem.str, searchText),
@@ -56,30 +58,35 @@ const PdfViewer = ({file}) => {
     }
 
     function onDocumentLoadSuccess({numPages}) {
+        console.log("setting num pages");
         setNumPages(numPages);
     }
 
-    // function highlightPattern(text, pattern) {
-    //     return text.replace(pattern, (value) => {
-    //         console.log(`Match found: ${value}`);
-    //         return `<mark style="color: #3a3a3a; background-color: #80cbc4">${value}</mark>`;
-    //     });
-    // }
+    useEffect(() => {
+        if (loaded && !scrolledToHighlight && containerRef.current) {
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.addedNodes.length > 0) {
+                        const svgElements = containerRef.current.querySelectorAll('svg.quadrilateralsContainer');
+                        if (svgElements.length > 0) {
+                            svgElements[0].scrollIntoView({behavior: 'smooth', block: 'center'});
+                            setScrolledToHighlight(true);
+                            observer.disconnect(); // Stop observing once we've scrolled to the element
+                        }
+                    }
+                });
+            });
 
-   // useEffect(() => {
-   //      if (loaded) {
-   //          // Use querySelector to find the fir
-   //         console.log("scrolling_to_quad");
-   //          const svgElement = containerRef.current.querySelector('svg.quadrilateralsContainer');
-   //          if (svgElement) {
-   //              // Use scrollIntoView to scroll the element into view
-   //              svgElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-   //          }
-   //      }
-   //  }, [loaded]);
+            observer.observe(containerRef.current, {childList: true, subtree: true});
+
+            // Clean up observer when component unmounts
+            return () => observer.disconnect();
+        }
+    }, [loaded, scrolledToHighlight]);
+
 
     return (
-        <div className={classes.pdfWrapper}>
+        <div ref={containerRef} className={classes.pdfWrapper}>
             {/*<label htmlFor="search">Search:</label>*/}
             {/*<input type="search" id="search" value={searchText} onChange={onChange}/>*/}
             <SizeMe

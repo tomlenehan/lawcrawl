@@ -4,7 +4,9 @@ import Grid from "@material-ui/core/Grid";
 import Modal from '@material-ui/core/Modal';
 import {Checkbox, FormControlLabel, Link} from '@material-ui/core';
 import {makeStyles} from '@material-ui/core/styles';
-import CloudUploadIcon from '@material-ui/icons/CloudUpload';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import AttachFileIcon from '@mui/icons-material/AttachFile';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
 import {useNavigate, useLocation} from 'react-router-dom';
 import Typography from "@material-ui/core/Typography";
 import Footer from "./Footer";
@@ -18,8 +20,8 @@ import {
     MenuItem,
     InputLabel,
     FormControl,
-    LinearProgress
 } from "@material-ui/core";
+import LinearProgress from '@material-ui/core/LinearProgress';
 import {useDispatch} from 'react-redux';
 import {addUserCase} from '../actions/user';
 import TermsOfService from "./TermsOfService";
@@ -64,11 +66,10 @@ const useStyles = makeStyles((theme) => ({
     cardTile: {
         fontFamily: 'DMSans, sans-serif',
     },
-    loginButton: {
+    inputButton: {
         color: '#3a3a3a',
         padding: '8px 30px',
         backgroundColor: '#80cbc4',
-        marginTop: 10,
         '&:hover': {
             backgroundColor: '#26a69a',  // Darker color on hover
         },
@@ -121,6 +122,10 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 
+// function CheckBoxIcon() {
+//     return null;
+// }
+
 const UploadPage = ({isAuthenticated, userCases}) => {
     const classes = useStyles();
     const [loading, setLoading] = React.useState(false);
@@ -128,6 +133,7 @@ const UploadPage = ({isAuthenticated, userCases}) => {
     const [selectedState, setSelectedState] = React.useState('');
     const [errorMessage, setErrorMessage] = React.useState(null);
     const [termsAccepted, setTermsAccepted] = useState(false);
+    const [fileLoaded, setFileLoaded] = React.useState(false);
     const [openModal, setOpenModal] = useState(false);
     const token = localStorage.getItem('access');
     const navigate = useNavigate();
@@ -153,10 +159,29 @@ const UploadPage = ({isAuthenticated, userCases}) => {
         }
     }, [token]);
 
-    const handleFileChange = async (event) => {
+
+    const handleFileChange = (event) => {
+        // Check if the files are selected
+        if (event.target.files.length > 0) {
+            setFileLoaded(true);
+        } else {
+            setFileLoaded(false);
+        }
+    };
+
+    const handleSubmit = async (event) => {
 
         if (!termsAccepted) {
             setErrorMessage("Please agree to the Terms of Service before proceeding.");
+            return;
+        } else if (!fileLoaded) {
+            setErrorMessage("Please select a file before proceeding.");
+            return;
+        } else if (!caseName) {
+            setErrorMessage("Please provide a case name before proceeding.");
+            return;
+        } else if (!selectedState) {
+            setErrorMessage("Please select a state before proceeding.");
             return;
         }
         // Clear any existing error messages
@@ -166,7 +191,10 @@ const UploadPage = ({isAuthenticated, userCases}) => {
 
         event.preventDefault();
 
-        const files = event.target.files;
+        // const files = event.target.files;
+        const fileInputElement = document.getElementById('fileInput');
+        const files = fileInputElement.files;
+
         const formData = new FormData();
 
         for (let i = 0; i < files.length; i++) {
@@ -222,7 +250,8 @@ const UploadPage = ({isAuthenticated, userCases}) => {
     };
 
     return (
-        <ThemeProvider theme={theme}>
+        // <ThemeProvider theme={theme}>
+        <>
             <div className={classes.root}>
                 <div className={classes.homePageContainer}>
                     <Grid container spacing={3} direction="column" alignItems="center">
@@ -239,12 +268,14 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                             }
                         </Grid>
                         <Grid item xs={12}>
+
                             {/*show progress*/}
-                            {loading && <LinearProgress/>}
+                            {loading && <LinearProgress color="primary" size="lg" />}
                             {/*Display errors*/}
                             {
                                 errorMessage && <div className={classes.error}>{errorMessage}</div>
                             }
+
                             <TextField
                                 label="Case Name"
                                 variant="outlined"
@@ -343,38 +374,54 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                                     }}
                                     disabled={loading}
                                 />
-
                                 <Typography variant="body2" component="span">
                                     I agree to the
                                 </Typography>
+                                {/* Clickable "Terms of Service" text */}
+                                <Typography variant="body2" component="span"
+                                            className={classes.termsOfServiceLink}
+                                            onClick={handleOpenModal}>
+                                    Terms of Service.
+                                </Typography>
                             </div>
-
-                            <Typography variant="body2" component="div"
-                                        className={classes.termsOfServiceLink}
-                                        onClick={handleOpenModal}>
-                                Terms of Service.
-                            </Typography>
 
                         </Grid>
 
-
                         <Grid item xs={12}>
+                            {/* File input to load the file */}
                             <input
                                 accept="application/pdf"
-                                className={classes.fileInput}
+                                className={`${classes.fileInput} ${classes.inputButton}`}
                                 id="fileInput"
                                 multiple
                                 type="file"
                                 onChange={handleFileChange}
+                                disabled={loading}
                             />
+                            <label htmlFor="fileInput">
+                                <Button
+                                    variant="contained"
+                                    component="span"
+                                    className={classes.inputButton}
+                                    startIcon={fileLoaded ? <CheckBoxIcon/> : <AttachFileIcon/>}
+                                    disabled={loading}
+                                >
+                                    {fileLoaded ? 'PDF Selected' : 'Select PDF'}
+                                </Button>
+                            </label>
+                        </Grid>
+
+                        <Grid item xs={12}>
+                            {/* Separate Submit button */}
                             <Button
                                 variant="contained"
-                                className={classes.loginButton}
-                                startIcon={<CloudUploadIcon/>}
-                                onClick={handleUploadClick}
-                                disabled={loading}
+                                color="primary"
+                                className={classes.inputButton}
+                                onClick={handleSubmit}
+                                startIcon={<FileUploadIcon/>}
+                                disabled={loading || !termsAccepted || !fileLoaded || !caseName} // Disable when loading, terms not accepted, or file not loaded
                             >
-                                Upload PDF
+                                Upload
                             </Button>
                         </Grid>
 
@@ -394,8 +441,8 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                     <TermsOfService/>
                 </div>
             </Modal>
-
-        </ThemeProvider>
+            </>
+        // </ThemeProvider>
     )
 }
 

@@ -222,7 +222,7 @@ def generate_doc_summary(tmp_file, case_uid):
         {
             "user": "gpt",
             "message": "I highlighted some items of interest in your doc. "
-            "I'm happy to answer any question you may have.",
+            "I'm happy to answer any further questions that you may have.",
         }
     )
     conversation.conversation = chat_log
@@ -274,10 +274,10 @@ def process_pdf(request, case_uid):
         # get relevant chunks for highlighting
         processor = DocumentProcessor(conversation.case.uid)
         docs_and_scores = processor.vectorstore.similarity_search_with_score(
-            user_message, k=3, filter=processor.filter_query
+            user_message, k=6, filter=processor.filter_query
         )
         # Highlight the text in each of the top three documents
-        docs_with_highest_scores = sorted(docs_and_scores, key=lambda x: x[1], reverse=True)[:3]
+        docs_with_highest_scores = sorted(docs_and_scores, key=lambda x: x[1], reverse=True)[:2]
 
         processor.clear_highlights(conversation.temp_file)
 
@@ -344,7 +344,7 @@ class DocumentProcessor:
             return JsonResponse({"error": "Invalid case UID"}, status=400)
 
         retriever = self.vectorstore.as_retriever(
-            search_kwargs={"filter": self.filter_query, "k": 4},
+            search_kwargs={"filter": self.filter_query, "k": 6},
             retriever_kwargs={
                 "search_kwargs": {"filter": self.filter_query},
             },
@@ -484,10 +484,10 @@ class DocumentProcessor:
     # upsert the embeddings to Pinecone
     def store_vectors(self, file, case, user):
         total_tokens = 0
-        start = time.time()
+        # start = time.time()
 
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=256,
+            chunk_size=100,
             chunk_overlap=0,
             length_function=tiktoken_len,
             separators=["\n\n", "\n", " ", ""],
