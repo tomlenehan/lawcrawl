@@ -20,6 +20,7 @@ from django.http import FileResponse
 from django.http import HttpResponseForbidden
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
+from langchain.document_loaders import PyMuPDFLoader
 from .models import CaseConversation, UploadedFile, Case
 from lawcrawl.storages import UploadStorage
 import jwt
@@ -89,39 +90,39 @@ def upload_file(request):
 
         # Generate a unique filename with the same extension as the uploaded file
         file_extension = os.path.splitext(uploaded_file_obj.name)[1]
-        obf_filename = f"{uuid.uuid4()}{file_extension}"
-        temp_file_path = os.path.join(temp_dir, obf_filename)
+        temp_filename = f"{uuid.uuid4()}{file_extension}"
+        temp_file_path = os.path.join(temp_dir, temp_filename)
 
+        # store the file locally
         try:
-            # Save the uploaded file to the temporary location
-            with open(temp_file_path, "wb+") as destination:
+            with open(temp_file_path, "wb+") as temp_file:
                 for chunk in uploaded_file_obj.chunks():
-                    destination.write(chunk)
-
-        except FileNotFoundError as e:
+                    temp_file.write(chunk)
+            # File has been written to disk at this point
+        except IOError as e:
+            # Handle the error, e.g., return an error response or raise an exception
             return JsonResponse(
                 {"error": f"An error occurred while saving the file: {str(e)}"},
                 status=500,
             )
 
-        # Handle case creation
+        # sanitize_pdf(temp_file_path, ocred_pdf_path)
         case = Case.objects.create(name=case_name, user=request.user)
 
         try:
             # Create embeddings from the pdf
             processor = DocumentProcessor(case.uid)
-            processor.store_vectors(file=temp_file_path, case=case, user=request.user)
+            processor.store_vectors(case, request.user, temp_file_path)
         except ValueError as e:
             # Clean up: Remove the temporary file
             shutil.rmtree(temp_file_path)
             return JsonResponse({"error": str(e)}, status=400)
 
+        # Generate a summary of the doc
+        generate_doc_summary(temp_filename, case.uid)
+
         # Save the file from the temp location to S3
         case_document_storage = UploadStorage()
-
-        # Generate a summary of the doc
-        generate_doc_summary(obf_filename, case.uid)
-
         # Save the file from the temp location to S3
         with open(temp_file_path, "rb") as f:
             file_name = case_document_storage.save(uploaded_file_obj.name, f)
@@ -132,53 +133,16 @@ def upload_file(request):
 
         case_dict = model_to_dict(case)
 
-        return JsonResponse(
-            {"message": "Success", "case": case_dict}, status=201
-        )
+        return JsonResponse({"message": "Success", "case": case_dict}, status=201)
 
     return JsonResponse({"error": "Bad request or not authenticated"}, status=400)
-
-
-def get_doc_url(conversation):
-
-    if conversation.temp_file:
-        temp_file_path = conversation.temp_file
-
-    else:
-        uploaded_file = UploadedFile.objects.filter(case=conversation.case).first()
-        s3_client = boto3.client(
-            "s3",
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        )
-        bucket_name = UploadStorage.bucket_name
-        signed_url = s3_client.generate_presigned_url(
-            "get_object",
-            Params={"Bucket": bucket_name, "Key": uploaded_file.object_key},
-            ExpiresIn=3600,  # expires in 1 hour
-        )
-
-        # Fetch the document from S3 using the signed URL
-        response = requests.get(signed_url)
-        response.raise_for_status()
-
-        # Save the fetched content as a temporary file
-        temp_dir = tempfile.mkdtemp()
-        temp_file_path = os.path.join(temp_dir, os.path.basename(uploaded_file.object_key))
-        with open(temp_file_path, "wb") as temp_file:
-            temp_file.write(response.content)
-
-        conversation.temp_file = uploaded_file.object_key
-        conversation.save()
-
-    temp_file_url = reverse("serve_pdf", args=[os.path.basename(temp_file_path)])
-    return temp_file_url
 
 
 def tiktoken_len(text):
     tokenizer = tiktoken.get_encoding("cl100k_base")
     tokens = tokenizer.encode(text)
     return len(tokens)
+
 
 @csrf_exempt
 @access_token_required
@@ -205,7 +169,6 @@ def chat_message(request):
 
 # start the chat by highlighting the key points of the doc
 def generate_doc_summary(tmp_file, case_uid):
-
     # message = """Analyze the provided legal document delimited by triple backquotes and summarize the key points. Instead of numbering key points, create new lines. Identify any clauses that are non-standard for this type of agreement and highlight any sections that require further review or clarification."
     message = """Analyze the provided legal document delimited by triple backquotes and summarize the key points. Instead of numbering key points, create new lines. Identify any clauses that are non-standard for this type of agreement and highlight any sections that require further review or clarification. Your response should be less than 200 words."
                    ```{text}```
@@ -253,8 +216,8 @@ def fetch_conversation(request, case_uid):
 def get_latest_user_message(conversation):
     # Reverse iterate through the conversation list
     for message_obj in reversed(conversation.conversation):
-        if message_obj['user'] == 'me':
-            return message_obj['message']
+        if message_obj["user"] == "me":
+            return message_obj["message"]
     return None
 
 
@@ -274,12 +237,15 @@ def process_pdf(request, case_uid):
         # get relevant chunks for highlighting
         processor = DocumentProcessor(conversation.case.uid)
         docs_and_scores = processor.vectorstore.similarity_search_with_score(
-            user_message, k=6, filter=processor.filter_query
+            user_message, k=12, filter=processor.filter_query
         )
         # Highlight the text in each of the top three documents
-        docs_with_highest_scores = sorted(docs_and_scores, key=lambda x: x[1], reverse=True)[:2]
+        docs_with_highest_scores = sorted(
+            docs_and_scores, key=lambda x: x[1], reverse=True
+        )[:4]
 
-        processor.clear_highlights(conversation.temp_file)
+        processor.pull_from_s3(conversation)
+        processor.clear_highlights(conversation)
 
         for doc, score in docs_with_highest_scores:
             processor.highlight_text(doc.page_content, conversation.temp_file)
@@ -291,23 +257,17 @@ def process_pdf(request, case_uid):
         return HttpResponseForbidden("File not found.")
 
 
-def pdf_to_text(pdf_path):
-    try:
-        doc = fitz.open(pdf_path)
-    except Exception as e:
-        raise ValueError("Invalid PDF file")
-
-    if len(doc) > 100:
-        raise ValueError("Your file exceeds the 100 page limit!")
-
-    text = ""
-    page_texts = []
-    for page in doc:
-        page_text = page.get_text("text")
-        text += page_text
-        page_texts.append({"text": page_text, "page_number": page.number})
-    # return text, page_texts
-    return text
+# def sanitize_pdf(input_pdf_path, output_pdf_path):
+#     try:
+#         ocrmypdf.ocr(
+#             input_pdf_path,
+#             output_pdf_path,
+#             clean_final=True,
+#             force_ocr=True,
+#             language="eng",
+#         )
+#     except Exception as e:
+#         raise ValueError(f"Error during OCR processing: {str(e)}")
 
 
 class DocumentProcessor:
@@ -323,7 +283,7 @@ class DocumentProcessor:
 
         self.llm = ChatOpenAI(
             openai_api_key=self.openai_api_key,
-            model_name="gpt-4",
+            model_name="gpt-4-1106-preview",
             temperature=0.7,
         )
 
@@ -407,29 +367,76 @@ class DocumentProcessor:
 
         return {"conversation": conversation, "answer": response["answer"]}
 
+    @csrf_exempt
+    def pull_from_s3(self, conversation):
+        temp_file_path = os.path.join(
+            settings.TMP_DIR, os.path.basename(conversation.temp_file)
+        )
+        if os.path.isfile(temp_file_path) == False:
+            uploaded_file = UploadedFile.objects.filter(case=conversation.case).first()
+            s3_client = boto3.client(
+                "s3",
+                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            )
+            bucket_name = UploadStorage.bucket_name
+            signed_url = s3_client.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": bucket_name, "Key": uploaded_file.object_key},
+                ExpiresIn=3600,  # expires in 1 hour
+            )
 
-    def clear_highlights(self, file_name):
-        file_path = os.path.join(settings.TMP_DIR, file_name)
+            # Fetch the document from S3 using the signed URL
+            response = requests.get(signed_url)
+            response.raise_for_status()
 
+            # Save the fetched content as a temporary file
+            temp_dir = tempfile.mkdtemp()
+            temp_file_path = os.path.join(
+                temp_dir, os.path.basename(uploaded_file.object_key)
+            )
+            with open(temp_file_path, "wb") as temp_file:
+                temp_file.write(response.content)
+
+            conversation.temp_file = uploaded_file.object_key
+            conversation.save()
+
+    def clear_highlights(self, conversation):
+
+        file_path = os.path.join(settings.TMP_DIR, conversation.temp_file)
         doc = fitz.open(file_path)
-        # clear the highlights
+        # Clear the highlights
         for page in doc:
-            # First, clear the highlights
+            # Remove the annotations (highlights are a type of annotation)
             doc.xref_set_key(page.xref, "Annots", "null")
 
-        # Save the changes to the PDF
-        doc.save(file_path, incremental=1, encryption=0)
-        return doc
+        # Save the changes by overwriting the original file
+        try:
+            # if doc is repaired, save to new file
+            if doc.is_repaired:
+                temp_file_name = f"repaired_{conversation.temp_file}"
+                file_path = os.path.join(
+                    settings.TMP_DIR, temp_file_name
+                )
+                doc.save(file_path, encryption=0)
+                conversation.temp_file = temp_file_name
+                conversation.save()
+            else:
+                doc.save(file_path, incremental=1, encryption=0)
+        except RuntimeError as e:
+            # If there's an error during saving, handle it appropriately
+            raise RuntimeError(f"Error saving file: {e}")
+
+        doc.close()
+        return file_path
 
     def highlight_text(self, text_to_highlight, temp_file):
         file_path = os.path.join(settings.TMP_DIR, temp_file)
 
         if not isinstance(text_to_highlight, str):
             raise ValueError("text_to_highlight must be a string")
-
         # Define a regular expression pattern that matches strings with at least one alphabetical character
-        valid_phrase_pattern = re.compile(r'[A-Za-z]')
-
+        valid_phrase_pattern = re.compile(r"[A-Za-z]")
         # Open the original PDF
         doc = fitz.open(file_path)
 
@@ -437,57 +444,45 @@ class DocumentProcessor:
             phrase
             for phrase in text_to_highlight.strip().splitlines()
             if len(phrase.strip()) > 20 and valid_phrase_pattern.search(phrase)
+            if valid_phrase_pattern.search(phrase)
         ]
 
         for page in doc:
-            # First, clear the highlights
-            # doc.xref_set_key(page.xref, "Annots", "null")
 
             for phrase in phrases:
                 areas = page.search_for(phrase)
                 if areas:
                     for area in areas:
                         highlight = page.add_highlight_annot(area)
-                        highlight.set_colors(
-                            {
-                                "stroke": (0.698, 0.874, 0.858)
-                            }
-                        )
+                        highlight.set_colors({"stroke": (0.698, 0.874, 0.858)})
                         highlight.update()
 
         # Save the changes to the PDF
         doc.save(file_path, incremental=1, encryption=0)
         return doc
 
-
-
     # create embeddings and track tokens
-    def generate_vectors(self, texts):
-        tokens = sum(tiktoken_len(text) for text in texts)
-        vectors = self.embed.embed_documents(texts)
-        return vectors, tokens
+    # def generate_vectors(self, texts):
+    #     tokens = sum(tiktoken_len(text) for text in texts)
+    #     vectors = self.embed.embed_documents(texts)
+    #     return vectors, tokens
 
     # Function to upsert embeddings to Pinecone
-    def upsert_to_pinecone(self, texts_to_upsert, metadatas_to_upsert):
-        if texts_to_upsert:
-            ids = [str(uuid4()) for _ in range(len(texts_to_upsert))]
-            vectors, tokens = self.generate_vectors(texts_to_upsert)
-            vector_pkg = list(zip(ids, vectors, metadatas_to_upsert))
+    def upsert_to_pinecone(self, texts, metadatas):
+        if texts:
+            ids = [str(uuid4()) for _ in range(len(texts))]
+            vectors = self.embed.embed_documents(texts)
+            vector_pkg = list(zip(ids, vectors, metadatas))
             self.index.upsert(
                 vectors=vector_pkg,
                 namespace=self.namespace,
                 batch_size=self.batch_limit,
             )
-            return sum(tiktoken_len(text) for text in texts_to_upsert)
-        return 0
 
     # upsert the embeddings to Pinecone
-    def store_vectors(self, file, case, user):
-        total_tokens = 0
-        # start = time.time()
-
+    def store_vectors(self, case, user, temp_file_path):
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=100,
+            chunk_size=150,
             chunk_overlap=0,
             length_function=tiktoken_len,
             separators=["\n\n", "\n", " ", ""],
@@ -503,36 +498,24 @@ class DocumentProcessor:
             "user_email": user.email,
         }
 
-        # get PDF text and check page number limit
-        try:
-            pdf_text = pdf_to_text(file)
-        except ValueError as e:
-            print(e)
-            raise e
-
-        # split the text
-        pdf_texts = text_splitter.split_text(pdf_text)
+        text_chunks = []
+        loader = PyMuPDFLoader(temp_file_path)
+        docs = loader.load()
+        for doc in docs:
+            # split the text into chunks
+            texts = text_splitter.split_text(doc.page_content)
+            for text in texts:
+                text_chunks.append(text)
 
         pdf_metadatas = [
-            {"chunk": j, "text": text, **metadata} for j, text in enumerate(pdf_texts)
+            {"chunk": j, "text": text, **metadata} for j, text in enumerate(text_chunks)
         ]
 
         # Process and upsert embeddings in batches
-        for i in range(0, len(pdf_texts), self.batch_limit):
-            batch_texts = pdf_texts[i : i + self.batch_limit]
+        for i in range(0, len(text_chunks), self.batch_limit):
+            batch_texts = text_chunks[i : i + self.batch_limit]
             batch_metadatas = pdf_metadatas[i : i + self.batch_limit]
-            total_tokens += self.upsert_to_pinecone(batch_texts, batch_metadatas)
-
-        # end = time.time()
-        # duration = end - start
-        # cost_per_token = (
-        #     0.0004 * 0.001
-        # )  # $0.0004 per 1K tokens for text-embedding-ada-002
-        # total_cost = total_tokens * cost_per_token
-
-        # print("total_cost=", total_cost)
-        # print("duration=", duration)
-        # print(self.index.describe_index_stats())
+            self.upsert_to_pinecone(batch_texts, batch_metadatas)
 
 
 # @csrf_exempt
