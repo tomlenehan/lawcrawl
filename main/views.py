@@ -242,7 +242,7 @@ def process_pdf(request, case_uid):
         # Highlight the text in each of the top three documents
         docs_with_highest_scores = sorted(
             docs_and_scores, key=lambda x: x[1], reverse=True
-        )[:4]
+        )[:6]
 
         processor.pull_from_s3(conversation)
         processor.clear_highlights(conversation)
@@ -402,7 +402,6 @@ class DocumentProcessor:
             conversation.save()
 
     def clear_highlights(self, conversation):
-
         file_path = os.path.join(settings.TMP_DIR, conversation.temp_file)
         doc = fitz.open(file_path)
         # Clear the highlights
@@ -415,9 +414,7 @@ class DocumentProcessor:
             # if doc is repaired, save to new file
             if doc.is_repaired:
                 temp_file_name = f"repaired_{conversation.temp_file}"
-                file_path = os.path.join(
-                    settings.TMP_DIR, temp_file_name
-                )
+                file_path = os.path.join(settings.TMP_DIR, temp_file_name)
                 doc.save(file_path, encryption=0)
                 conversation.temp_file = temp_file_name
                 conversation.save()
@@ -435,27 +432,42 @@ class DocumentProcessor:
 
         if not isinstance(text_to_highlight, str):
             raise ValueError("text_to_highlight must be a string")
-        # Define a regular expression pattern that matches strings with at least one alphabetical character
+
+        # Regular expression to match the "(PAR Form xxxx)" pattern
+        par_form_pattern = re.compile(r"\(PAR Form [^\)]+\)")
+
+        # Regular expression to match strings with at least one alphabetical character
         valid_phrase_pattern = re.compile(r"[A-Za-z]")
-        # Open the original PDF
+
+        # Remove all instances of "(PAR Form xxxx)" from the text
+        text_to_highlight = par_form_pattern.sub("", text_to_highlight)
+
+        # Split the text into phrases, filter based on conditions, remove duplicates by converting to a set, then back to a list
+        phrases = list(
+            set(
+                phrase
+                for phrase in map(str.strip, text_to_highlight.splitlines())
+                if len(phrase) > 20 and valid_phrase_pattern.search(phrase)
+            )
+        )
+
         doc = fitz.open(file_path)
 
-        phrases = [
-            phrase
-            for phrase in text_to_highlight.strip().splitlines()
-            if len(phrase.strip()) > 20 and valid_phrase_pattern.search(phrase)
-            if valid_phrase_pattern.search(phrase)
-        ]
+        # Keep track of highlighted phrases to avoid duplicates on different pages
+        highlighted_phrases = set()
 
         for page in doc:
-
             for phrase in phrases:
-                areas = page.search_for(phrase)
-                if areas:
-                    for area in areas:
-                        highlight = page.add_highlight_annot(area)
-                        highlight.set_colors({"stroke": (0.698, 0.874, 0.858)})
-                        highlight.update()
+                if phrase not in highlighted_phrases:
+                    areas = page.search_for(phrase)
+                    if areas:
+                        for area in areas:
+                            highlight = page.add_highlight_annot(area)
+                            highlight.set_colors({"stroke": (0.698, 0.874, 0.858)})
+                            highlight.update()
+                        highlighted_phrases.add(
+                            phrase
+                        )
 
         # Save the changes to the PDF
         doc.save(file_path, incremental=1, encryption=0)
