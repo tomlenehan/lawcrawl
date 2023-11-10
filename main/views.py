@@ -84,6 +84,7 @@ def upload_file(request):
         temp_dir = settings.TMP_DIR
         uploaded_file_obj = request.FILES["file"]
         case_name = request.POST.get("case_name", None)
+        document_type = request.POST.get("document_type", None)
 
         if not os.path.exists(temp_dir):
             os.makedirs(temp_dir)
@@ -128,7 +129,7 @@ def upload_file(request):
             file_name = case_document_storage.save(uploaded_file_obj.name, f)
         file_url = case_document_storage.url(file_name)
 
-        uploaded_file = UploadedFile(case=case, object_key=file_name)
+        uploaded_file = UploadedFile(case=case, object_key=file_name, document_type=document_type)
         uploaded_file.save()
 
         case_dict = model_to_dict(case)

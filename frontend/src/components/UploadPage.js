@@ -79,6 +79,7 @@ const useStyles = makeStyles((theme) => ({
     },
     textField: {
         minWidth: 200,
+        height: 55,
         width: '100%',
         color: '#3a3a3a',
     },
@@ -131,9 +132,11 @@ const UploadPage = ({isAuthenticated, userCases}) => {
     const [loading, setLoading] = React.useState(false);
     const [caseName, setCaseName] = React.useState('');
     const [selectedState, setSelectedState] = React.useState('');
+    const [selectedDocumentType, setSelectedDocumentType] = React.useState('');
     const [errorMessage, setErrorMessage] = React.useState(null);
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [fileLoaded, setFileLoaded] = React.useState(false);
+    const [fileName, setFileName] = React.useState("");
     const [openModal, setOpenModal] = useState(false);
     const token = localStorage.getItem('access');
     const navigate = useNavigate();
@@ -164,8 +167,18 @@ const UploadPage = ({isAuthenticated, userCases}) => {
         // Check if the files are selected
         if (event.target.files.length > 0) {
             setFileLoaded(true);
+            const selectedFile = event.target.files[0];
+            setFileName(selectedFile.name);
         } else {
             setFileLoaded(false);
+        }
+    };
+
+    const truncateString = (str, num) => {
+        if (str.length > num) {
+            return str.slice(0, num) + "...";
+        } else {
+            return str;
         }
     };
 
@@ -182,6 +195,9 @@ const UploadPage = ({isAuthenticated, userCases}) => {
             return;
         } else if (!selectedState) {
             setErrorMessage("Please select a state before proceeding.");
+            return;
+        } else if (!selectedDocumentType) {
+            setErrorMessage("Please select a document type before proceeding.");
             return;
         }
         // Clear any existing error messages
@@ -203,6 +219,7 @@ const UploadPage = ({isAuthenticated, userCases}) => {
 
         formData.append('case_name', caseName);
         formData.append('state', selectedState);
+        formData.append('document_type', selectedDocumentType);
 
         try {
             // Start the upload
@@ -255,22 +272,23 @@ const UploadPage = ({isAuthenticated, userCases}) => {
             <div className={classes.root}>
                 <div className={classes.homePageContainer}>
                     <Grid container spacing={3} direction="column" alignItems="center">
+
                         <Grid item xs={12}>
                             <Typography style={{fontSize: '1.7vw'}}>
-                                {loading ? "Processing Document..." : (
-                                    "Upload your document"
-                                )}
+                                {loading ? "Processing Document..." : "Upload your document"}
                             </Typography>
-                            {loading &&
-                                <Typography style={{fontSize: '1.2vw'}}>
-                                    This will take a moment
-                                </Typography>
-                            }
+                            <Typography style={{
+                                fontSize: '1.2vw',
+                                visibility: loading ? 'visible' : 'hidden'
+                            }}>
+                                This will take a moment
+                            </Typography>
                         </Grid>
+
                         <Grid item xs={12}>
 
                             {/*show progress*/}
-                            {loading && <LinearProgress color="primary" size="lg" />}
+                            {loading && <LinearProgress color="primary" size="lg"/>}
                             {/*Display errors*/}
                             {
                                 errorMessage && <div className={classes.error}>{errorMessage}</div>
@@ -291,7 +309,7 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                             />
                         </Grid>
 
-                        <Grid item xs={12}>
+                        <Grid item xs={12} style={{marginTop: 15}}>
                             <FormControl variant="outlined" className={classes.textField}
                                          disabled={loading}>
                                 <InputLabel id="state-label"
@@ -357,6 +375,31 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                             </FormControl>
                         </Grid>
 
+
+                        <Grid item xs={12}>
+                            <FormControl variant="outlined" className={classes.textField}
+                                         disabled={loading}>
+                                <InputLabel id="document-type-label"
+                                            className={classes.blackLabel}>
+                                    Document Type
+                                </InputLabel>
+                                <Select
+                                    labelId="document-type-label"
+                                    value={selectedDocumentType}
+                                    onChange={e => setSelectedDocumentType(e.target.value)}
+                                    className={`${classes.textField} ${classes.creamInput}`}
+                                    label="Document Type"
+                                >
+                                    <MenuItem value="contract">Contract</MenuItem>
+                                    <MenuItem value="invoice">Invoice</MenuItem>
+                                    <MenuItem value="agreement">Agreement</MenuItem>
+                                    <MenuItem value="report">Report</MenuItem>
+                                    <MenuItem value="letter">Letter</MenuItem>
+                                    <MenuItem value="other">Other</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Grid>
+
                         <Grid item xs={12} style={{
                             display: 'flex',
                             flexDirection: 'column',
@@ -384,7 +427,6 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                                     Terms of Service.
                                 </Typography>
                             </div>
-
                         </Grid>
 
                         <Grid item xs={12}>
@@ -406,7 +448,7 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                                     startIcon={fileLoaded ? <CheckBoxIcon/> : <AttachFileIcon/>}
                                     disabled={loading}
                                 >
-                                    {fileLoaded ? 'PDF Selected' : 'Select PDF'}
+                                    {fileLoaded ? truncateString(fileName, 20) : 'Select PDF'}
                                 </Button>
                             </label>
                         </Grid>
@@ -419,13 +461,14 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                                 className={classes.inputButton}
                                 onClick={handleSubmit}
                                 startIcon={<FileUploadIcon/>}
-                                disabled={loading || !termsAccepted || !fileLoaded || !caseName} // Disable when loading, terms not accepted, or file not loaded
+                                disabled={loading || !termsAccepted || !fileLoaded || !caseName || !selectedState || !selectedDocumentType}
                             >
                                 Upload
                             </Button>
                         </Grid>
 
                     </Grid>
+
                 </div>
             </div>
             <Footer/>
@@ -441,7 +484,7 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                     <TermsOfService/>
                 </div>
             </Modal>
-            </>
+        </>
         // </ThemeProvider>
     )
 }
