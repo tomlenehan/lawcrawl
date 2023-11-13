@@ -18,7 +18,6 @@ const initialState = {
 export default function(state=initialState,action){
     switch (action.type){
         case TWITTER_AUTH_SUCCESS:
-            console.log('success');
             localStorage.setItem('access', action.payload.access);
             localStorage.setItem('refresh', action.payload.refresh);
             localStorage.setItem('user', action.payload.user);
@@ -31,7 +30,6 @@ export default function(state=initialState,action){
             }
         case TWITTER_AUTH_FAIL:
         case GOOGLE_AUTH_SUCCESS:
-            console.log(action.payload)
             localStorage.setItem('access',action.payload.access)
             return{
                 ...state,

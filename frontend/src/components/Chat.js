@@ -228,7 +228,6 @@ const Chat = () => {
                     },
                     responseType: 'blob',
                 });
-                console.log('processing_pdf');
                 const pdfBlob = new Blob([response.data], {type: 'application/pdf'});
                 setFile(pdfBlob);
             } catch (error) {
@@ -269,7 +268,6 @@ const Chat = () => {
     useEffect(() => {
         const setCurrentCaseFromLocation = () => {
             try {
-                console.log('getting_current_case');
                 const queryParams = new URLSearchParams(window.location.search);
                 const urlCaseUid = queryParams.get('uid');
 
@@ -358,7 +356,7 @@ const Chat = () => {
                 })
             });
             const data = await response.json();
-            console.log("setting_chat_log");
+
             setChatLog(prevChatLog => [
                 ...prevChatLog,
                 {user: "gpt", message: data.message}
@@ -371,7 +369,6 @@ const Chat = () => {
     }
 
     const handleKeyPress = (e) => {
-        console.log("key_pressed");
         if (e.key === 'Enter' && !e.shiftKey && input.trim()) {
             handleSubmit(e);
         }
@@ -388,12 +385,9 @@ const Chat = () => {
     // Scroll the chat log to the bottom whenever the chatLog state changes
     useEffect(() => {
         if (chatLogRef.current) {
-            console.log('scrolling_to_bottom');
-            console.log('Before:', chatLogRef.current.scrollTop, chatLogRef.current.scrollHeight);
             setTimeout(() => {
                 chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
             }, 100);
-            console.log('After:', chatLogRef.current.scrollTop);
         }
     }, [chatLog]);
 

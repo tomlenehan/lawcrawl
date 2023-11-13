@@ -4,10 +4,12 @@ import {Document, Page} from 'react-pdf';
 import {StyleSheet} from '@react-pdf/renderer';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
-
+import ArrowForwardIosIcon from '@material-ui/icons/ArrowForwardIos';
+import ArrowBackIosIcon from '@material-ui/icons/ArrowBackIos';
 import {pdfjs} from "react-pdf";
 import {makeStyles} from '@material-ui/core/styles';
 import {SizeMe} from 'react-sizeme';
+import {Button} from "@material-ui/core";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 
@@ -20,16 +22,43 @@ const styles = StyleSheet.create({
 });
 
 const useStyles = makeStyles({
+    pdfContainer: {
+        position: 'relative',
+        height: '100%',
+    },
     pdfWrapper: {
         height: '100%',
         overflowY: 'scroll',
         borderRadius: 15,
-        position: 'relative',
     },
     pdfPage: {
         color: '#3a3a3a',
-        backgroundColor: '#e0f2f1'
-    }
+        backgroundColor: '#e0f2f1',
+    },
+    navIcon: {
+        color: '#80cbc4',
+        '&disabled': {
+            color: '#bdbdbd',
+        },
+        '&:hover': {
+            backgroundColor: '#26a69a',
+        },
+    },
+    navigationButton: {
+        position: 'absolute',
+        top: '10%',
+        zIndex: 1000,
+        backgroundColor: 'white',
+        '&:hover': {
+            backgroundColor: '#26a69a',
+        },
+    },
+    backButton: {
+        left: '10px',
+    },
+    forwardButton: {
+        right: '10px',
+    },
 });
 
 const PdfViewer = ({file}) => {
@@ -38,6 +67,8 @@ const PdfViewer = ({file}) => {
     const [searchText, setSearchText] = useState('');
     const [loaded, setLoaded] = useState(false);
     const [scrolledToHighlight, setScrolledToHighlight] = useState(false);
+    const [highlightedRegions, setHighlightedRegions] = useState([]);
+    const [currentRegionIndex, setCurrentRegionIndex] = useState(0);
     const containerRef = useRef();
     // const textRenderer = useCallback(
     //     (textItem) => highlightPattern(textItem.str, searchText),
@@ -53,73 +84,100 @@ const PdfViewer = ({file}) => {
     };
 
     function onChange(event) {
-        console.log('highlighting1');
         setSearchText(event.target.value);
     }
 
     function onDocumentLoadSuccess({numPages}) {
-        console.log("setting num pages");
         setNumPages(numPages);
     }
 
-    useEffect(() => {
-        if (loaded && !scrolledToHighlight && containerRef.current) {
-            const observer = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                    if (mutation.addedNodes.length > 0) {
-                        const svgElements = containerRef.current.querySelectorAll('svg.quadrilateralsContainer');
-                        if (svgElements.length > 0) {
-                            svgElements[0].scrollIntoView({behavior: 'smooth', block: 'center'});
-                            setScrolledToHighlight(true);
-                            observer.disconnect(); // Stop observing once we've scrolled to the element
-                        }
-                    }
-                });
-            });
+useEffect(() => {
+    if (loaded && containerRef.current) {
+        const maxWaitTime = 10000; // Maximum wait time in milliseconds (e.g., 10 seconds)
+        const intervalTime = 500; // Interval time in milliseconds for checking SVG elements
+        let elapsedTime = 0;
 
-            observer.observe(containerRef.current, {childList: true, subtree: true});
+        const checkSvgElements = () => {
+            const renderedPages = containerRef.current.querySelectorAll('.react-pdf__Page');
+            if (renderedPages.length === numPages) {
+                const svgElements = containerRef.current.querySelectorAll('svg.quadrilateralsContainer');
+                if (svgElements.length > 0 || elapsedTime >= maxWaitTime) {
+                    setHighlightedRegions(Array.from(svgElements));
+                    svgElements[0].scrollIntoView({behavior: 'smooth', block: 'center'});
+                    setScrolledToHighlight(true);
+                    clearInterval(intervalId);
+                }
+            }
+            elapsedTime += intervalTime;
+        };
 
-            // Clean up observer when component unmounts
-            return () => observer.disconnect();
+        const intervalId = setInterval(checkSvgElements, intervalTime);
+
+        return () => clearInterval(intervalId); // Cleanup interval on component unmount
+    }
+}, [loaded, numPages]);
+
+
+
+    const scrollToRegion = (index) => {
+        if (index >= 0 && index < highlightedRegions.length) {
+            highlightedRegions[index].scrollIntoView({behavior: 'smooth', block: 'center'});
+            setCurrentRegionIndex(index);
         }
-    }, [loaded, scrolledToHighlight]);
+    };
+
+    const scrollToNextRegion = () => scrollToRegion(currentRegionIndex + 1);
+    const scrollToPrevRegion = () => scrollToRegion(currentRegionIndex - 1);
 
 
     return (
-        <div ref={containerRef} className={classes.pdfWrapper}>
-            {/*<label htmlFor="search">Search:</label>*/}
-            {/*<input type="search" id="search" value={searchText} onChange={onChange}/>*/}
-            <SizeMe
-                monitorHeight
-                refreshRate={128}
-                refreshMode={"debounce"}
-                render={({size}) => (
-                    // <div style={{maxHeight: '100%', overflowY: "hidden"}}>
-                    <Document
-                        file={file}
-                        onLoadSuccess={onDocumentLoadSuccess}
-                    >
-                        {Array.from(
-                            new Array(numPages),
-                            (el, index) => (
-                                <Page
-                                    key={`page_${index + 1}`}
-                                    pageNumber={index + 1}
-                                    width={size.width}
-                                    // customTextRenderer={textRenderer}
-                                    onRenderSuccess={handlePageRender}
-                                    className={classes.pdfPage}
-                                    style={styles.page}
-                                />
-                            ),
-                        )}
-                    </Document>
-
-                )}/>
-            <div>
+        <div className={classes.pdfContainer}>
+            <div ref={containerRef} className={classes.pdfWrapper}>
+                <SizeMe
+                    monitorHeight
+                    refreshRate={128}
+                    refreshMode={"debounce"}
+                    render={({size}) => (
+                        <Document
+                            file={file}
+                            onLoadSuccess={onDocumentLoadSuccess}
+                        >
+                            {Array.from(
+                                new Array(numPages),
+                                (el, index) => (
+                                    <Page
+                                        key={`page_${index + 1}`}
+                                        pageNumber={index + 1}
+                                        width={size.width}
+                                        onRenderSuccess={handlePageRender}
+                                        className={classes.pdfPage}
+                                        style={styles.page}
+                                    />
+                                ),
+                            )}
+                        </Document>
+                    )}
+                />
             </div>
+
+            <Button
+                className={`${classes.navigationButton} ${classes.backButton}`}
+                onClick={scrollToPrevRegion}
+                disabled={currentRegionIndex === 0}
+            >
+                <ArrowBackIosIcon className={classes.navIcon} />
+            </Button>
+
+            <Button
+                className={`${classes.navigationButton} ${classes.forwardButton}`}
+                onClick={scrollToNextRegion}
+                disabled={currentRegionIndex === highlightedRegions.length - 1}
+            >
+                <ArrowForwardIosIcon className={classes.navIcon} />
+            </Button>
         </div>
     );
+
 }
 
 export default PdfViewer;

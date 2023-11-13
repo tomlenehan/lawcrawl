@@ -91,7 +91,6 @@ const LoginPage = ({isAuthenticated}) => {
     const loginWithTwitter = async () => {
         // Logic for logging in with Twitter
         try {
-            console.log("REACT_APP_API_URL:", process.env.REACT_APP_API_URL);
             const res = await axios.get(`/auth/o/twitter/?redirect_uri=${process.env.REACT_APP_API_URL}/upload`)
             window.location.replace(res.data.authorization_url)
 

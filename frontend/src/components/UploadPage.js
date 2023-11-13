@@ -273,13 +273,14 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                 <div className={classes.homePageContainer}>
                     <Grid container spacing={3} direction="column" alignItems="center">
 
-                        <Grid item xs={12}>
+                        <Grid item xs={12} style={{padding: 0}}>
                             <Typography style={{fontSize: '1.7vw'}}>
                                 {loading ? "Processing Document..." : "Upload your document"}
                             </Typography>
                             <Typography style={{
                                 fontSize: '1.2vw',
-                                visibility: loading ? 'visible' : 'hidden'
+                                visibility: loading ? 'visible' : 'hidden',
+                                // marginBottom: -10,
                             }}>
                                 This will take a moment
                             </Typography>
@@ -430,7 +431,6 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                         </Grid>
 
                         <Grid item xs={12}>
-                            {/* File input to load the file */}
                             <input
                                 accept="application/pdf"
                                 className={`${classes.fileInput} ${classes.inputButton}`}
@@ -448,7 +448,7 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                                     startIcon={fileLoaded ? <CheckBoxIcon/> : <AttachFileIcon/>}
                                     disabled={loading}
                                 >
-                                    {fileLoaded ? truncateString(fileName, 20) : 'Select PDF'}
+                                    {fileLoaded ? truncateString(fileName, 8) : 'Select PDF'}
                                 </Button>
                             </label>
                         </Grid>

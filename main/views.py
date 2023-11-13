@@ -9,6 +9,7 @@ import tempfile
 import shutil
 import json
 import fitz
+from fuzzywuzzy import fuzz
 from django.urls import reverse
 from django.utils import timezone
 from django.http import JsonResponse
@@ -129,7 +130,9 @@ def upload_file(request):
             file_name = case_document_storage.save(uploaded_file_obj.name, f)
         file_url = case_document_storage.url(file_name)
 
-        uploaded_file = UploadedFile(case=case, object_key=file_name, document_type=document_type)
+        uploaded_file = UploadedFile(
+            case=case, object_key=file_name, document_type=document_type
+        )
         uploaded_file.save()
 
         case_dict = model_to_dict(case)
@@ -225,6 +228,8 @@ def get_latest_user_message(conversation):
 @csrf_exempt
 @access_token_required
 def process_pdf(request, case_uid):
+    doc_number = 6
+
     try:
         conversation = CaseConversation.objects.get(case__uid=case_uid)
 
@@ -243,13 +248,16 @@ def process_pdf(request, case_uid):
         # Highlight the text in each of the top three documents
         docs_with_highest_scores = sorted(
             docs_and_scores, key=lambda x: x[1], reverse=True
-        )[:6]
+        )[:doc_number]
 
         processor.pull_from_s3(conversation)
         processor.clear_highlights(conversation)
 
         for doc, score in docs_with_highest_scores:
-            processor.highlight_text(doc.page_content, conversation.temp_file)
+            processor.fuzzy_highlight(doc.page_content, conversation.temp_file)
+
+        # for doc, score in docs_with_highest_scores:
+        #     processor.highlight_text(doc.page_content, conversation.temp_file)
 
         file_path = os.path.join(settings.TMP_DIR, conversation.temp_file)
         return FileResponse(open(file_path, "rb"), content_type="application/pdf")
@@ -428,51 +436,83 @@ class DocumentProcessor:
         doc.close()
         return file_path
 
-    def highlight_text(self, text_to_highlight, temp_file):
-        file_path = os.path.join(settings.TMP_DIR, temp_file)
-
-        if not isinstance(text_to_highlight, str):
-            raise ValueError("text_to_highlight must be a string")
-
-        # Regular expression to match the "(PAR Form xxxx)" pattern
-        par_form_pattern = re.compile(r"\(PAR Form [^\)]+\)")
-
-        # Regular expression to match strings with at least one alphabetical character
-        valid_phrase_pattern = re.compile(r"[A-Za-z]")
-
-        # Remove all instances of "(PAR Form xxxx)" from the text
-        text_to_highlight = par_form_pattern.sub("", text_to_highlight)
-
-        # Split the text into phrases, filter based on conditions, remove duplicates by converting to a set, then back to a list
-        phrases = list(
-            set(
-                phrase
-                for phrase in map(str.strip, text_to_highlight.splitlines())
-                if len(phrase) > 20 and valid_phrase_pattern.search(phrase)
-            )
+    def fuzzy_highlight(self, text_to_highlight, temp_file):
+        # Regular expression to match lines that consist only of numbers (possibly separated by spaces)
+        cleaned_text = re.sub(
+            r"^\s*(\d+\s*)+$", "", text_to_highlight, flags=re.MULTILINE
         )
 
+        file_path = os.path.join(settings.TMP_DIR, temp_file)
         doc = fitz.open(file_path)
 
-        # Keep track of highlighted phrases to avoid duplicates on different pages
-        highlighted_phrases = set()
-
         for page in doc:
-            for phrase in phrases:
-                if phrase not in highlighted_phrases:
-                    areas = page.search_for(phrase)
-                    if areas:
-                        for area in areas:
-                            highlight = page.add_highlight_annot(area)
-                            highlight.set_colors({"stroke": (0.698, 0.874, 0.858)})
-                            highlight.update()
-                        highlighted_phrases.add(
-                            phrase
-                        )
+            page_text = page.get_text("text")
 
-        # Save the changes to the PDF
+            # Calculate similarity score
+            similarity = fuzz.partial_ratio(page_text, cleaned_text)
+            if similarity > 80:  # Threshold for similarity
+                areas = page.search_for(cleaned_text)
+                if areas:
+                    # Create a bounding rect around all areas
+                    bounding_rect = fitz.Rect(areas[0])
+                    for area in areas[1:]:
+                        bounding_rect.include_rect(area)
+
+                    # Create a single highlight annotation for the bounding rect
+                    highlight = page.add_highlight_annot(bounding_rect)
+                    highlight.set_colors({"stroke": (0.698, 0.874, 0.858)})
+                    highlight.update()
+
         doc.save(file_path, incremental=1, encryption=0)
         return doc
+
+    # def highlight_text(self, text_to_highlight, temp_file):
+    #     file_path = os.path.join(settings.TMP_DIR, temp_file)
+    #
+    #     if not isinstance(text_to_highlight, str):
+    #         raise ValueError("text_to_highlight must be a string")
+    #
+    #     # Regular expression to match the "(PAR Form xxxx)" pattern
+    #     par_form_pattern = re.compile(r"\(PAR Form [^\)]+\)")
+    #
+    #     # Regular expression to match strings with at least one alphabetical character
+    #     valid_phrase_pattern = re.compile(r"[A-Za-z]")
+    #
+    #     # Remove all instances of "(PAR Form xxxx)" from the text
+    #     text_to_highlight = par_form_pattern.sub("", text_to_highlight)
+    #
+    #     # Split the text into phrases, filter based on conditions, remove duplicates by converting to a set, then back to a list
+    #     phrases = list(
+    #         set(
+    #             phrase
+    #             for phrase in map(str.strip, text_to_highlight.splitlines())
+    #             if len(phrase) > 20 and valid_phrase_pattern.search(phrase)
+    #         )
+    #     )
+    #
+    #     doc = fitz.open(file_path)
+    #
+    #     # Keep track of highlighted phrases to avoid duplicates on different pages
+    #     highlighted_phrases = set()
+    #
+    #     for page in doc:
+    #         for phrase in phrases:
+    #             if phrase not in highlighted_phrases:
+    #                 areas = page.search_for(phrase)
+    #                 if areas:
+    #                     # Create a bounding rect around all areas
+    #                     bounding_rect = fitz.Rect(areas[0])
+    #                     for area in areas[1:]:
+    #                         bounding_rect.include_rect(area)
+    #
+    #                     # Create a single highlight annotation for the bounding rect
+    #                     highlight = page.add_highlight_annot(bounding_rect)
+    #                     highlight.set_colors({"stroke": (0.698, 0.874, 0.858)})
+    #                     highlight.update()
+    #
+    #     # Save the changes to the PDF
+    #     doc.save(file_path, incremental=1, encryption=0)
+    #     return doc
 
     # create embeddings and track tokens
     # def generate_vectors(self, texts):

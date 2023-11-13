@@ -11,7 +11,7 @@ import axios from "axios";
 axios.defaults.withCredentials = true;
 
 export const googleAuthenticate = (state, code) => async dispatch =>{
-    console.log("google_redux");
+
     if( state && code && !localStorage.getItem('access')){
         const config = {
             headers: {
@@ -33,7 +33,6 @@ export const googleAuthenticate = (state, code) => async dispatch =>{
             dispatch({
                 type:GOOGLE_AUTH_FAIL
             })
-            console.log(err)
         }
     }
 }
@@ -54,13 +53,11 @@ export const twitterAuthenticate = (state, code, verifier) => async (dispatch) =
         try {
 
             const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/o/twitter/?${formBody}`, config)
-            console.log('Trying to authenticate');
             dispatch({
                 type: TWITTER_AUTH_SUCCESS,
 
                 payload: res.data
             })
-            console.log(res.data)
         } catch (err) {
             dispatch({
                 type: TWITTER_AUTH_FAIL

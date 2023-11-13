@@ -19,7 +19,6 @@ const StatusProgress = ({ bill_id }) => {
     const theme = useTheme();
 
     useEffect(() => {
-        console.log('Fetching bill actions');
         // Get bill actions from your backend
         axios.get(`/api/get_bill_actions/${bill_id}`)
             .then(response => {

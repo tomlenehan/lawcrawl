@@ -56,7 +56,6 @@ function AdComponent() {
                 return response.json();
             })
             .then(data => {
-                console.log('Data:', data);
                 setAds(data);
                 if (data.length > 0) {
                     setRandomAd(data[Math.floor(Math.random() * data.length)]);  // Update randomAd state when ads are fetched
