@@ -9,6 +9,7 @@ import tempfile
 import shutil
 import json
 import fitz
+import ocrmypdf
 from fuzzywuzzy import fuzz
 from django.urls import reverse
 from django.utils import timezone
@@ -82,52 +83,31 @@ def get_user_cases(request):
 @access_token_required
 def upload_file(request):
     if request.method == "POST" and request.user.is_authenticated:
-        temp_dir = settings.TMP_DIR
         uploaded_file_obj = request.FILES["file"]
         case_name = request.POST.get("case_name", None)
         document_type = request.POST.get("document_type", None)
 
-        if not os.path.exists(temp_dir):
-            os.makedirs(temp_dir)
+        temp_file = sanitize_pdf(uploaded_file_obj)
+        temp_file_path = os.path.join(settings.TMP_DIR, temp_file)
 
-        # Generate a unique filename with the same extension as the uploaded file
-        file_extension = os.path.splitext(uploaded_file_obj.name)[1]
-        temp_filename = f"{uuid.uuid4()}{file_extension}"
-        temp_file_path = os.path.join(temp_dir, temp_filename)
-
-        # store the file locally
-        try:
-            with open(temp_file_path, "wb+") as temp_file:
-                for chunk in uploaded_file_obj.chunks():
-                    temp_file.write(chunk)
-            # File has been written to disk at this point
-        except IOError as e:
-            # Handle the error, e.g., return an error response or raise an exception
-            return JsonResponse(
-                {"error": f"An error occurred while saving the file: {str(e)}"},
-                status=500,
-            )
-
-        # sanitize_pdf(temp_file_path, ocred_pdf_path)
         case = Case.objects.create(name=case_name, user=request.user)
 
         try:
             # Create embeddings from the pdf
             processor = DocumentProcessor(case.uid)
-            processor.store_vectors(case, request.user, temp_file_path)
+            processor.store_vectors(case, request.user, temp_file)
         except ValueError as e:
             # Clean up: Remove the temporary file
             shutil.rmtree(temp_file_path)
             return JsonResponse({"error": str(e)}, status=400)
 
         # Generate a summary of the doc
-        generate_doc_summary(temp_filename, case.uid)
+        generate_doc_summary(temp_file, case.uid)
 
         # Save the file from the temp location to S3
         case_document_storage = UploadStorage()
-        # Save the file from the temp location to S3
         with open(temp_file_path, "rb") as f:
-            file_name = case_document_storage.save(uploaded_file_obj.name, f)
+            file_name = case_document_storage.save(temp_file, f)
         file_url = case_document_storage.url(file_name)
 
         uploaded_file = UploadedFile(
@@ -172,7 +152,7 @@ def chat_message(request):
 
 
 # start the chat by highlighting the key points of the doc
-def generate_doc_summary(tmp_file, case_uid):
+def generate_doc_summary(temp_file, case_uid):
     # message = """Analyze the provided legal document delimited by triple backquotes and summarize the key points. Instead of numbering key points, create new lines. Identify any clauses that are non-standard for this type of agreement and highlight any sections that require further review or clarification."
     message = """Analyze the provided legal document delimited by triple backquotes and summarize the key points. Instead of numbering key points, create new lines. Identify any clauses that are non-standard for this type of agreement and highlight any sections that require further review or clarification. Your response should be less than 200 words."
                    ```{text}```
@@ -181,7 +161,7 @@ def generate_doc_summary(tmp_file, case_uid):
 
     # process the summary and save the new convo
     processor = DocumentProcessor(case_uid)
-    result = processor.process_chat_message(case_uid, message, tmp_file, [])
+    result = processor.process_chat_message(case_uid, message, temp_file, [])
     conversation = result["conversation"]
 
     chat_log = conversation.conversation
@@ -239,25 +219,10 @@ def process_pdf(request, case_uid):
                 "You don't have permission to access this file."
             )
 
-        user_message = get_latest_user_message(conversation)
-        # get relevant chunks for highlighting
         processor = DocumentProcessor(conversation.case.uid)
-        docs_and_scores = processor.vectorstore.similarity_search_with_score(
-            user_message, k=12, filter=processor.filter_query
-        )
-        # Highlight the text in each of the top three documents
-        docs_with_highest_scores = sorted(
-            docs_and_scores, key=lambda x: x[1], reverse=True
-        )[:doc_number]
-
         processor.pull_from_s3(conversation)
         processor.clear_highlights(conversation)
-
-        for doc, score in docs_with_highest_scores:
-            processor.fuzzy_highlight(doc.page_content, conversation.temp_file)
-
-        # for doc, score in docs_with_highest_scores:
-        #     processor.highlight_text(doc.page_content, conversation.temp_file)
+        processor.fuzzy_highlight(conversation)
 
         file_path = os.path.join(settings.TMP_DIR, conversation.temp_file)
         return FileResponse(open(file_path, "rb"), content_type="application/pdf")
@@ -266,17 +231,58 @@ def process_pdf(request, case_uid):
         return HttpResponseForbidden("File not found.")
 
 
-# def sanitize_pdf(input_pdf_path, output_pdf_path):
-#     try:
-#         ocrmypdf.ocr(
-#             input_pdf_path,
-#             output_pdf_path,
-#             clean_final=True,
-#             force_ocr=True,
-#             language="eng",
-#         )
-#     except Exception as e:
-#         raise ValueError(f"Error during OCR processing: {str(e)}")
+def sanitize_pdf(uploaded_file_obj):
+    temp_dir = settings.TMP_DIR
+    if not os.path.exists(temp_dir):
+        os.makedirs(temp_dir)
+
+    file_extension = os.path.splitext(uploaded_file_obj.name)[1]
+    temp_filename = f"{uuid.uuid4()}{file_extension}"
+    temp_file_path = os.path.join(temp_dir, temp_filename)
+
+    try:
+        with open(temp_file_path, "wb+") as temp_file:
+            for chunk in uploaded_file_obj.chunks():
+                temp_file.write(chunk)
+        if os.path.getsize(temp_file_path) == 0:
+            raise IOError("Written file is empty")
+    except IOError as e:
+        return JsonResponse({"error": f"Error saving file: {str(e)}"}, status=500)
+
+    unknown_char_threshold = 50  # Set a threshold for unknown characters
+    perform_ocr = False
+
+    try:
+        doc = fitz.open(temp_file_path)
+
+        # if doc is repaired, save to new file
+        if doc.is_repaired:
+            temp_file_name = f"repaired_{temp_filename}"
+            temp_file_path = os.path.join(settings.TMP_DIR, temp_file_name)
+            doc.save(temp_file_path, encryption=0)
+            doc = fitz.open(temp_file_path)
+
+        for page_num in range(min(10, doc.page_count)):
+            page_text = doc[page_num].get_text()
+            if page_text.count("�") > unknown_char_threshold:
+                perform_ocr = True
+                break
+        doc.close()
+    except RuntimeError as e:
+        return JsonResponse({"error": f"Error opening file: {str(e)}"}, status=500)
+
+    if perform_ocr:
+        temp_filename = f"ocr_{temp_filename}"
+        ocred_pdf_path = os.path.join(temp_dir, temp_filename)
+        try:
+            ocrmypdf.ocr(temp_file_path, ocred_pdf_path, force_ocr=True, language="eng")
+        except Exception as ocr_error:
+            return JsonResponse(
+                {"error": f"Error during OCR processing: {str(ocr_error)}"}, status=500
+            )
+        temp_file_path = ocred_pdf_path
+
+    return temp_filename
 
 
 class DocumentProcessor:
@@ -418,101 +424,57 @@ class DocumentProcessor:
             # Remove the annotations (highlights are a type of annotation)
             doc.xref_set_key(page.xref, "Annots", "null")
 
-        # Save the changes by overwriting the original file
-        try:
-            # if doc is repaired, save to new file
-            if doc.is_repaired:
-                temp_file_name = f"repaired_{conversation.temp_file}"
-                file_path = os.path.join(settings.TMP_DIR, temp_file_name)
-                doc.save(file_path, encryption=0)
-                conversation.temp_file = temp_file_name
-                conversation.save()
-            else:
-                doc.save(file_path, incremental=1, encryption=0)
-        except RuntimeError as e:
-            # If there's an error during saving, handle it appropriately
-            raise RuntimeError(f"Error saving file: {e}")
-
+        doc.save(file_path, incremental=1, encryption=0)
         doc.close()
         return file_path
 
-    def fuzzy_highlight(self, text_to_highlight, temp_file):
-        # Regular expression to match lines that consist only of numbers (possibly separated by spaces)
-        cleaned_text = re.sub(
-            r"^\s*(\d+\s*)+$", "", text_to_highlight, flags=re.MULTILINE
+    def fuzzy_highlight(self, conversation):
+
+        file_path = os.path.join(settings.TMP_DIR, conversation.temp_file)
+        doc = fitz.open(file_path)
+        highlight_limit = doc.page_count * 2
+
+        user_message = get_latest_user_message(conversation)
+        # get relevant chunks for highlighting
+        processor = DocumentProcessor(conversation.case.uid)
+        highlight_texts = processor.vectorstore.similarity_search_with_score(
+            user_message, k=12, filter=processor.filter_query
         )
 
-        file_path = os.path.join(settings.TMP_DIR, temp_file)
-        doc = fitz.open(file_path)
+        # sort by score
+        highlight_texts = sorted(
+            [
+                doc_and_score
+                for doc_and_score in highlight_texts
+                if doc_and_score[1] >= 0.60
+            ],
+            key=lambda x: x[1],
+            reverse=True,
+        )[:highlight_limit]
 
-        for page in doc:
-            page_text = page.get_text("text")
+        for highlight_text in highlight_texts:
+            cleaned_text = highlight_text[0].page_content
 
-            # Calculate similarity score
-            similarity = fuzz.partial_ratio(page_text, cleaned_text)
-            if similarity > 80:  # Threshold for similarity
-                areas = page.search_for(cleaned_text)
-                if areas:
-                    # Create a bounding rect around all areas
-                    bounding_rect = fitz.Rect(areas[0])
-                    for area in areas[1:]:
-                        bounding_rect.include_rect(area)
+            for page in doc:
+                page_text = page.get_text("text")
 
-                    # Create a single highlight annotation for the bounding rect
-                    highlight = page.add_highlight_annot(bounding_rect)
-                    highlight.set_colors({"stroke": (0.698, 0.874, 0.858)})
-                    highlight.update()
+                # Calculate similarity score
+                similarity = fuzz.partial_ratio(page_text, cleaned_text)
+                if similarity > 80:  # Threshold for similarity
+                    areas = page.search_for(cleaned_text)
+                    if areas:
+                        # Create a bounding rect around all areas
+                        bounding_rect = fitz.Rect(areas[0])
+                        for area in areas[1:]:
+                            bounding_rect.include_rect(area)
+
+                        # Create a single highlight annotation for the bounding rect
+                        highlight = page.add_highlight_annot(bounding_rect)
+                        highlight.set_colors({"stroke": (0.698, 0.874, 0.858)})
+                        highlight.update()
 
         doc.save(file_path, incremental=1, encryption=0)
         return doc
-
-    # def highlight_text(self, text_to_highlight, temp_file):
-    #     file_path = os.path.join(settings.TMP_DIR, temp_file)
-    #
-    #     if not isinstance(text_to_highlight, str):
-    #         raise ValueError("text_to_highlight must be a string")
-    #
-    #     # Regular expression to match the "(PAR Form xxxx)" pattern
-    #     par_form_pattern = re.compile(r"\(PAR Form [^\)]+\)")
-    #
-    #     # Regular expression to match strings with at least one alphabetical character
-    #     valid_phrase_pattern = re.compile(r"[A-Za-z]")
-    #
-    #     # Remove all instances of "(PAR Form xxxx)" from the text
-    #     text_to_highlight = par_form_pattern.sub("", text_to_highlight)
-    #
-    #     # Split the text into phrases, filter based on conditions, remove duplicates by converting to a set, then back to a list
-    #     phrases = list(
-    #         set(
-    #             phrase
-    #             for phrase in map(str.strip, text_to_highlight.splitlines())
-    #             if len(phrase) > 20 and valid_phrase_pattern.search(phrase)
-    #         )
-    #     )
-    #
-    #     doc = fitz.open(file_path)
-    #
-    #     # Keep track of highlighted phrases to avoid duplicates on different pages
-    #     highlighted_phrases = set()
-    #
-    #     for page in doc:
-    #         for phrase in phrases:
-    #             if phrase not in highlighted_phrases:
-    #                 areas = page.search_for(phrase)
-    #                 if areas:
-    #                     # Create a bounding rect around all areas
-    #                     bounding_rect = fitz.Rect(areas[0])
-    #                     for area in areas[1:]:
-    #                         bounding_rect.include_rect(area)
-    #
-    #                     # Create a single highlight annotation for the bounding rect
-    #                     highlight = page.add_highlight_annot(bounding_rect)
-    #                     highlight.set_colors({"stroke": (0.698, 0.874, 0.858)})
-    #                     highlight.update()
-    #
-    #     # Save the changes to the PDF
-    #     doc.save(file_path, incremental=1, encryption=0)
-    #     return doc
 
     # create embeddings and track tokens
     # def generate_vectors(self, texts):
@@ -533,7 +495,9 @@ class DocumentProcessor:
             )
 
     # upsert the embeddings to Pinecone
-    def store_vectors(self, case, user, temp_file_path):
+    def store_vectors(self, case, user, temp_file):
+        temp_file_path = os.path.join(settings.TMP_DIR, temp_file)
+
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=150,
             chunk_overlap=0,

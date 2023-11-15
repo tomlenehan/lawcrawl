@@ -65,7 +65,7 @@ nipype==1.8.6
 numexpr==2.8.6
 numpy==1.26.0
 oauthlib==3.2.2
-ocrmypdf==14.4.0
+ocrmypdf==15.4.2
 openai==0.27.4
 openapi-schema-pydantic==1.2.4
 packaging==23.1

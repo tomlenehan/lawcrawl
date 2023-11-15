@@ -53,6 +53,10 @@ const useStyles = makeStyles({
             backgroundColor: '#26a69a',
         },
     },
+    disabledButton: {
+        opacity: 0.5,
+        pointerEvents: 'none',
+    },
     backButton: {
         left: '10px',
     },
@@ -69,6 +73,8 @@ const PdfViewer = ({file}) => {
     const [scrolledToHighlight, setScrolledToHighlight] = useState(false);
     const [highlightedRegions, setHighlightedRegions] = useState([]);
     const [currentRegionIndex, setCurrentRegionIndex] = useState(0);
+    const isPrevDisabled = currentRegionIndex === 0;
+    const isNextDisabled = currentRegionIndex === (highlightedRegions.length - 1);
     const containerRef = useRef();
     // const textRenderer = useCallback(
     //     (textItem) => highlightPattern(textItem.str, searchText),
@@ -141,6 +147,7 @@ useEffect(() => {
                         <Document
                             file={file}
                             onLoadSuccess={onDocumentLoadSuccess}
+                            loading = ""
                         >
                             {Array.from(
                                 new Array(numPages),
@@ -161,20 +168,21 @@ useEffect(() => {
             </div>
 
             <Button
-                className={`${classes.navigationButton} ${classes.backButton}`}
+                className={`${classes.navigationButton} ${classes.backButton} ${isPrevDisabled ? classes.disabledButton : ''}`}
                 onClick={scrollToPrevRegion}
-                disabled={currentRegionIndex === 0}
+                disabled={isPrevDisabled}
             >
                 <ArrowBackIosIcon className={classes.navIcon} />
             </Button>
 
             <Button
-                className={`${classes.navigationButton} ${classes.forwardButton}`}
+                className={`${classes.navigationButton} ${classes.forwardButton} ${isNextDisabled ? classes.disabledButton : ''}`}
                 onClick={scrollToNextRegion}
-                disabled={currentRegionIndex === highlightedRegions.length - 1}
+                disabled={isNextDisabled}
             >
                 <ArrowForwardIosIcon className={classes.navIcon} />
             </Button>
+
         </div>
     );
 
