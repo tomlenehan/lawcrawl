@@ -87,7 +87,12 @@ def upload_file(request):
         case_name = request.POST.get("case_name", None)
         document_type = request.POST.get("document_type", None)
 
-        temp_file = sanitize_pdf(uploaded_file_obj)
+        sanitize_status, temp_file = sanitize_pdf(uploaded_file_obj)
+
+        if not sanitize_status:
+            # If sanitize_pdf failed, return the error message
+            return JsonResponse({"error": temp_file}, status=500)
+
         temp_file_path = os.path.join(settings.TMP_DIR, temp_file)
 
         case = Case.objects.create(name=case_name, user=request.user)
@@ -247,7 +252,7 @@ def sanitize_pdf(uploaded_file_obj):
         if os.path.getsize(temp_file_path) == 0:
             raise IOError("Written file is empty")
     except IOError as e:
-        return JsonResponse({"error": f"Error saving file: {str(e)}"}, status=500)
+        return False, f"Error saving file: {str(e)}"
 
     unknown_char_threshold = 50  # Set a threshold for unknown characters
     perform_ocr = False
@@ -255,11 +260,11 @@ def sanitize_pdf(uploaded_file_obj):
     try:
         doc = fitz.open(temp_file_path)
 
-        # if doc is repaired, save to new file
         if doc.is_repaired:
-            temp_file_name = f"repaired_{temp_filename}"
-            temp_file_path = os.path.join(settings.TMP_DIR, temp_file_name)
+            temp_filename = f"repaired_{temp_filename}"
+            temp_file_path = os.path.join(temp_dir, temp_filename)
             doc.save(temp_file_path, encryption=0)
+            doc.close()
             doc = fitz.open(temp_file_path)
 
         for page_num in range(min(10, doc.page_count)):
@@ -267,22 +272,23 @@ def sanitize_pdf(uploaded_file_obj):
             if page_text.count("�") > unknown_char_threshold:
                 perform_ocr = True
                 break
-        doc.close()
+
+        doc.close()  # Close the document
+
+        if perform_ocr:
+            temp_filename = f"ocr_{temp_filename}"
+            ocred_pdf_path = os.path.join(temp_dir, temp_filename)
+            try:
+                ocrmypdf.ocr(temp_file_path, ocred_pdf_path, force_ocr=True, language="eng")
+                return True, temp_filename
+            except Exception as ocr_error:
+                return False, f"Error during OCR processing {ocr_error}"
+
     except RuntimeError as e:
-        return JsonResponse({"error": f"Error opening file: {str(e)}"}, status=500)
+        return False, f"Error opening file: {str(e)}"
 
-    if perform_ocr:
-        temp_filename = f"ocr_{temp_filename}"
-        ocred_pdf_path = os.path.join(temp_dir, temp_filename)
-        try:
-            ocrmypdf.ocr(temp_file_path, ocred_pdf_path, force_ocr=True, language="eng")
-        except Exception as ocr_error:
-            return JsonResponse(
-                {"error": f"Error during OCR processing: {str(ocr_error)}"}, status=500
-            )
-        temp_file_path = ocred_pdf_path
-
-    return temp_filename
+    # If no OCR needed, return True and the original filename
+    return True, temp_filename
 
 
 class DocumentProcessor:
@@ -429,7 +435,6 @@ class DocumentProcessor:
         return file_path
 
     def fuzzy_highlight(self, conversation):
-
         file_path = os.path.join(settings.TMP_DIR, conversation.temp_file)
         doc = fitz.open(file_path)
         highlight_limit = doc.page_count * 2
