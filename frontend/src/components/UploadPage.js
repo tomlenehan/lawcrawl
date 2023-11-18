@@ -20,6 +20,7 @@ import {
     MenuItem,
     InputLabel,
     FormControl,
+    Tooltip,
 } from "@material-ui/core";
 import LinearProgress from '@material-ui/core/LinearProgress';
 import {useDispatch} from 'react-redux';
@@ -119,7 +120,12 @@ const useStyles = makeStyles((theme) => ({
         maxWidth: 400,
         overflowY: 'auto',
         maxHeight: '80vh',
-    }
+    },
+    tooltip: {
+        backgroundColor: '#3a3a3a',
+        padding: '8px 30px',
+        color: '#80cbc4',
+    },
 }));
 
 
@@ -282,7 +288,7 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                                 visibility: loading ? 'visible' : 'hidden',
                                 // marginBottom: -10,
                             }}>
-                                This will take a moment
+                                This will take a few minutes.
                             </Typography>
                         </Grid>
 
@@ -440,17 +446,26 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                                 onChange={handleFileChange}
                                 disabled={loading}
                             />
-                            <label htmlFor="fileInput">
-                                <Button
-                                    variant="contained"
-                                    component="span"
-                                    className={classes.inputButton}
-                                    startIcon={fileLoaded ? <CheckBoxIcon/> : <AttachFileIcon/>}
-                                    disabled={loading}
-                                >
-                                    {fileLoaded ? truncateString(fileName, 8) : 'Select PDF'}
-                                </Button>
-                            </label>
+                            <Tooltip
+                                title="Must be a PDF file < 20 pages and < 10MB"
+                                enterDelay={500}
+                                leaveDelay={200}
+                            >
+                                <label htmlFor="fileInput">
+                                    <Button
+                                        variant="contained"
+                                        component="span"
+                                        className={classes.inputButton}
+                                        startIcon={fileLoaded ? <CheckBoxIcon/> : <AttachFileIcon/>}
+                                        disabled={loading}
+                                    >
+                                        {fileLoaded ? truncateString(fileName, 8) : 'Select PDF'}
+                                    </Button>
+                                </label>
+                            </Tooltip>
+                            {/*<Typography variant="caption" display="block" gutterBottom>*/}
+                            {/*    Must be a PDF file less than 20 pages and less than 10MB*/}
+                            {/*</Typography>*/}
                         </Grid>
 
                         <Grid item xs={12}>

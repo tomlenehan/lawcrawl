@@ -158,10 +158,10 @@ def chat_message(request):
 
 # start the chat by highlighting the key points of the doc
 def generate_doc_summary(temp_file, case_uid):
-    # message = """Analyze the provided legal document delimited by triple backquotes and summarize the key points. Instead of numbering key points, create new lines. Identify any clauses that are non-standard for this type of agreement and highlight any sections that require further review or clarification."
-    message = """Analyze the provided legal document delimited by triple backquotes and summarize the key points. Instead of numbering key points, create new lines. Identify any clauses that are non-standard for this type of agreement and highlight any sections that require further review or clarification. Your response should be less than 200 words."
+    message = """Analyze the provided document delimited by triple backquotes. 
+                Identify any sections that are non-standard for this type of document 
+                and may require further review or clarification. Keep your response brief."
                    ```{text}```
-                SUMMARY:
                 """
 
     # process the summary and save the new convo
@@ -254,7 +254,7 @@ def sanitize_pdf(uploaded_file_obj):
     except IOError as e:
         return False, f"Error saving file: {str(e)}"
 
-    unknown_char_threshold = 50  # Set a threshold for unknown characters
+    unknown_char_threshold = 50
     perform_ocr = False
 
     try:
@@ -279,7 +279,9 @@ def sanitize_pdf(uploaded_file_obj):
             temp_filename = f"ocr_{temp_filename}"
             ocred_pdf_path = os.path.join(temp_dir, temp_filename)
             try:
-                ocrmypdf.ocr(temp_file_path, ocred_pdf_path, force_ocr=True, language="eng")
+                ocrmypdf.ocr(
+                    temp_file_path, ocred_pdf_path, force_ocr=True, language="eng"
+                )
                 return True, temp_filename
             except Exception as ocr_error:
                 return False, f"Error during OCR processing {ocr_error}"
@@ -336,8 +338,10 @@ class DocumentProcessor:
             "You are friendly AI legal assistant tasked with giving "
             "helpful answers to questions about the user's legal matter "
             "Combine the chat history and follow up question into "
-            "a standalone question. Chat History: {chat_history}"
-            "Follow up question: {question}"
+            "a standalone question. Be sure to respond with only the requested information "
+            "and If you do not know the answer, simply say so."
+            "Chat History: {chat_history} "
+            "Follow up question: {question} "
         )
         prompt = PromptTemplate.from_template(template)
 
