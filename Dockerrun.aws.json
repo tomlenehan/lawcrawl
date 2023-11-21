@@ -1,0 +1,23 @@
+{
+  "AWSEBDockerrunVersion": 2,
+  "containerDefinitions": [
+    {
+      "name": "lawcrawl",
+      "image": "lawcrawl",
+      "essential": true,
+      "memory": 1000,
+      "portMappings": [
+        {
+          "hostPort": 8000,
+          "containerPort": 8000
+        }
+      ]
+    },
+    {
+      "name": "ocrmypdf",
+      "image": "jbarlow83/ocrmypdf",
+      "essential": false,
+      "memory": 1000
+    }
+  ]
+}

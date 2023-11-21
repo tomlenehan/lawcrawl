@@ -267,8 +267,11 @@ def sanitize_pdf(uploaded_file_obj):
             doc.close()
             doc = fitz.open(temp_file_path)
 
-        for page_num in range(min(10, doc.page_count)):
-            page_text = doc[page_num].get_text()
+        loader = PyMuPDFLoader(temp_file_path)
+        docs = loader.load()
+
+        for page_num in range(min(10, len(docs))):
+            page_text = docs[page_num].page_content
             if page_text.count("�") > unknown_char_threshold:
                 perform_ocr = True
                 break
@@ -280,7 +283,7 @@ def sanitize_pdf(uploaded_file_obj):
             ocred_pdf_path = os.path.join(temp_dir, temp_filename)
             try:
                 ocrmypdf.ocr(
-                    temp_file_path, ocred_pdf_path, force_ocr=True, language="eng"
+                    temp_file_path, ocred_pdf_path, skip_text=True, language="eng"
                 )
                 return True, temp_filename
             except Exception as ocr_error:

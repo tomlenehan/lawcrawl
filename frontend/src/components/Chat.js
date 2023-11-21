@@ -181,8 +181,10 @@ const useStyles = makeStyles((theme) => ({
     },
     sendButtonEnabled: {
         backgroundColor: '#B2DFDB',
+        color: '#BA68C8',
         '&:hover': {
             backgroundColor: '#80cbc4',
+            color: '#9C27B0',
         },
     }
 }));

@@ -12,7 +12,7 @@ set -e
 # Install dependencies
 yum -y install -y git
 yum -y groupinstall "Development Tools"
-yum -y install clang autoconf automake
+yum -y install clang autoconf automake meson cmake
 yum -y install libtool asciidoc
 yum -y install libpng-devel libtiff-devel zlib-devel libwebp-devel libjpeg-turbo-devel wget tar gzip
 yum -y install -y ghostscript qpdf libxml2 libxslt pngquant
@@ -28,16 +28,6 @@ wget http://www.leptonica.org/source/leptonica-1.80.0.tar.gz
 tar -zxvf leptonica-1.80.0.tar.gz
 rm leptonica-1.80.0.tar.gz
 cd leptonica-1.80.0
-./autogen.sh
-./configure && make
-make install
-
-# Install JBIG2 to speed up OCRMyPDF
-cd /usr/share/
-if [ ! -d "jbig2enc" ]; then
-  git clone https://github.com/agl/jbig2enc
-fi
-cd jbig2enc
 ./autogen.sh
 ./configure && make
 make install
@@ -64,8 +54,20 @@ ldconfig
 
 # add tesseract language (eng)
 cd /usr/local/share/tessdata
-wget https://github.com/tesseract-ocr/tessdata/raw/main/eng.traineddata
+if [ ! -f "eng.traineddata" ]; then
+    wget https://github.com/tesseract-ocr/tessdata/raw/main/eng.traineddata
+fi
 export TESSDATA_PREFIX='/usr/local/share/tessdata'
+
+# Install JBIG2 to speed up OCRMyPDF
+cd /usr/share/
+if [ ! -d "jbig2enc" ]; then
+  git clone https://github.com/agl/jbig2enc
+fi
+cd jbig2enc
+./autogen.sh
+./configure && make
+make install
 
 # install Python packages
 cd /var/app/current/
