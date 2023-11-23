@@ -463,7 +463,12 @@ const Chat = () => {
                                 </React.Fragment>
                             )
                         ))}
-                        {loadingChatLog && <LinearProgress color="primary" size="lg" style={{width: '50%'}}/>}
+                        {loadingChatLog && (
+                            <div
+                                style={{display: 'flex', justifyContent: 'center', width: '100%'}}>
+                                <LinearProgress color="primary" style={{width: '50%'}}/>
+                            </div>
+                        )}
                     </div>
                     {/*</div>*/}
 

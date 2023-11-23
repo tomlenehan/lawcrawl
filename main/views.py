@@ -107,7 +107,7 @@ def upload_file(request):
             return JsonResponse({"error": str(e)}, status=400)
 
         # Generate a summary of the doc
-        generate_doc_summary(temp_file, case.uid)
+        processor.process_summary(temp_file)
 
         # Save the file from the temp location to S3
         case_document_storage = UploadStorage()
@@ -148,45 +148,16 @@ def chat_message(request):
 
         try:
             processor = DocumentProcessor(case_uid)
-            result = processor.process_chat_message(
-                case_uid, message, tmp_file, chat_log
-            )
+            result = processor.process_chat_message(message, chat_log, tmp_file)
             return JsonResponse({"message": result["answer"]})
         except ValueError as e:
             return JsonResponse({"error": str(e)}, status=400)
 
 
-# start the chat by highlighting the key points of the doc
-def generate_doc_summary(temp_file, case_uid):
-    message = """Analyze the provided document delimited by triple backquotes. 
-                Identify any sections that are non-standard for this type of document 
-                and may require further review or clarification. Keep your response brief."
-                   ```{text}```
-                """
-
-    # process the summary and save the new convo
-    processor = DocumentProcessor(case_uid)
-    result = processor.process_chat_message(case_uid, message, temp_file, [])
-    conversation = result["conversation"]
-
-    chat_log = conversation.conversation
-    chat_log.append(
-        {
-            "user": "gpt",
-            "message": "I highlighted some items of interest in your doc. "
-            "I'm happy to answer any further questions that you may have.",
-        }
-    )
-    conversation.conversation = chat_log
-    conversation.save()
-
-    return conversation
-
-
 @csrf_exempt
 @access_token_required
 def fetch_conversation(request, case_uid):
-    case = get_object_or_404(Case, uid=case_uid)
+    case = get_object_or_404(Case, uid=str(case_uid))
     # Check if the requested case belongs to the logged-in user
     if request.user != case.user:
         return JsonResponse({"error": "Unauthorized access"}, status=401)
@@ -264,8 +235,6 @@ def sanitize_pdf(uploaded_file_obj):
             temp_filename = f"repaired_{temp_filename}"
             temp_file_path = os.path.join(temp_dir, temp_filename)
             doc.save(temp_file_path, encryption=0)
-            doc.close()
-            doc = fitz.open(temp_file_path)
 
         loader = PyMuPDFLoader(temp_file_path)
         docs = loader.load()
@@ -282,9 +251,21 @@ def sanitize_pdf(uploaded_file_obj):
             temp_filename = f"ocr_{temp_filename}"
             ocred_pdf_path = os.path.join(temp_dir, temp_filename)
             try:
-                ocrmypdf.ocr(
-                    temp_file_path, ocred_pdf_path, skip_text=True, language="eng"
-                )
+                # If the document is less than 4 pages, force OCR
+                if len(docs) < 4:
+                    ocrmypdf.ocr(
+                        temp_file_path,
+                        ocred_pdf_path,
+                        force_ocr=True,
+                        language="eng",
+                    )
+                else:
+                    ocrmypdf.ocr(
+                        temp_file_path,
+                        ocred_pdf_path,
+                        skip_text=True,
+                        language="eng",
+                    )
                 return True, temp_filename
             except Exception as ocr_error:
                 return False, f"Error during OCR processing {ocr_error}"
@@ -298,7 +279,7 @@ def sanitize_pdf(uploaded_file_obj):
 
 class DocumentProcessor:
     def __init__(self, case_uid):
-        self.case_uid = case_uid
+        self.case = Case.objects.get(uid=str(case_uid))
         self.openai_api_key = settings.OPENAI_API_KEY
         self.model_name = "text-embedding-ada-002"
         self.pinecone_api_key = settings.PINECONE_API_KEY
@@ -320,15 +301,53 @@ class DocumentProcessor:
         pinecone.init(api_key=self.pinecone_api_key, environment=self.pinecone_env)
         self.index = pinecone.Index(self.index_name)
         self.vectorstore = Pinecone(self.index, self.embed, "text", self.namespace)
-        self.filter_query = {"case_uid": str(self.case_uid)}
+        self.filter_query = {"case_uid": str(self.case.uid)}
 
-    @csrf_exempt
-    def process_chat_message(self, case_uid, message, tmp_file, chat_log):
+    def process_summary(self, temp_file):
+        retriever = self.vectorstore.as_retriever(
+            search_kwargs={"filter": self.filter_query, "k": 6},
+            retriever_kwargs={
+                "search_kwargs": {"filter": self.filter_query},
+            },
+            include_values=True,
+        )
+        question = (
+            "You are friendly AI legal assistant tasked with analyzing the provided document "
+            "and identify any sections that are non-standard and may require further review "
+            "or clarification. Do not say if it is not possible to conclusively identify "
+            "non-standard sections and keep your response brief."
+        )
+
+        qa = RetrievalQA.from_llm(llm=self.llm, retriever=retriever)
+
         try:
-            case = Case.objects.get(uid=case_uid)
-        except ObjectDoesNotExist:
-            return JsonResponse({"error": "Invalid case UID"}, status=400)
+            response = qa(question)
+            if "result" in response:
+                answer = response["result"]
 
+                chat_log = [
+                    {"user": "me", "message": question},
+                    {"user": "gpt", "message": answer},
+                    {
+                        "user": "gpt",
+                        "message": "I highlighted some items of interest in your doc. "
+                        "I'm happy to answer any further questions that you may have.",
+                    },
+                ]
+
+                conversation = CaseConversation.objects.create(
+                    case=self.case,
+                    conversation=chat_log,
+                    temp_file=temp_file,
+                    is_active=True,
+                    updated_at=timezone.now(),
+                )
+                return {"conversation": conversation, "answer": answer}
+
+        except Exception as e:
+            return False, f"Error during summary retrieval {e}"
+
+    def process_chat_message(self, message, chat_log, tmp_file):
         retriever = self.vectorstore.as_retriever(
             search_kwargs={"filter": self.filter_query, "k": 6},
             retriever_kwargs={
@@ -346,6 +365,15 @@ class DocumentProcessor:
             "Chat History: {chat_history} "
             "Follow up question: {question} "
         )
+
+        truncated_chat_log = (
+            [chat_log[0]] + chat_log[-6:] if len(chat_log) > 6 else chat_log
+        )
+        chat_history = [
+            (entry["message"], truncated_chat_log[i + 1]["message"])
+            for i, entry in enumerate(truncated_chat_log[:-1])
+        ]
+
         prompt = PromptTemplate.from_template(template)
 
         question_generator_chain = LLMChain(llm=self.llm, prompt=prompt)
@@ -357,43 +385,32 @@ class DocumentProcessor:
             question_generator=question_generator_chain,
             return_source_documents=True,
         )
-        # Truncate chat_log to the last 4 entries (4 Q&A pairs) but always include the first entry (summary)
-        truncated_chat_log = chat_log
-        if len(chat_log) > 6:
-            truncated_chat_log = [chat_log[0]] + chat_log[-6:]
 
-        # Transforming chat history into OpenAI format
-        chat_history = []
-        for i, entry in enumerate(
-            truncated_chat_log[:-1]
-        ):  # Exclude the last entry for pairing
-            chat_history.append(
-                (entry["message"], truncated_chat_log[i + 1]["message"])
-            )
+        try:
+            response = qa({"question": message, "chat_history": chat_history})
 
-        response = qa({"question": message, "chat_history": chat_history})
+            if "answer" in response:
+                answer = response["answer"]
+                chat_log.extend(
+                    [
+                        {"user": "me", "message": message},
+                        {"user": "gpt", "message": answer},
+                    ]
+                )
+                conversation = CaseConversation.objects.get(
+                    case=self.case
+                )  # Replace some_id with the primary key of the specific record you want to update
 
-        if chat_log is None:
-            chat_log = []
+                conversation.conversation = chat_log
+                conversation.temp_file = tmp_file
+                conversation.is_active = True
+                conversation.updated_at = timezone.now()
+                conversation.save()
 
-        chat_log.extend(
-            [
-                {"user": "me", "message": message},
-                {"user": "gpt", "message": response["answer"]},
-            ]
-        )
+                return {"conversation": conversation, "answer": answer}
 
-        conversation, created = CaseConversation.objects.update_or_create(
-            case=case,
-            defaults={
-                "conversation": chat_log,
-                "temp_file": tmp_file,
-                "is_active": True,
-                "updated_at": timezone.now(),
-            },
-        )
-
-        return {"conversation": conversation, "answer": response["answer"]}
+        except Exception as e:
+            return False, f"Error processing chat response: {e}"
 
     @csrf_exempt
     def pull_from_s3(self, conversation):
@@ -443,6 +460,7 @@ class DocumentProcessor:
 
     def fuzzy_highlight(self, conversation):
         file_path = os.path.join(settings.TMP_DIR, conversation.temp_file)
+
         doc = fitz.open(file_path)
         highlight_limit = doc.page_count * 2
 
@@ -450,7 +468,7 @@ class DocumentProcessor:
         # get relevant chunks for highlighting
         processor = DocumentProcessor(conversation.case.uid)
         highlight_texts = processor.vectorstore.similarity_search_with_score(
-            user_message, k=12, filter=processor.filter_query
+            user_message, k=6, filter=processor.filter_query
         )
 
         # sort by score
@@ -458,7 +476,7 @@ class DocumentProcessor:
             [
                 doc_and_score
                 for doc_and_score in highlight_texts
-                if doc_and_score[1] >= 0.60
+                if doc_and_score[1] >= 0.70
             ],
             key=lambda x: x[1],
             reverse=True,
@@ -468,19 +486,51 @@ class DocumentProcessor:
             cleaned_text = highlight_text[0].page_content
 
             for page in doc:
+                # for page in docs:
                 page_text = page.get_text("text")
 
                 # Calculate similarity score
                 similarity = fuzz.partial_ratio(page_text, cleaned_text)
+
                 if similarity > 80:  # Threshold for similarity
                     areas = page.search_for(cleaned_text)
-                    if areas:
-                        # Create a bounding rect around all areas
+
+                    # If it fails to search, split cleaned text into segments and search for each segment
+                    if not areas:
+                        segment_length = 100  # You can adjust this to a suitable value
+                        num_segments = len(cleaned_text) // segment_length + 1
+                        bounding_rects = []
+
+                        for i in range(num_segments):
+                            start = i * segment_length
+                            end = start + segment_length
+                            segment = cleaned_text[start:end]
+
+                            areas = page.search_for(segment)
+
+                            if areas:
+                                # Create a bounding rect around all areas for this segment
+                                bounding_rect = fitz.Rect(areas[0])
+                                for area in areas[1:]:
+                                    bounding_rect.include_rect(area)
+
+                                bounding_rects.append(bounding_rect)
+
+                        # Create a single highlight annotation for the bounding rects of all segments
+                        if bounding_rects:
+                            bounding_rect = bounding_rects[0]
+                            for rect in bounding_rects[1:]:
+                                bounding_rect.include_rect(rect)
+
+                            highlight = page.add_highlight_annot(bounding_rect)
+                            highlight.set_colors({"stroke": (0.698, 0.874, 0.858)})
+                            highlight.update()
+                    else:
+                        # Create a highlight annotation for the entire cleaned_text
                         bounding_rect = fitz.Rect(areas[0])
                         for area in areas[1:]:
                             bounding_rect.include_rect(area)
 
-                        # Create a single highlight annotation for the bounding rect
                         highlight = page.add_highlight_annot(bounding_rect)
                         highlight.set_colors({"stroke": (0.698, 0.874, 0.858)})
                         highlight.update()
@@ -511,7 +561,7 @@ class DocumentProcessor:
         temp_file_path = os.path.join(settings.TMP_DIR, temp_file)
 
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=150,
+            chunk_size=100,
             chunk_overlap=0,
             length_function=tiktoken_len,
             separators=["\n\n", "\n", " ", ""],
@@ -531,8 +581,10 @@ class DocumentProcessor:
         loader = PyMuPDFLoader(temp_file_path)
         docs = loader.load()
         for doc in docs:
-            # split the text into chunks
-            texts = text_splitter.split_text(doc.page_content)
+            # Clean the entire page content first
+            cleaned_text = doc.page_content.replace("�", "").replace("\n", " ").strip()
+            # Then split the cleaned text into chunks
+            texts = text_splitter.split_text(cleaned_text)
             for text in texts:
                 text_chunks.append(text)
 
