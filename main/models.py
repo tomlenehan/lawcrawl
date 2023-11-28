@@ -63,15 +63,17 @@ class Case(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     state = models.CharField(max_length=2, choices=STATES, default="NY")
 
+
 DOCUMENT_TYPES = (
-    ('contract', 'Contract'),
-    ('invoice', 'Invoice'),
-    ('agreement', 'Agreement'),
-    ('report', 'Report'),
-    ('letter', 'Letter'),
-    ('other', 'Other'),
+    ("contract", "Contract"),
+    ("invoice", "Invoice"),
+    ("agreement", "Agreement"),
+    ("report", "Report"),
+    ("letter", "Letter"),
+    ("other", "Other"),
     # Add more document types here as needed
 )
+
 
 class UploadedFile(models.Model):
     case = models.ForeignKey(
@@ -81,9 +83,11 @@ class UploadedFile(models.Model):
     document_type = models.CharField(
         max_length=50,
         choices=DOCUMENT_TYPES,
-        default='contract',  # Set a default value if you wish
-        help_text='Select the type of the document'
+        default="contract",  # Set a default value if you wish
+        help_text="Select the type of the document",
     )
+
+    raw_text = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.get_document_type_display()} - {self.case.name}"

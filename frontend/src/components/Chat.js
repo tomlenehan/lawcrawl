@@ -181,10 +181,10 @@ const useStyles = makeStyles((theme) => ({
     },
     sendButtonEnabled: {
         backgroundColor: '#B2DFDB',
-        color: '#BA68C8',
+        color: '#5C6BC0',
         '&:hover': {
             backgroundColor: '#80cbc4',
-            color: '#9C27B0',
+            color: '#5C6BC0',
         },
     }
 }));
@@ -362,7 +362,6 @@ const Chat = () => {
             setChatLog(prevChatLog => [
                 ...prevChatLog,
                 {user: "gpt", message: data.message}
-                // data.message
             ]);
         } finally {
             setLoadingChatLog(false);
@@ -464,9 +463,9 @@ const Chat = () => {
                             )
                         ))}
                         {loadingChatLog && (
-                            <div
-                                style={{display: 'flex', justifyContent: 'center', width: '100%'}}>
-                                <LinearProgress color="primary" style={{width: '50%'}}/>
+                            // <div style={{display: 'flex', justifyContent: 'center', width: '50%'}}>
+                            <div className={classes.progressContainer}>
+                                <LinearProgress color="primary" size="lg" style={{width: '50%'}}/>
                             </div>
                         )}
                     </div>

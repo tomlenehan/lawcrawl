@@ -8,9 +8,9 @@ RUN apk --no-cache add gcc musl-dev openssl-dev libffi-dev zlib-dev make g++
 COPY . /app
 WORKDIR /app
 
-RUN pip install --upgrade pip
+RUN pip3 install --upgrade pip
 # Install your application's dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Expose the port your app runs on
 EXPOSE 8000

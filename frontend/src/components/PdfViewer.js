@@ -74,12 +74,8 @@ const PdfViewer = ({file}) => {
     const [highlightedRegions, setHighlightedRegions] = useState([]);
     const [currentRegionIndex, setCurrentRegionIndex] = useState(0);
     const isPrevDisabled = currentRegionIndex === 0;
-    const isNextDisabled = currentRegionIndex === (highlightedRegions.length - 1);
+    const isNextDisabled = currentRegionIndex >= highlightedRegions.length - 1;
     const containerRef = useRef();
-    // const textRenderer = useCallback(
-    //     (textItem) => highlightPattern(textItem.str, searchText),
-    //     [searchText]
-    // );
 
 
     const handlePageRender = () => {
@@ -97,40 +93,49 @@ const PdfViewer = ({file}) => {
         setNumPages(numPages);
     }
 
-useEffect(() => {
-    if (loaded && containerRef.current) {
-        const maxWaitTime = 10000; // Maximum wait time in milliseconds (e.g., 10 seconds)
-        const intervalTime = 500; // Interval time in milliseconds for checking SVG elements
-        let elapsedTime = 0;
+    useEffect(() => {
+        if (loaded && containerRef.current) {
+            const maxWaitTime = 10000; // Maximum wait time in milliseconds (e.g., 10 seconds)
+            const intervalTime = 500; // Interval time in milliseconds for checking SVG elements
+            let elapsedTime = 0;
 
-        const checkSvgElements = () => {
-            const renderedPages = containerRef.current.querySelectorAll('.react-pdf__Page');
-            if (renderedPages.length === numPages) {
-                const svgElements = containerRef.current.querySelectorAll('svg.quadrilateralsContainer');
-                if (svgElements.length > 0 || elapsedTime >= maxWaitTime) {
-                    setHighlightedRegions(Array.from(svgElements));
-                    svgElements[0].scrollIntoView({behavior: 'smooth', block: 'center'});
-                    setScrolledToHighlight(true);
-                    clearInterval(intervalId);
+            const checkSvgElements = () => {
+                const renderedPages = containerRef.current.querySelectorAll('.react-pdf__Page');
+                if (renderedPages.length === numPages) {
+                    const svgElements = containerRef.current.querySelectorAll('svg.quadrilateralsContainer');
+                    if (svgElements.length > 0 || elapsedTime >= maxWaitTime) {
+                        setHighlightedRegions(Array.from(svgElements));
+                        if (svgElements.length > 0) {
+                            svgElements[0].scrollIntoView({behavior: 'smooth', block: 'center'});
+                            setScrolledToHighlight(true);
+                        }
+                        clearInterval(intervalId);
+                    }
                 }
-            }
-            elapsedTime += intervalTime;
-        };
+                elapsedTime += intervalTime;
+            };
 
-        const intervalId = setInterval(checkSvgElements, intervalTime);
+            const intervalId = setInterval(checkSvgElements, intervalTime);
 
-        return () => clearInterval(intervalId); // Cleanup interval on component unmount
-    }
-}, [loaded, numPages]);
-
-
+            return () => clearInterval(intervalId); // Cleanup interval on component unmount
+        }
+    }, [loaded, numPages]);
 
     const scrollToRegion = (index) => {
         if (index >= 0 && index < highlightedRegions.length) {
-            highlightedRegions[index].scrollIntoView({behavior: 'smooth', block: 'center'});
             setCurrentRegionIndex(index);
         }
     };
+
+    useEffect(() => {
+        if (currentRegionIndex >= 0 && currentRegionIndex < highlightedRegions.length) {
+            highlightedRegions[currentRegionIndex].scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
+        }
+    }, [currentRegionIndex, highlightedRegions]);
+
 
     const scrollToNextRegion = () => scrollToRegion(currentRegionIndex + 1);
     const scrollToPrevRegion = () => scrollToRegion(currentRegionIndex - 1);
@@ -147,7 +152,7 @@ useEffect(() => {
                         <Document
                             file={file}
                             onLoadSuccess={onDocumentLoadSuccess}
-                            loading = ""
+                            loading=""
                         >
                             {Array.from(
                                 new Array(numPages),
@@ -168,19 +173,23 @@ useEffect(() => {
             </div>
 
             <Button
-                className={`${classes.navigationButton} ${classes.backButton} ${isPrevDisabled ? classes.disabledButton : ''}`}
+                className={`${classes.navigationButton} ${classes.backButton} ${
+                    isPrevDisabled ? classes.disabledButton : ""
+                }`}
                 onClick={scrollToPrevRegion}
                 disabled={isPrevDisabled}
             >
-                <ArrowBackIosIcon className={classes.navIcon} />
+                <ArrowBackIosIcon className={classes.navIcon}/>
             </Button>
 
             <Button
-                className={`${classes.navigationButton} ${classes.forwardButton} ${isNextDisabled ? classes.disabledButton : ''}`}
+                className={`${classes.navigationButton} ${classes.forwardButton} ${
+                    isNextDisabled ? classes.disabledButton : ""
+                }`}
                 onClick={scrollToNextRegion}
                 disabled={isNextDisabled}
             >
-                <ArrowForwardIosIcon className={classes.navIcon} />
+                <ArrowForwardIosIcon className={classes.navIcon}/>
             </Button>
 
         </div>

@@ -197,7 +197,7 @@ const UploadPage = ({isAuthenticated, userCases}) => {
             setErrorMessage("Please select a file before proceeding.");
             return;
         } else if (!caseName) {
-            setErrorMessage("Please provide a case name before proceeding.");
+            setErrorMessage("Please provide a document name before proceeding.");
             return;
         } else if (!selectedState) {
             setErrorMessage("Please select a state before proceeding.");
@@ -302,7 +302,7 @@ const UploadPage = ({isAuthenticated, userCases}) => {
                             }
 
                             <TextField
-                                label="Case Name"
+                                label="Document Name"
                                 variant="outlined"
                                 value={caseName}
                                 InputLabelProps={{className: classes.blackLabel}}
