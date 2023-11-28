@@ -507,19 +507,18 @@ class DocumentProcessor:
                     {"user": "gpt", "message": answer},
                 ]
                 if performed_ocr:
+                    chat_log.append({
+                        "user": "gpt",
+                        "message": "Your document seems to be scanned or contains many images, which "
+                                   "effects how well I can read it, but I'm happy to your questions "
+                                   "as best I can.",
+                    })
+                else:
                     chat_log.append(
                         {
                             "user": "gpt",
                             "message": "I highlighted some items of interest in your doc. "
                             "I'm happy to answer any further questions that you may have.",
-                        }
-                    )
-                else:
-                    chat_log.append(
-                        {
-                            "user": "gpt",
-                            "message": "Your document seems to be from a scanner so I am unable "
-                            "to make edits to it but I happy to answer any questions that you may have",
                         }
                     )
 
@@ -665,7 +664,7 @@ class DocumentProcessor:
                 [
                     doc_and_score
                     for doc_and_score in highlight_texts
-                    if doc_and_score[1] >= 0.70
+                    if doc_and_score[1] >= 0.80
                 ],
                 key=lambda x: x[1],
                 reverse=True,
