@@ -196,6 +196,11 @@ LOGGING = {
             'handlers': ['file'],
             'level': 'ERROR',
         },
+        'lawcrawl': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
     },
 }
 

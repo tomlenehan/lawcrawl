@@ -7,6 +7,7 @@ from uuid import uuid4
 import requests
 import tempfile
 import shutil
+import logging
 import json
 import fitz
 import ocrmypdf
@@ -41,6 +42,8 @@ import pinecone
 import boto3
 from main.serializers import CaseSerializer
 from django.core.exceptions import ObjectDoesNotExist
+
+logger = logging.getLogger("lawcrawl")
 
 
 def access_token_required(view_func):
@@ -111,6 +114,7 @@ def extract_text(file_name):
                 "textract",
                 aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
                 aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name="us-east-1",
             )
             bucket_name = UploadStorage.bucket_name
 
@@ -210,7 +214,8 @@ def extract_text(file_name):
                     break
 
         except Exception as e:
-            return JsonResponse({"error": str(e)}, status=400)
+            logger.error(f"Error in extract_text: {e}")  # Log the error
+            return "", False
 
     return extracted_text.strip(), perform_ocr
 
@@ -507,12 +512,14 @@ class DocumentProcessor:
                     {"user": "gpt", "message": answer},
                 ]
                 if performed_ocr:
-                    chat_log.append({
-                        "user": "gpt",
-                        "message": "Your document seems to be scanned or contains many images, which "
-                                   "effects how well I can read it, but I'm happy to your questions "
-                                   "as best I can.",
-                    })
+                    chat_log.append(
+                        {
+                            "user": "gpt",
+                            "message": "Your document seems to be scanned or contains many images, which "
+                            "effects how well I can read it, but I'm happy to your questions "
+                            "as best I can.",
+                        }
+                    )
                 else:
                     chat_log.append(
                         {
@@ -610,6 +617,7 @@ class DocumentProcessor:
                 "s3",
                 aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
                 aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+                region_name="us-east-1",
             )
             bucket_name = UploadStorage.bucket_name
             signed_url = s3_client.generate_presigned_url(
@@ -617,16 +625,10 @@ class DocumentProcessor:
                 Params={"Bucket": bucket_name, "Key": uploaded_file.object_key},
                 ExpiresIn=3600,  # expires in 1 hour
             )
-
             # Fetch the document from S3 using the signed URL
             response = requests.get(signed_url)
             response.raise_for_status()
 
-            # Save the fetched content as a temporary file
-            temp_dir = tempfile.mkdtemp()
-            temp_file_path = os.path.join(
-                temp_dir, os.path.basename(uploaded_file.object_key)
-            )
             with open(temp_file_path, "wb") as temp_file:
                 temp_file.write(response.content)
 
@@ -664,7 +666,7 @@ class DocumentProcessor:
                 [
                     doc_and_score
                     for doc_and_score in highlight_texts
-                    if doc_and_score[1] >= 0.80
+                    if doc_and_score[1] >= 0.75
                 ],
                 key=lambda x: x[1],
                 reverse=True,

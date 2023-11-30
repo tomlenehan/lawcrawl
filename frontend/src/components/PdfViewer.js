@@ -94,35 +94,41 @@ const PdfViewer = ({file}) => {
     }
 
     useEffect(() => {
-        if (loaded && containerRef.current) {
-            const maxWaitTime = 10000; // Maximum wait time in milliseconds (e.g., 10 seconds)
-            const intervalTime = 500; // Interval time in milliseconds for checking SVG elements
-            let elapsedTime = 0;
 
-            const checkSvgElements = () => {
-                const renderedPages = containerRef.current.querySelectorAll('.react-pdf__Page');
-                if (renderedPages.length === numPages) {
-                    const svgElements = containerRef.current.querySelectorAll('svg.quadrilateralsContainer');
-                    if (svgElements.length > 0 || elapsedTime >= maxWaitTime) {
-                        setHighlightedRegions(Array.from(svgElements));
-                        if (svgElements.length > 0) {
-                            svgElements[0].scrollIntoView({behavior: 'smooth', block: 'center'});
+        let num_highlights = 0;
+
+        if (loaded && containerRef.current) {
+            const observer = new MutationObserver(mutations => {
+                mutations.forEach(mutation => {
+                    if (mutation.addedNodes.length) {
+                        const svgElements = containerRef.current.querySelectorAll('svg.quadrilateralsContainer');
+
+                        // reset scrollable highlights if there are more
+                        if(svgElements.length > num_highlights) {
+                            num_highlights = svgElements.length;
+                            setHighlightedRegions(Array.from(svgElements));
+                        }
+
+                        // scroll to first highlight when it's available
+                        if (svgElements.length > 0 && !scrolledToHighlight) {
+                            svgElements[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
                             setScrolledToHighlight(true);
                         }
-                        clearInterval(intervalId);
                     }
-                }
-                elapsedTime += intervalTime;
-            };
+                });
+            });
 
-            const intervalId = setInterval(checkSvgElements, intervalTime);
+            observer.observe(containerRef.current, { childList: true, subtree: true });
 
-            return () => clearInterval(intervalId); // Cleanup interval on component unmount
+            return () => observer.disconnect();
         }
-    }, [loaded, numPages]);
+    }, [loaded, scrolledToHighlight]);
+
 
     const scrollToRegion = (index) => {
+        console.log("region:"+ index +"of"+ highlightedRegions.length)
         if (index >= 0 && index < highlightedRegions.length) {
+            highlightedRegions[index].scrollIntoView({behavior: 'smooth', block: 'center'});
             setCurrentRegionIndex(index);
         }
     };
@@ -152,7 +158,7 @@ const PdfViewer = ({file}) => {
                         <Document
                             file={file}
                             onLoadSuccess={onDocumentLoadSuccess}
-                            loading=""
+                            loading=" "
                         >
                             {Array.from(
                                 new Array(numPages),
@@ -164,6 +170,7 @@ const PdfViewer = ({file}) => {
                                         onRenderSuccess={handlePageRender}
                                         className={classes.pdfPage}
                                         style={styles.page}
+                                        loading=" "
                                     />
                                 ),
                             )}
