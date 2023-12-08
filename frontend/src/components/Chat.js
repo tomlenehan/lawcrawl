@@ -186,7 +186,16 @@ const useStyles = makeStyles((theme) => ({
             backgroundColor: '#80cbc4',
             color: '#5C6BC0',
         },
-    }
+    },
+    blinkingEmoji: {
+        animation: '$blink 1s linear infinite',
+        fontSize: 25,
+    },
+
+    '@keyframes blink': {
+        '0%, 100%': {opacity: 1},
+        '50%': {opacity: 0},
+    },
 }));
 
 const Chat = () => {
@@ -203,8 +212,10 @@ const Chat = () => {
     const [loadingPDF, setLoadingPDF] = useState(false);
     const userCases = useSelector((state) => state.userCases);
     const [currentCase, setCurrentCase] = useState(null);
+    const [conversationID, setConversationID] = useState(null);
+    const [sessionID, setSessionID] = useState(null);
     const [termsOpen, setTermsOpen] = useState(false);
-    const [chatLog, setChatLog] = useState(chatLogBaseline);
+    const [chatLog, setChatLog] = useState(null);
     const [file, setFile] = useState(null);
     const chatLogRef = useRef(null);
     const fetchUserCases = useFetchUserCases();
@@ -220,11 +231,14 @@ const Chat = () => {
     };
 
 
-    const processPDF = async (currentCase, authToken) => {
+    const processPDF = async (currentCase, authToken, query) => {
         setLoadingPDF(true);
         if (currentCase) {
             try {
-                const response = await axios.get(`/api/process_pdf/${currentCase.uid}`, {
+                const url = new URL(`/api/process_pdf/${currentCase.uid}`, window.location.origin);
+                url.searchParams.append('query', query);
+
+                const response = await axios.get(url.toString(), {
                     headers: {
                         'Authorization': `Bearer ${authToken}`,
                     },
@@ -241,7 +255,7 @@ const Chat = () => {
     };
 
     useEffect(() => {
-        processPDF(currentCase, token);
+        processPDF(currentCase, token, "");
     }, [token, currentCase]);
 
     // useEffect(() => {
@@ -312,6 +326,8 @@ const Chat = () => {
                         },
                     });
                     if (response.status === 200) {
+                        setSessionID(response.data.session_id);
+                        setConversationID(response.data.conversation_id);
                         setChatLog(response.data.conversation);
                     } else {
                         console.error('Error fetching CaseConversation:', response.status, response.data);
@@ -337,36 +353,64 @@ const Chat = () => {
     async function handleSubmit(e) {
         e.preventDefault();
 
-        console.log('submitting_input')
+        console.log('submitting_input');
 
         const userInput = input;
-        setChatLog([...chatLog, {user: "me", message: input}]);
+        setChatLog([...chatLog, {role: "user", content: input}]);
 
         setInput("");
-        setLoadingChatLog(true);
+
+        // Construct the SSE URL with query parameters
+        const sseUrl = new URL('/api/chat/message/', window.location.origin);
+        sseUrl.searchParams.append('message', userInput);
+        sseUrl.searchParams.append('conversation_id', conversationID);
+        sseUrl.searchParams.append('session_id', sessionID);
+
+        // set placeholder while agent "thinks"
+        setChatLog(prevChatLog => [
+            ...prevChatLog,
+            {role: "agent", content: <span className={classes.blinkingEmoji}>🤔</span>}
+        ]);
+
+         // re-process the PDF
+        processPDF(currentCase, token, input);
 
         try {
-            const response = await fetch('/api/chat/message/', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    message: userInput,
-                    chat_log: chatLog,
-                    case_uid: currentCase.uid
-                })
-            });
-            const data = await response.json();
+            // Establish SSE connection
+            const eventSource = new EventSource(sseUrl.toString());
+            let firstMessageReceived = false;
 
-            setChatLog(prevChatLog => [
-                ...prevChatLog,
-                {user: "gpt", message: data.message}
-            ]);
-        } finally {
+            eventSource.onmessage = (event) => {
+                // Handle incoming data
+                console.log("incoming_message");
+                const eventData = JSON.parse(event.data);
+
+                setChatLog(prevChatLog => {
+                    const updatedChatLog = [...prevChatLog];
+                    const lastMessageIndex = updatedChatLog.length - 1;
+
+                    if (!firstMessageReceived) {
+                        // Replace the placeholder with the first part of the message
+                        updatedChatLog[lastMessageIndex].content = eventData.token;
+                        firstMessageReceived = true;
+                    } else {
+                        // Append to the existing message
+                        updatedChatLog[lastMessageIndex].content += eventData.token;
+                    }
+                    return updatedChatLog;
+                });
+            };
+
+            eventSource.onerror = (error) => {
+                console.error("EventSource failed:", error);
+                eventSource.close();
+                setLoadingChatLog(false);
+            };
+
+        } catch (error) {
+            console.error("An error occurred:", error);
             setLoadingChatLog(false);
         }
-        processPDF(currentCase, token);
     }
 
     const handleKeyPress = (e) => {
@@ -450,26 +494,31 @@ const Chat = () => {
             <div className={classes.chatBox}>
                 <div className={classes.chatContentContainer}>
                     <div className={classes.chatLog} ref={chatLogRef}>
-                        {/*<div style={{ height: '100%', overflowY: 'scroll', borderRadius: 15 }} >*/}
                         {/* Chat messages */}
-                        {chatLog.map((chat, index) => (
-                            index === 0 ? null : ( // Return null for the first element
+                        {Array.isArray(chatLog) && chatLog.map((chat, index) => (
+                            index === 0 ? null : (
                                 <React.Fragment key={index}>
                                     <ChatMessage className={classes.lineBreak}
-                                                 message={chat.message}
-                                                 user={chat.user}/>
-                                    {(index + 1) % ad_interval === 0 && <AdSenseAd/>}
+                                                 content={chat.content}
+                                                 role={chat.role}/>
+                                    {/*{(index + 1) % ad_interval === 0 && <AdSenseAd/>}*/}
                                 </React.Fragment>
                             )
                         ))}
                         {loadingChatLog && (
-                            // <div style={{display: 'flex', justifyContent: 'center', width: '50%'}}>
-                            <div className={classes.progressContainer}>
-                                <LinearProgress color="primary" size="lg" style={{width: '50%'}}/>
-                            </div>
+                            chatLog === null ? (
+                                <div className={classes.progressContainer}>
+                                    <LinearProgress color="primary" size="lg"
+                                                    style={{width: '50%'}}/>
+                                </div>
+                            ) : (
+                                <div style={{justifyContent: 'center', display: 'flex'}}>
+                                    <LinearProgress color="primary" size="lg"
+                                                    style={{width: '50%'}}/>
+                                </div>
+                            )
                         )}
                     </div>
-                    {/*</div>*/}
 
                     <div className={classes.pdfViewerContainer}>
                         {loadingPDF ? (
@@ -499,7 +548,7 @@ const Chat = () => {
                                             type="submit"
                                             className={
                                                 input.trim() ? `${classes.sendButton} ${classes.sendButtonEnabled}` : classes.sendButton
-                                              }
+                                            }
                                             disabled={!input.trim()} // Button disabled when input is empty or just whitespace
                                         >
                                             <SendIcon/>
@@ -518,9 +567,9 @@ const Chat = () => {
     );
 }
 
-const ChatMessage = ({message, user}) => {
+const ChatMessage = ({content, role}) => {
     const classes = useStyles();
-    if (user === "gpt") {
+    if (role === "agent") {
         return (
             <div className={classes.chatMessageGPT}>
                 <div className={classes.chatMessageCenter}>
@@ -534,7 +583,7 @@ const ChatMessage = ({message, user}) => {
                                  marginLeft: 2
                              }}/>
                     </div>
-                    <div className={classes.message}>{message}</div>
+                    <div className={classes.message}>{content}</div>
 
                     {/*<div className={classes.feedbackButtons}>*/}
                     {/*    <IconButton onClick={() => onFeedback(index, 'up')}>*/}
@@ -555,7 +604,7 @@ const ChatMessage = ({message, user}) => {
                     <div className={classes.avatarME}>
                         YOU
                     </div>
-                    <div className={classes.message}>{message}</div>
+                    <div className={classes.message}>{content}</div>
                 </div>
             </div>
         );

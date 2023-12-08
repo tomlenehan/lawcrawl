@@ -16,7 +16,6 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
-from storages.backends.s3boto3 import S3Boto3Storage
 
 # Load environment variables from .env file
 load_dotenv()
@@ -56,6 +55,7 @@ INSTALLED_APPS = [
     'webpack_loader',
 
     # Third party apps
+    # "daphne",
     "rest_framework",
     "djoser",
     "corsheaders",
@@ -108,6 +108,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "lawcrawl.wsgi.application"
+# ASGI_APPLICATION = "lawcrawl.asgi.application"
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -233,8 +234,8 @@ AWS_UPLOAD_BUCKET_NAME = os.getenv('AWS_UPLOAD_BUCKET_NAME')
 
 # Set storage backends
 if USE_AWS_S3_FOR_STATIC_FILES:
-    STATICFILES_STORAGE = 'lawcrawl.storages.StaticStorage'
-    DEFAULT_FILE_STORAGE = 'lawcrawl.storages.UploadStorage'
+    STATICFILES_STORAGE = 'lawcrawl.custom_storages.StaticStorage'
+    DEFAULT_FILE_STORAGE = 'lawcrawl.custom_storages.UploadStorage'
     STATIC_URL = f'https://{AWS_STATIC_BUCKET_NAME}.s3.amazonaws.com/static/'
 else:
     STATIC_URL = '/frontend/static/'

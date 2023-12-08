@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 django = "*"
 djangorestframework-simplejwt = "==4.8.0"
+ninja = "*"
 
 [dev-packages]
 
