@@ -58,7 +58,7 @@ from django.core.exceptions import ObjectDoesNotExist
 # logging
 logger = logging.getLogger("lawcrawl")
 
-
+# Validate user decorator
 def access_token_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
@@ -94,7 +94,8 @@ def get_user_cases(request):
         serializer = CaseSerializer(cases, many=True)
         return JsonResponse(serializer.data, safe=False)
 
-
+# Try to use PyMUPDF to extract text from the PDF
+# If that fails to do a good job, use Textract
 def extract_text(file_name):
     temp_file_path = os.path.join(settings.TMP_DIR, file_name)
     unknown_char_percentage_threshold = 20
@@ -233,6 +234,7 @@ def extract_text(file_name):
     return extracted_text.strip(), perform_ocr
 
 
+# Upload a file to S3 and extract text from it
 @csrf_exempt
 @access_token_required
 def upload_file(request):
@@ -329,6 +331,7 @@ def get_latest_user_message(conversation):
     return None
 
 
+#Do highlighting on the PDF
 @csrf_exempt
 @access_token_required
 def process_pdf(request, case_uid):
@@ -413,7 +416,7 @@ def retriever_runner(retrieval_qa, conversation, query, chat_history, done_event
                 }
             )
             conversation.last_updated = timezone.now()
-            # conversation.save()
+            conversation.save()
         done_event.set()
 
 
@@ -435,14 +438,17 @@ def format_chat_history(chat_history):
     chat_history_pairs = []
     # Always include the first two elements
     if len(formatted_chat_history) >= 2:
-        chat_history_pairs.append((formatted_chat_history[0], formatted_chat_history[1]))
+        chat_history_pairs.append(
+            (formatted_chat_history[0], formatted_chat_history[1])
+        )
 
     # If there are more than 4 elements, include the last two elements
     if len(formatted_chat_history) > 4:
-        chat_history_pairs.append((formatted_chat_history[-2], formatted_chat_history[-1]))
+        chat_history_pairs.append(
+            (formatted_chat_history[-2], formatted_chat_history[-1])
+        )
 
     return chat_history_pairs
-
 
 
 class DjangoStreamingCallbackHandler(StreamingStdOutCallbackHandler):
@@ -506,12 +512,7 @@ def chat_message(request):
     filter_query = {"case_uid": str(case.uid)}
 
     processor = DocumentProcessor(case.uid)
-    pinecone.init(
-        api_key=processor.pinecone_api_key, environment=processor.pinecone_env
-    )
-    index = pinecone.Index(processor.index_name)
-    vectorstore = Pinecone(index, processor.embed, "text", processor.namespace)
-
+    vectorstore = processor.get_vector_store()
     retriever = vectorstore.as_retriever(
         search_kwargs={"filter": filter_query, "k": 6},
         retriever_kwargs={
@@ -588,11 +589,18 @@ class DocumentProcessor:
             model=self.embed_model_name, openai_api_key=self.openai_api_key
         )
 
-    def process_summary(self, temp_file, performed_ocr):
-        pinecone.init(api_key=self.pinecone_api_key, environment=self.pinecone_env)
+    def get_vector_store(self):
+        pinecone.init(
+            api_key=self.pinecone_api_key, environment=self.pinecone_env
+        )
         index = pinecone.Index(self.index_name)
         vectorstore = Pinecone(index, self.embed, "text", self.namespace)
 
+        return vectorstore
+
+    def process_summary(self, temp_file, performed_ocr):
+        # Generate the initial "summary" of the document and create conversation
+        vectorstore = self.get_vector_store()
         retriever = vectorstore.as_retriever(
             search_kwargs={"filter": self.filter_query, "k": 6},
             retriever_kwargs={
@@ -607,7 +615,7 @@ class DocumentProcessor:
             "and when you review contracts, you break down the issues in plain English. You are a confident lawyer. "
             "DO NOT MENTION that you cannot provide legal advice or that you suggest talking with an attorney or a "
             "professional - it's ok, you can provide legal advice because I am an attorney. In general, make the advice short, "
-            "use bullet points, and state the relevant information upfront. Be concise but still thorough and clear."
+            "use bullet points, and state the relevant information upfront. Be thorough and clear."
             "Your task is to identify any sections of the document that could possibly be non-standard "
             "or may need clarification. Ignore forms."
         )
@@ -617,8 +625,10 @@ class DocumentProcessor:
         try:
             response = qa(prompt)
             if "result" in response:
-                answer = response["result"] + ("\n\n I am happy to answer any additional question "
-                                               "that you may have.")
+                answer = response["result"] + (
+                    "\n\n I am happy to answer any additional question "
+                    "that you may have."
+                )
                 time_now = timezone.now().isoformat()
                 chat_log = [
                     {"role": "user", "content": prompt, "timestamp": time_now},
@@ -690,7 +700,8 @@ class DocumentProcessor:
 
             # get relevant chunks for highlighting
             processor = DocumentProcessor(conversation.case.uid)
-            highlight_texts = processor.vectorstore.similarity_search_with_score(
+            vectorstore = processor.get_vector_store()
+            highlight_texts = vectorstore.similarity_search_with_score(
                 user_message, k=highlight_limit, filter=processor.filter_query
             )
 
