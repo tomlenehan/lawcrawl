@@ -55,7 +55,6 @@ INSTALLED_APPS = [
     'webpack_loader',
 
     # Third party apps
-    # "daphne",
     "rest_framework",
     "djoser",
     "corsheaders",

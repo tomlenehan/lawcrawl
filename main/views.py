@@ -32,6 +32,11 @@ from langchain.tools import Tool
 from langchain.callbacks.streaming_stdout_final_only import (
     FinalStreamingStdOutCallbackHandler,
 )
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain.chains.conversational_retrieval.prompts import (
+    CONDENSE_QUESTION_PROMPT,
+    QA_PROMPT,
+)
 from .models import CaseConversation, UploadedFile, Case
 from lawcrawl.custom_storages import UploadStorage
 import jwt
@@ -328,7 +333,7 @@ def get_latest_user_message(conversation):
 @access_token_required
 def process_pdf(request, case_uid):
     try:
-        query = request.GET.get('query')
+        query = request.GET.get("query")
         conversation = CaseConversation.objects.get(case__uid=case_uid)
 
         # Check if the requesting user is associated with the Case
@@ -384,34 +389,31 @@ def sanitize_pdf(uploaded_file_obj):
         return False, f"Error opening file: {str(e)}"
 
 
-def agent_runner(agent, conversation, query, chat_history, done_event):
+def retriever_runner(retrieval_qa, conversation, query, chat_history, done_event):
     # Run the agent and save the conversation
     response = ""
     try:
-        prompt = (
-            "Use the 'Lawcrawl Retrieval Tool' to answer the following question:"
-            + query
-        )
-        response = agent.run({"input": prompt, "chat_history": chat_history})
+        response = retrieval_qa({"question": query, "chat_history": chat_history})
 
     finally:
-        time_now = timezone.now().isoformat()
-        conversation.conversation.append(
-            {
-                "role": "user",
-                "content": query,
-                "timestamp": time_now,
-            }
-        )
-        conversation.conversation.append(
-            {
-                "role": "agent",
-                "content": response,
-                "timestamp": time_now,
-            }
-        )
-        conversation.last_updated = timezone.now()
-        conversation.save()
+        if "answer" in response:
+            time_now = timezone.now().isoformat()
+            conversation.conversation.append(
+                {
+                    "role": "user",
+                    "content": query,
+                    "timestamp": time_now,
+                }
+            )
+            conversation.conversation.append(
+                {
+                    "role": "agent",
+                    "content": response["answer"],
+                    "timestamp": time_now,
+                }
+            )
+            conversation.last_updated = timezone.now()
+            # conversation.save()
         done_event.set()
 
 
@@ -427,90 +429,33 @@ def generate_streaming_content(output_list, done_event):
 
 
 def format_chat_history(chat_history):
-    # Format the chat history so it can be used by the agent
+    # Extract the content from chat history items
+    formatted_chat_history = [item["content"] for item in chat_history]
 
-    formatted_chat_history = []
-    for item in chat_history:
-        if item["role"] == "user":
-            formatted_chat_history.append(
-                HumanMessage(
-                    content=item["content"],
-                    timestamp=item["timestamp"],
-                    metadata={"role": item["role"]},
-                )
-            )
-        elif item["role"] == "agent":
-            formatted_chat_history.append(
-                AIMessage(
-                    content=item["content"],
-                    timestamp=item["timestamp"],
-                    metadata={"role": item["role"]},
-                )
-            )
-    return formatted_chat_history
+    chat_history_pairs = []
+    # Always include the first two elements
+    if len(formatted_chat_history) >= 2:
+        chat_history_pairs.append((formatted_chat_history[0], formatted_chat_history[1]))
+
+    # If there are more than 4 elements, include the last two elements
+    if len(formatted_chat_history) > 4:
+        chat_history_pairs.append((formatted_chat_history[-2], formatted_chat_history[-1]))
+
+    return chat_history_pairs
 
 
-@csrf_exempt
-def chat_message(request):
-    # session_id = request.GET.get("session_id")
-    message = request.GET.get("message")
-    conversation_id = request.GET.get("conversation_id")
-    conversation = CaseConversation.objects.get(id=conversation_id)
-    case = Case.objects.get(id=conversation.case_id)
-    filter_query = {"case_uid": str(case.uid)}
 
-    processor = DocumentProcessor(case.uid)
+class DjangoStreamingCallbackHandler(StreamingStdOutCallbackHandler):
+    def __init__(self, output_list, *args, **kwargs):
+        self.output_list = output_list
 
-    retriever = processor.vectorstore.as_retriever(
-        search_kwargs={"filter": filter_query, "k": 4},
-        retriever_kwargs={
-            "search_kwargs": {"filter": filter_query},
-        },
-        include_values=True,
-    )
+    def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
+        super().on_llm_new_token(token, **kwargs)
 
-    retrieval_qa = RetrievalQA.from_chain_type(
-        llm=processor.llm, chain_type="stuff", retriever=retriever
-    )
-
-    agent = processor.agent
-
-    tools = [
-        Tool(
-            name="Lawcrawl Retrieval Tool",
-            func=retrieval_qa.run,
-            description="You are friendly AI legal assistant tasked with giving "
-            "helpful answers to questions about the user's legal document.",
-        )
-    ]
-    agent.tools = tools
-
-    # Format the chat history so it can be used by the agent,
-    # limit it to the last 4 messages
-    chat_history = format_chat_history(conversation.conversation[-4:])
-
-    output_list = []
-    done_event = Event()  # Event to signal the completion of the agent's run
-    callback_handler = DjangoStreamingCallbackHandler(output_list)
-    agent.agent.llm_chain.llm.callbacks = [callback_handler]
-
-    thread = threading.Thread(
-        target=agent_runner,
-        args=(
-            agent,
-            conversation,
-            message,
-            chat_history,
-            done_event,
-        ),
-    )
-    thread.start()
-
-    streaming_content = generate_streaming_content(output_list, done_event)
-    return StreamingHttpResponse(streaming_content, content_type="text/event-stream")
+        self.output_list.append(token)
 
 
-class DjangoStreamingCallbackHandler(FinalStreamingStdOutCallbackHandler):
+class DjangoStreamingCallbackHandlerAgent(FinalStreamingStdOutCallbackHandler):
     def __init__(self, output_list, *args, **kwargs):
         # Custom answer prefix tokens
         custom_answer_prefix_tokens = [
@@ -551,6 +496,70 @@ class DjangoStreamingCallbackHandler(FinalStreamingStdOutCallbackHandler):
                 self.output_list.append(cleaned_token)
 
 
+@csrf_exempt
+def chat_message(request):
+    # session_id = request.GET.get("session_id")
+    message = request.GET.get("message")
+    conversation_id = request.GET.get("conversation_id")
+    conversation = CaseConversation.objects.get(id=conversation_id)
+    case = Case.objects.get(id=conversation.case_id)
+    filter_query = {"case_uid": str(case.uid)}
+
+    processor = DocumentProcessor(case.uid)
+    pinecone.init(
+        api_key=processor.pinecone_api_key, environment=processor.pinecone_env
+    )
+    index = pinecone.Index(processor.index_name)
+    vectorstore = Pinecone(index, processor.embed, "text", processor.namespace)
+
+    retriever = vectorstore.as_retriever(
+        search_kwargs={"filter": filter_query, "k": 6},
+        retriever_kwargs={
+            "search_kwargs": {"filter": filter_query},
+        },
+        include_values=True,
+    )
+
+    chat_history = format_chat_history(conversation.conversation)
+
+    output_list = []
+    done_event = Event()  # Event to signal the completion of the agent's run
+    callback_handler = DjangoStreamingCallbackHandler(output_list)
+
+    llm = ChatOpenAI(temperature=0, openai_api_key=processor.openai_api_key)
+    streaming_llm = ChatOpenAI(
+        streaming=True,
+        callbacks=[callback_handler],
+        temperature=0,
+        openai_api_key=processor.openai_api_key,
+    )
+
+    question_generator = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
+    doc_chain = load_qa_chain(streaming_llm, chain_type="stuff", prompt=QA_PROMPT)
+
+    qa = ConversationalRetrievalChain(
+        combine_docs_chain=doc_chain,
+        retriever=retriever,
+        question_generator=question_generator,
+        return_source_documents=True,
+    )
+
+    thread = threading.Thread(
+        target=retriever_runner,
+        args=(
+            qa,
+            conversation,
+            message,
+            chat_history,
+            done_event,
+        ),
+    )
+    thread.start()
+
+    streaming_content = generate_streaming_content(output_list, done_event)
+    return StreamingHttpResponse(streaming_content, content_type="text/event-stream")
+
+
 class DocumentProcessor:
     def __init__(self, case_uid):
         self.case = Case.objects.get(uid=str(case_uid))
@@ -578,53 +587,42 @@ class DocumentProcessor:
         self.embed = OpenAIEmbeddings(
             model=self.embed_model_name, openai_api_key=self.openai_api_key
         )
-        pinecone.init(api_key=self.pinecone_api_key, environment=self.pinecone_env)
-        self.index = pinecone.Index(self.index_name)
-        self.vectorstore = Pinecone(self.index, self.embed, "text", self.namespace)
-
-        # Initialize agent
-        self.agent = initialize_agent(
-            agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,
-            tools=[],
-            llm=self.llm,
-            verbose=False,
-            max_iterations=3,
-            early_stopping_method="generate",
-            # memory=memory,
-            return_intermediate_steps=False,
-        )
 
     def process_summary(self, temp_file, performed_ocr):
-        retriever = self.vectorstore.as_retriever(
+        pinecone.init(api_key=self.pinecone_api_key, environment=self.pinecone_env)
+        index = pinecone.Index(self.index_name)
+        vectorstore = Pinecone(index, self.embed, "text", self.namespace)
+
+        retriever = vectorstore.as_retriever(
             search_kwargs={"filter": self.filter_query, "k": 6},
             retriever_kwargs={
                 "search_kwargs": {"filter": self.filter_query},
             },
             include_values=True,
         )
-        question = (
-            "You are friendly AI legal assistant tasked with analyzing the provided document "
-            "and identify any sections that could possibly be non-standard "
-            "or may need clarification. Ignore incomplete forms. Do not say if you can't"
-            " conclusively evaluate and keep your response brief."
+        prompt = (
+            "You are an excellent in-house lawyer and general counsel for my company. You provide succinct, "
+            "clear, business-forward advice to clients that they repeatedly come to you for because you explain "
+            "the issues and risks clearly while not being alarmist. Companies you admire include Apple and Amazon, "
+            "and when you review contracts, you break down the issues in plain English. You are a confident lawyer. "
+            "DO NOT MENTION that you cannot provide legal advice or that you suggest talking with an attorney or a "
+            "professional - it's ok, you can provide legal advice because I am an attorney. In general, make the advice short, "
+            "use bullet points, and state the relevant information upfront. Be concise but still thorough and clear."
+            "Your task is to identify any sections of the document that could possibly be non-standard "
+            "or may need clarification. Ignore forms."
         )
 
         qa = RetrievalQA.from_llm(llm=self.llm, retriever=retriever)
 
         try:
-            response = qa(question)
+            response = qa(prompt)
             if "result" in response:
-                answer = response["result"]
+                answer = response["result"] + ("\n\n I am happy to answer any additional question "
+                                               "that you may have.")
                 time_now = timezone.now().isoformat()
                 chat_log = [
-                    {"role": "user", "content": question, "timestamp": time_now},
+                    {"role": "user", "content": prompt, "timestamp": time_now},
                     {"role": "agent", "content": answer, "timestamp": time_now},
-                    {
-                        "role": "agent",
-                        "content": "I hope that helped and I'm happy to answer any additional "
-                        "questions that you may have.",
-                        "timestamp": time_now,
-                    },
                 ]
 
                 conversation = CaseConversation.objects.create(
@@ -768,7 +766,11 @@ class DocumentProcessor:
             ids = [str(uuid4()) for _ in range(len(texts))]
             vectors = self.embed.embed_documents(texts)
             vector_pkg = list(zip(ids, vectors, metadatas))
-            self.index.upsert(
+
+            pinecone.init(api_key=self.pinecone_api_key, environment=self.pinecone_env)
+            index = pinecone.Index(self.index_name)
+
+            index.upsert(
                 vectors=vector_pkg,
                 namespace=self.namespace,
                 batch_size=self.batch_limit,
