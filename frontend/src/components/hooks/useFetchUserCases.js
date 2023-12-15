@@ -12,7 +12,11 @@ const useFetchUserCases = () => {
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                if (response.status === 401) {
+                    // Dispatch a logout action
+                    dispatch(logout());
+                }
+                return response.status;
             }
             const data = await response.json();
 

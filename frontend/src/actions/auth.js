@@ -55,7 +55,6 @@ export const twitterAuthenticate = (state, code, verifier) => async (dispatch) =
             const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/o/twitter/?${formBody}`, config)
             dispatch({
                 type: TWITTER_AUTH_SUCCESS,
-
                 payload: res.data
             })
         } catch (err) {

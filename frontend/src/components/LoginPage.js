@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react'
+import { useNavigate } from 'react-router-dom';
 import {Link, Navigate} from 'react-router-dom'
 import {connect, useDispatch, useSelector} from 'react-redux'
 import {ThemeProvider, makeStyles, Button, Typography, Container, Box} from "@material-ui/core";
@@ -87,6 +88,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 const LoginPage = ({isAuthenticated}) => {
+    const navigate = useNavigate();
 
     const loginWithTwitter = async () => {
         // Logic for logging in with Twitter
@@ -110,7 +112,8 @@ const LoginPage = ({isAuthenticated}) => {
     };
 
     if (isAuthenticated) {
-        return <Navigate to="/chat"/>;
+        console.log("isAuthenticated");
+        navigate('/chat');
     }
 
     const classes = useStyles();

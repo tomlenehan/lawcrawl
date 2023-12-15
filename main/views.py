@@ -24,6 +24,9 @@ from django.forms.models import model_to_dict
 from django.shortcuts import get_object_or_404
 from django.http import FileResponse
 from django.http import HttpResponseForbidden
+from django.contrib.auth import logout
+from django.shortcuts import redirect
+
 from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
 from langchain.document_loaders import PyMuPDFLoader
@@ -66,7 +69,7 @@ def access_token_required(view_func):
             "HTTP_AUTHORIZATION"
         )  # Get the 'Authorization' header
         if not access_token or not access_token.startswith("Bearer "):
-            return JsonResponse({"error": "Access token required"}, status=401)
+            return JsonResponse({"error": "Access token required, please login again"}, status=401)
 
         access_token = access_token[7:]  # Remove the 'Bearer '
         user = get_user_model()
@@ -79,7 +82,7 @@ def access_token_required(view_func):
             user = user.objects.get(pk=user_id)
             request.user = user
         except (jwt.InvalidTokenError, user.DoesNotExist):
-            return JsonResponse({"error": "Invalid access token"}, status=401)
+            return JsonResponse({"error": "Invalid access token, please login again"}, status=401)
 
         return view_func(request, *args, **kwargs)
 
@@ -331,7 +334,7 @@ def get_latest_user_message(conversation):
     return None
 
 
-#Do highlighting on the PDF
+# Do highlighting on the PDF
 @csrf_exempt
 @access_token_required
 def process_pdf(request, case_uid):
@@ -590,9 +593,7 @@ class DocumentProcessor:
         )
 
     def get_vector_store(self):
-        pinecone.init(
-            api_key=self.pinecone_api_key, environment=self.pinecone_env
-        )
+        pinecone.init(api_key=self.pinecone_api_key, environment=self.pinecone_env)
         index = pinecone.Index(self.index_name)
         vectorstore = Pinecone(index, self.embed, "text", self.namespace)
 

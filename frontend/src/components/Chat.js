@@ -1,7 +1,7 @@
 import React, {useEffect, useRef, useState} from "react";
 import {makeStyles} from '@material-ui/core/styles';
 import {Link, useNavigate} from 'react-router-dom';
-import {useDispatch, useSelector} from 'react-redux';
+import {connect, useDispatch, useSelector} from 'react-redux';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import ThumbUpIcon from '@material-ui/icons/ThumbUp';
@@ -12,7 +12,6 @@ import PrivacyTip from '@mui/icons-material/PrivacyTip';
 import axios from "axios";
 import {Box} from "@material-ui/core";
 import config from "./config";
-import {addUserCase} from "../actions/user";
 import AdComponent from "./AdComponent"
 import AdSenseAd from './AdSenseAd';
 import TermsOfService from "./TermsOfService";
@@ -206,11 +205,11 @@ const Chat = () => {
             "answer all of your legal questions.",
     }];
     const classes = useStyles();
-    const token = localStorage.getItem('access');
     const [input, setInput] = useState('');
     const [loadingChatLog, setLoadingChatLog] = useState(false);
     const [loadingPDF, setLoadingPDF] = useState(false);
     const userCases = useSelector((state) => state.userCases);
+    const token = useSelector((state) => state.auth.access);
     const [currentCase, setCurrentCase] = useState(null);
     const [conversationID, setConversationID] = useState(null);
     const [sessionID, setSessionID] = useState(null);
@@ -255,31 +254,11 @@ const Chat = () => {
     };
 
     useEffect(() => {
-        processPDF(currentCase, token, "");
+        if(token) {
+            processPDF(currentCase, token, "");
+        }
     }, [token, currentCase]);
 
-    // useEffect(() => {
-    //     const processPDF = async () => {
-    //         setLoadingPDF(true);
-    //         if (currentCase) {
-    //             try {
-    //                 const response = await axios.get(`/api/process_pdf/${currentCase.uid}`, {
-    //                     headers: {
-    //                         'Authorization': `Bearer ${token}`,
-    //                     },
-    //                     responseType: 'blob',
-    //                 });
-    //                 // const data = await response;
-    //                 console.log('processing_pdf');
-    //                 const pdfBlob = new Blob([response.data], {type: 'application/pdf'});
-    //                 setFile(pdfBlob);
-    //             } finally {
-    //                 setLoadingPDF(false);
-    //             }
-    //         }
-    //     };
-    //     processPDF();
-    // }, [token, currentCase]);
 
     useEffect(() => {
         const setCurrentCaseFromLocation = () => {
@@ -300,19 +279,26 @@ const Chat = () => {
             }
         };
 
-        if (userCases.length === 0) {
-            fetchUserCases(token, dispatch)
-                .then(() => {
-                    setCurrentCaseFromLocation();
-                })
-                .catch(error => {
-                    console.error('Error fetching user cases:', error);
-                    handleLogout();
-                });
-        } else {
-            setCurrentCaseFromLocation();
+        console.log("setting_case");
+        if(token != null) {
+            if (userCases.length === 0) {
+                fetchUserCases(token, dispatch)
+                    .then((status) => {
+                        if (status !== 401) {
+                            setCurrentCaseFromLocation();
+                        } else {
+                            handleLogout();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching user cases:', error);
+                        handleLogout();
+                    });
+            } else {
+                setCurrentCaseFromLocation();
+            }
         }
-    }, [userCases, location.search]);
+    }, [token, userCases, location.search]);
 
 
     useEffect(() => {
@@ -445,7 +431,7 @@ const Chat = () => {
                             to={`/chat?uid=${userCase.uid}`}
                             onClick={() => {
                                 setCurrentCase(userCase);
-                                setChatLog(chatLogBaseline);
+                                // setChatLog(chatLogBaseline);
                             }}
                             style={{
                                 backgroundColor: currentCase && userCase.uid === currentCase.uid ? '#2a2a2a' : 'transparent',

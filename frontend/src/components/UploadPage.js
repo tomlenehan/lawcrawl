@@ -128,12 +128,7 @@ const useStyles = makeStyles((theme) => ({
     },
 }));
 
-
-// function CheckBoxIcon() {
-//     return null;
-// }
-
-const UploadPage = ({isAuthenticated, userCases}) => {
+const UploadPage = ({token, isAuthenticated, userCases}) => {
     const classes = useStyles();
     const [loading, setLoading] = React.useState(false);
     const [caseName, setCaseName] = React.useState('');
@@ -144,7 +139,6 @@ const UploadPage = ({isAuthenticated, userCases}) => {
     const [fileLoaded, setFileLoaded] = React.useState(false);
     const [fileName, setFileName] = React.useState("");
     const [openModal, setOpenModal] = useState(false);
-    const token = localStorage.getItem('access');
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const fetchUserCases = useFetchUserCases();
@@ -155,18 +149,21 @@ const UploadPage = ({isAuthenticated, userCases}) => {
     };
 
     const handleLogout = () => {
+        console.log("logging_out");
         dispatch(logout());
         navigate('/login');
     };
 
     useEffect(() => {
-        if (token && (!userCases || userCases.length === 0)) {
-            useFetchUserCases()(token, dispatch).catch(error => {
-                console.error('Error fetching user cases:', error);
-                handleLogout();
-            });
-        }
-    }, [token]);
+        if(isAuthenticated === true && token != null) {
+                if (!userCases || userCases.length === 0) {
+                    fetchUserCases(token, dispatch).catch(error => {
+                        console.error('Error fetching user cases:', error);
+                        handleLogout();
+                    });
+                }
+            }
+    }, [isAuthenticated, token]);
 
 
     const handleFileChange = (event) => {
@@ -239,8 +236,6 @@ const UploadPage = ({isAuthenticated, userCases}) => {
 
             if (response.ok) {
                 const data = await response.json();
-                // Redirect to the chat page with the appropriate uid
-                // console.log('updating_user_cases');
                 const updatedUserCases = [data.case, ...userCases];
                 dispatch(addUserCase(updatedUserCases));
                 navigate(`/chat?uid=${data.case.uid}`);
@@ -505,6 +500,7 @@ const UploadPage = ({isAuthenticated, userCases}) => {
 }
 
 const mapStateToProps = (state) => ({
+    token: state.auth.access,
     isAuthenticated: state.auth.isAuthenticated,
     userCases: state.userCases,
 });
