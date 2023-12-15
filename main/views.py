@@ -397,6 +397,7 @@ def sanitize_pdf(uploaded_file_obj):
 
 def retriever_runner(retrieval_qa, conversation, query, chat_history, done_event):
     # Run the agent and save the conversation
+    prompt = f"Answer the following question in-depth \n\nQUESTION: {query}\n\nANSWER:"
     response = ""
     try:
         response = retrieval_qa({"question": query, "chat_history": chat_history})
@@ -711,7 +712,7 @@ class DocumentProcessor:
                 [
                     doc_and_score
                     for doc_and_score in highlight_texts
-                    if doc_and_score[1] >= 0.80
+                    if doc_and_score[1] >= 0.75
                 ],
                 key=lambda x: x[1],
                 reverse=True,
