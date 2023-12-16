@@ -22,6 +22,8 @@ import config from './config';
 const useStyles = makeStyles((theme) => ({
     appBar: {
         height: 50,
+        position: 'relative',
+        zIndex: 5,
     },
     menuButton: {
         color: '#3a3a3a',

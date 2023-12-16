@@ -10,7 +10,8 @@ const useStyles = makeStyles(() => ({
         justifyContent: 'center',
         textAlign: 'center',
         fontSize: '14px !important',
-        // marginTop: '1.5rem',
+        position: 'relative',
+        zIndex: 5,
         paddingTop: '50px',
     },
     link: {

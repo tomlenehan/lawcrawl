@@ -1,15 +1,15 @@
 {
   "status": "done",
   "assets": {
-    "fonts/MontserratRegular.ttf": {
-      "name": "fonts/MontserratRegular.ttf",
-      "path": "/Users/tomlenehan/Dev/lawcrawl/frontend/static/fonts/MontserratRegular.ttf",
-      "publicPath": "/static/frontend/fonts/MontserratRegular.ttf"
-    },
     "fonts/Lato-Black.ttf": {
       "name": "fonts/Lato-Black.ttf",
       "path": "/Users/tomlenehan/Dev/lawcrawl/frontend/static/fonts/Lato-Black.ttf",
       "publicPath": "/static/frontend/fonts/Lato-Black.ttf"
+    },
+    "fonts/MontserratRegular.ttf": {
+      "name": "fonts/MontserratRegular.ttf",
+      "path": "/Users/tomlenehan/Dev/lawcrawl/frontend/static/fonts/MontserratRegular.ttf",
+      "publicPath": "/static/frontend/fonts/MontserratRegular.ttf"
     },
     "fonts/BarlowCondensed-ExtraBold.ttf": {
       "name": "fonts/BarlowCondensed-ExtraBold.ttf",
