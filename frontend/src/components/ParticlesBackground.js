@@ -18,7 +18,7 @@ const ParticlesBackground = () => {
             options={{
                 particles: {
                     number: {
-                        value: 20,
+                        value: 15,
                         density: {
                             enable: true,
                             value_area: 710.2328774690454

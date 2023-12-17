@@ -130,9 +130,10 @@ const useStyles = makeStyles((theme) => ({
         marginLeft: theme.spacing(1), // Add some space between the image and the text
     },
     gradientBackground: {
-        background: 'linear-gradient(270deg, #26a69a, #80cbc4, #B2DFDB)',
+        // background: 'linear-gradient(270deg, #26a69a, #B2DFDB, #26a69a)',
+        background: 'linear-gradient(270deg, #B2DFDB, #26a69a, #B2DFDB)',
         backgroundSize: '600% 600%',
-        animation: '$gradientAnimation 20s ease infinite',
+        animation: '$gradientAnimation 25s ease infinite',
     },
     '@keyframes gradientAnimation': {
         '0%': {backgroundPosition: '0% 50%'},
@@ -158,7 +159,7 @@ const HomePage = ({isAuthenticated}) => {
 
                         <Grid container>
                             <Grid item xs={12}>
-                                <img src={`${config.STATIC_URL}images/logos/LogoLG.png`}
+                                <img src={`${config.STATIC_URL}images/logos/LogoLGGreen.png`}
                                      alt="Lawcrawl Logo"
                                      className={classes.mainLogo}/>
                             </Grid>
@@ -167,7 +168,7 @@ const HomePage = ({isAuthenticated}) => {
                                 <img src={`${config.STATIC_URL}images/logos/TextLogoLG.png`}
                                      alt="Lawcrawl Logo"
                                      className={classes.textLogo}/>
-                                <Typography className={classes.alphaText}>Alpha</Typography>
+                                <Typography className={classes.alphaText}>alpha</Typography>
                             </Grid>
 
                             <Grid item xs={12}>
