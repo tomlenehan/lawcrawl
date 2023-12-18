@@ -1,7 +1,12 @@
 import {
+    LOGIN_SUCCESS,
+    LOGIN_FAIL,
+    USER_LOADED_SUCCESS,
+    USER_LOADED_FAIL,
+    LOGOUT,
+    SET_AUTH_ERROR,
     TWITTER_AUTH_FAIL,
     TWITTER_AUTH_SUCCESS,
-    LOGOUT,
     GOOGLE_AUTH_FAIL,
     GOOGLE_AUTH_SUCCESS,
 } from "../actions/types";
@@ -15,8 +20,41 @@ const initialState = {
     secret: null,
 }
 
-export default function(state=initialState,action){
+export default function(state=initialState, action){
     switch (action.type){
+        case SET_AUTH_ERROR:
+            return {
+                ...state,
+                authError: action.payload
+            };
+        case LOGIN_SUCCESS:
+            localStorage.setItem('access', action.payload.access);
+            return{
+                ...state,
+                isAuthenticated: true,
+                access: action.payload.access,
+                refresh: action.payload.refresh
+            }
+        case LOGIN_FAIL:
+            localStorage.removeItem('access');
+            localStorage.removeItem('refresh');
+            return{
+                ...state,
+                isAuthenticated: false,
+                access: null,
+                refresh: null,
+                user: null,
+            }
+        case USER_LOADED_SUCCESS:
+            return{
+                ...state,
+                user: action.payload
+            }
+        case USER_LOADED_FAIL:
+            return{
+                ...state,
+                user: null
+            }
         case TWITTER_AUTH_SUCCESS:
             localStorage.setItem('access', action.payload.access);
             localStorage.setItem('refresh', action.payload.refresh);
@@ -26,7 +64,7 @@ export default function(state=initialState,action){
                 isAuthenticated: true,
                 access: action.payload.access,
                 refresh: action.payload.refresh,
-                user: action.payload.user, // Update the user in state
+                user: action.payload.user,
             }
         case TWITTER_AUTH_FAIL:
         case GOOGLE_AUTH_SUCCESS:

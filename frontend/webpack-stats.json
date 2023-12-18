@@ -1,25 +1,25 @@
 {
   "status": "done",
   "assets": {
-    "fonts/Lato-Black.ttf": {
-      "name": "fonts/Lato-Black.ttf",
-      "path": "/Users/tomlenehan/Dev/lawcrawl/frontend/static/fonts/Lato-Black.ttf",
-      "publicPath": "/static/frontend/fonts/Lato-Black.ttf"
-    },
     "fonts/MontserratRegular.ttf": {
       "name": "fonts/MontserratRegular.ttf",
       "path": "/Users/tomlenehan/Dev/lawcrawl/frontend/static/fonts/MontserratRegular.ttf",
       "publicPath": "/static/frontend/fonts/MontserratRegular.ttf"
     },
-    "fonts/BarlowCondensed-ExtraBold.ttf": {
-      "name": "fonts/BarlowCondensed-ExtraBold.ttf",
-      "path": "/Users/tomlenehan/Dev/lawcrawl/frontend/static/fonts/BarlowCondensed-ExtraBold.ttf",
-      "publicPath": "/static/frontend/fonts/BarlowCondensed-ExtraBold.ttf"
+    "fonts/Lato-Black.ttf": {
+      "name": "fonts/Lato-Black.ttf",
+      "path": "/Users/tomlenehan/Dev/lawcrawl/frontend/static/fonts/Lato-Black.ttf",
+      "publicPath": "/static/frontend/fonts/Lato-Black.ttf"
     },
     "fonts/DMSans-Bold.ttf": {
       "name": "fonts/DMSans-Bold.ttf",
       "path": "/Users/tomlenehan/Dev/lawcrawl/frontend/static/fonts/DMSans-Bold.ttf",
       "publicPath": "/static/frontend/fonts/DMSans-Bold.ttf"
+    },
+    "fonts/BarlowCondensed-ExtraBold.ttf": {
+      "name": "fonts/BarlowCondensed-ExtraBold.ttf",
+      "path": "/Users/tomlenehan/Dev/lawcrawl/frontend/static/fonts/BarlowCondensed-ExtraBold.ttf",
+      "publicPath": "/static/frontend/fonts/BarlowCondensed-ExtraBold.ttf"
     },
     "main.js": {
       "name": "main.js",

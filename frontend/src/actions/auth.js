@@ -1,4 +1,9 @@
 import {
+    LOGIN_SUCCESS,
+    LOGIN_FAIL,
+    USER_LOADED_SUCCESS,
+    USER_LOADED_FAIL,
+    SET_AUTH_ERROR,
     TWITTER_AUTH_FAIL,
     TWITTER_AUTH_SUCCESS,
     GOOGLE_AUTH_FAIL,
@@ -10,28 +15,84 @@ import axios from "axios";
 
 axios.defaults.withCredentials = true;
 
-export const googleAuthenticate = (state, code) => async dispatch =>{
-
-    if( state && code && !localStorage.getItem('access')){
+export const load_user = () => async dispatch => {
+    if (localStorage.getItem('access')) {
         const config = {
             headers: {
-                'Content-Type':'application/x-www-form-urlencoded'
-            }}
-        const details = {
-                'state': state,
-                'code':code
+                'Content-Type': 'application/json',
+                'Authorization': `JWT ${localStorage.getItem('access')}`,
+                'Accept': 'application/json'
+            }
+        };
+
+        try {
+            const res = await axios.get(`${process.env.REACT_APP_API_URL}/auth/users/me/`, config);
+
+            dispatch({
+                type: USER_LOADED_SUCCESS,
+                payload: res.data
+            });
+        } catch (err) {
+            dispatch({
+                type: USER_LOADED_FAIL
+            });
         }
-        const formBody = Object.keys(details).map(key=> encodeURIComponent(key)+'='+encodeURIComponent(details[key])).join('&')
-        try{
+    } else {
+        dispatch({
+            type: USER_LOADED_FAIL
+        });
+    }
+};
+
+export const login = (email, password) => async dispatch => {
+    console.log("trying_login");
+    const config = {
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    }
+    const body = JSON.stringify({email, password})
+    try {
+        const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/jwt/create/`, body, config);
+        dispatch({
+            type: LOGIN_SUCCESS,
+            payload: res.data
+        })
+        dispatch(load_user())
+    } catch (err) {
+        console.log("login_failed");
+        dispatch({
+            type: LOGIN_FAIL
+        });
+        dispatch({
+            type: SET_AUTH_ERROR,
+            payload: err.response.data.detail
+        });
+    }
+}
+
+export const googleAuthenticate = (state, code) => async dispatch => {
+    if (state && code && !localStorage.getItem('access')) {
+        const config = {
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            }
+        }
+        const details = {
+            'state': state,
+            'code': code
+        }
+        const formBody = Object.keys(details).map(key => encodeURIComponent(key) + '=' + encodeURIComponent(details[key])).join('&')
+        try {
             const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/o/google-oauth2/?${formBody}`, config);
             console.log(res.data)
             dispatch({
-                type:GOOGLE_AUTH_SUCCESS,
+                type: GOOGLE_AUTH_SUCCESS,
                 payload: res.data
             })
-        }catch(err){
+        } catch (err) {
             dispatch({
-                type:GOOGLE_AUTH_FAIL
+                type: GOOGLE_AUTH_FAIL
             })
         }
     }

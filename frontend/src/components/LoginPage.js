@@ -1,13 +1,22 @@
 import React, {useEffect, useState} from 'react'
-import { useNavigate } from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
+import {useForm} from 'react-hook-form';
 import {Link, Navigate} from 'react-router-dom'
 import {connect, useDispatch, useSelector} from 'react-redux'
-import {ThemeProvider, makeStyles, Button, Typography, Container, Box} from "@material-ui/core";
-import TwitterIcon from "@mui/icons-material/Twitter";
-import GoogleIcon from "@mui/icons-material/Google";
+import {login} from '../actions/auth';
+import {
+    ThemeProvider,
+    makeStyles,
+    Button,
+    Typography,
+    Container,
+    Box,
+    TextField
+} from "@material-ui/core";
+import Alert from '@material-ui/lab/Alert';
+import LoginSocial from "./LoginSocial";
 import Footer from "./Footer";
 import theme from "./Theme";
-import axios from "axios";
 import Grid from "@material-ui/core/Grid";
 import config from "./config";
 
@@ -19,13 +28,11 @@ const useStyles = makeStyles((theme) => ({
         height: "100vh",
     },
     contentContainer: {
-        paddingTop: 60,
-        textAlign: "left",
-    },
-    formContainer: {
         display: "flex",
         flexDirection: "column",
+        paddingTop: 60,
         alignItems: "center",
+        textAlign: "center",
     },
     mainLogo: {
         width: 100,
@@ -34,89 +41,74 @@ const useStyles = makeStyles((theme) => ({
     },
     loginHeadline: {
         fontFamily: "DMSans, sans-serif",
+        marginBottom: 0,
     },
     loginBody: {
         maxWidth: 400,
         textAlign: "center"
     },
-    buttonContainer: {
+    formContainer: {
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
         textAlign: "center",
-        borderRadius: 15,
         marginBottom: 20,
+        maxWidth: 220,
+    },
+    textField: {
+        minWidth: 200,
+        height: 55,
         width: '100%',
-        maxWidth: 400,
+        color: '#3a3a3a',
+    },
+    blackLabel: {
+        color: '#3a3a3a',
+    },
+    creamInput: {
+        backgroundColor: '#fdfbee',
+        '&:-webkit-autofill': {
+            WebkitBoxShadow: `0 0 0 1000px #fdfbee inset`, // Override the autofill background color
+            WebkitTextFillColor: '#3a3a3a', // You can also change the text color if needed
+        },
+    },
+    loginButton: {
+        backgroundColor: '#80cbc4',
+        borderRadius: '50px',
+        color: '#3a3a3a',
+        textTransform: 'none',
+        padding: '4px 25px',
+        width: 140,
+        height: 40,
+        marginTop: 18,
+        "&:hover": {
+            backgroundColor: '#26a69a',
+        },
+    },
+    signUpLink: {
         marginTop: theme.spacing(2),
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    commonButton: {
-        borderRadius: 25,
-        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
-        margin: theme.spacing(1, 0),
-        textTransform: 'none',
-        maxWidth: 200,
-        width: '200px',
-        marginTop: 15,
-    },
-    twitterButton: {
-        backgroundColor: "#1DA1F2",
-        borderRadius: '50px',
-        color: "white",
-        textTransform: 'none',
-        padding: '4px 25px',
-        maxWidth: 150,
-        "&:hover": {
-            backgroundColor: "#0C7EBF",
+        textDecoration: 'none',
+        color: theme.palette.primary.main, // Use primary color or any color you prefer
+        '&:hover': {
+            textDecoration: 'underline',
         },
-    },
-    googleButton: {
-        backgroundColor: "#4285F4",
-        color: "white",
-        textTransform: 'none',
-        padding: '4px 25px',
-        "&:hover": {
-            backgroundColor: "#357abd",
-        },
-        borderRadius: '50px',
-        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
-        margin: theme.spacing(1, 0),
-        maxWidth: 150,
-        marginTop: 20,
     },
 }));
 
-const LoginPage = ({isAuthenticated}) => {
+const LoginPage = ({login, isAuthenticated}) => {
+    const classes = useStyles();
     const navigate = useNavigate();
+    const authError = useSelector(state => state.auth.authError);
+    const {register, handleSubmit, formState: {errors}} = useForm();
 
-    const loginWithTwitter = async () => {
-        // Logic for logging in with Twitter
-        try {
-            const res = await axios.get(`/auth/o/twitter/?redirect_uri=${process.env.REACT_APP_API_URL}/upload`)
-            window.location.replace(res.data.authorization_url)
-
-        } catch (err) {
-            console.log("Error logging in")
-        }
-    };
-
-    const loginWithGoogle = async () => {
-        try {
-            const res = await axios.get(`${process.env.REACT_APP_API_URL}/auth/o/google-oauth2/?redirect_uri=${process.env.REACT_APP_API_URL}/upload`)
-            window.location.replace(res.data.authorization_url)
-
-        } catch (err) {
-            console.log("Error logging in")
-        }
+    const onSubmit = data => {
+        console.log("submitting_login", data);
+        login(data.email, data.password);
     };
 
     if (isAuthenticated) {
         console.log("isAuthenticated");
-        navigate('/chat');
+        navigate('/upload');
     }
-
-    const classes = useStyles();
 
     return (
         <ThemeProvider theme={theme}>
@@ -132,36 +124,77 @@ const LoginPage = ({isAuthenticated}) => {
                     <Box className={classes.formContainer}>
                         <Typography className={classes.loginHeadline} variant="h4"
                                     gutterBottom>
-                            Log in
+                            Login
                         </Typography>
-                        <Typography className={classes.loginBody} variant="subtitle1">
-                            to get started.
-                        </Typography>
-                        <Box className={classes.buttonContainer}>
 
+                        {authError &&
+                            <Alert variant="filled" severity="error">{authError}</Alert>}
+
+                        <form onSubmit={handleSubmit(onSubmit)}>
+                            <TextField
+                                label="Email"
+                                className={classes.textField}
+                                InputLabelProps={{className: classes.blackLabel}}
+                                InputProps={{
+                                    className: classes.creamInput
+                                }}
+                                variant="outlined"
+                                type="email"
+                                name="email"
+                                {...register('email', {
+                                    required: 'Email is required',
+                                    pattern: {
+                                        value: /^\S+@\S+$/i,
+                                        message: 'Invalid email address',
+                                    },
+                                })}
+                                error={!!errors.email}
+                                helperText={errors.email?.message}
+                                fullWidth
+                                margin="normal"
+                            />
+                            <TextField
+                                label="Password"
+                                className={classes.textField}
+                                InputLabelProps={{className: classes.blackLabel}}
+                                InputProps={{
+                                    className: classes.creamInput
+                                }}
+                                variant="outlined"
+
+                                type="password"
+                                name="password"
+                                {...register('password', {
+                                    required: 'Password is required',
+                                    minLength: {
+                                        value: 6,
+                                        message: 'Password must be at least 6 characters long',
+                                    },
+                                })}
+                                error={!!errors.password}
+                                helperText={errors.password?.message}
+                                fullWidth
+                                margin="normal"
+                            />
                             <Button
+                                type="submit"
                                 variant="contained"
-                                className={`${classes.googleButton} ${classes.commonButton}`}
-                                onClick={loginWithGoogle}
-                                startIcon={<GoogleIcon/>}
+                                color="primary"
+                                className={classes.loginButton}
                             >
-                                <Box style={{padding: 4, textDecoration: 'None'}}>
-                                    Google
-                                </Box>
+                                Login
                             </Button>
+                        </form>
 
-                            <Button
-                                variant="contained"
-                                className={`${classes.twitterButton} ${classes.commonButton}`}
-                                onClick={loginWithTwitter}
-                                startIcon={<TwitterIcon/>}
-                            >
-                                <Box style={{padding: 4, textDecoration: 'none !important'}}>
-                                    Twitter
-                                </Box>
-                            </Button>
+                        <Link to="/sign_up" className={classes.signUpLink}>
+                            Don't have an account? <br/>
+                            Sign up
+                        </Link>
 
-                        </Box>
+                        {/* Social Login Buttons */}
+                        <LoginSocial/>
+
+
                     </Box>
                 </Container>
             </Box>
@@ -170,4 +203,7 @@ const LoginPage = ({isAuthenticated}) => {
     );
 };
 
-export default LoginPage;
+const mapStateToProps = state => ({
+    isAuthenticated: state.auth.isAuthenticated
+});
+export default connect(mapStateToProps, {login})(LoginPage);

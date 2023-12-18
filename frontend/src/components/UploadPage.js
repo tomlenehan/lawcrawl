@@ -3,6 +3,7 @@ import {connect} from 'react-redux';
 import Grid from "@material-ui/core/Grid";
 import Modal from '@material-ui/core/Modal';
 import {Checkbox, FormControlLabel, Link} from '@material-ui/core';
+import Alert from '@material-ui/lab/Alert';
 import {makeStyles} from '@material-ui/core/styles';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
@@ -293,7 +294,8 @@ const UploadPage = ({token, isAuthenticated, userCases}) => {
                             {loading && <LinearProgress color="primary" size="lg"/>}
                             {/*Display errors*/}
                             {
-                                errorMessage && <div className={classes.error}>{errorMessage}</div>
+                                // errorMessage && <div className={classes.error}>{errorMessage}</div>
+                                errorMessage && <Alert variant="filled" severity="error">{errorMessage}</Alert>
                             }
 
                             <TextField
