@@ -10,6 +10,7 @@ import {ThemeProvider} from '@mui/material/styles';
 import {makeStyles} from "@material-ui/core";
 import HomePage from "./components/HomePage";
 import LoginPage from "./components/LoginPage";
+import SignupPage from "./components/SignupPage";
 import UploadPage from "./components/UploadPage";
 import ChatPage from "./components/ChatPage";
 import TermsOfServicePage from "./components/TermsOfServicePage";
@@ -48,6 +49,7 @@ export default function App() {
                                 <Route path="/" element={<HomePage/>}/>
                                 <Route path="/home" element={<HomePage/>}/>
                                 <Route path="/login" element={<LoginPage/>}/>
+                                <Route path="/signup" element={<SignupPage/>}/>
                                 <Route path="/upload" element={<UploadPage/>}/>
                                 <Route path="/chat" element={<ChatPage/>}/>
                                 <Route path="/terms" element={<TermsOfServicePage/>}/>

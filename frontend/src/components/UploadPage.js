@@ -103,9 +103,13 @@ const useStyles = makeStyles((theme) => ({
         fontWeight: "bold",
     },
     termsOfServiceLink: {
-        color: '#26a69a',
+        textDecoration: 'none',
         cursor: 'pointer',
         marginLeft: 10,
+        color: "#4285F4",
+        '&:hover': {
+            textDecoration: 'underline',
+        },
     },
     customCheckbox: {
         '&$checked': {
@@ -276,13 +280,13 @@ const UploadPage = ({token, isAuthenticated, userCases}) => {
                     <Grid container spacing={3} direction="column" alignItems="center">
 
                         <Grid item xs={12} style={{padding: 0}}>
-                            <Typography style={{fontSize: '1.7vw'}}>
+                            <Typography style={{fontSize: 22, color: '#3a3a3a', marginBottom: -20}}>
                                 {loading ? "Processing Document..." : "Upload your document"}
                             </Typography>
                             <Typography style={{
-                                fontSize: '1.2vw',
+                                fontSize: 18,
+                                color: '#3a3a3a',
                                 visibility: loading ? 'visible' : 'hidden',
-                                // marginBottom: -10,
                             }}>
                                 This will take a few minutes.
                             </Typography>
@@ -421,16 +425,17 @@ const UploadPage = ({token, isAuthenticated, userCases}) => {
                                     }}
                                     disabled={loading}
                                 />
+
+                                {/* TOS modal */}
                                 <Typography variant="body2" component="span">
                                     I agree to the
                                 </Typography>
-                                {/* Clickable "Terms of Service" text */}
-                                <Typography variant="body2" component="span"
-                                            className={classes.termsOfServiceLink}
+
+                            </div>
+                            <Link className={classes.termsOfServiceLink}
                                             onClick={handleOpenModal}>
                                     Terms of Service.
-                                </Typography>
-                            </div>
+                                </Link>
                         </Grid>
 
                         <Grid item xs={12}>

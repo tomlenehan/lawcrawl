@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {
-    AppBar as MuiAppBar,
+    AppBar,
     Toolbar,
     Button,
     makeStyles,
@@ -24,6 +24,8 @@ const useStyles = makeStyles((theme) => ({
         height: 50,
         position: 'relative',
         zIndex: 5,
+        boxShadow: 'none',
+        border: 'none',
     },
     menuButton: {
         color: '#3a3a3a',
@@ -39,8 +41,8 @@ const useStyles = makeStyles((theme) => ({
         color: '#3a3a3a',
     },
     toolbar: {
-        justifyContent: 'space-between', // Adjusted justifyContent
-        boxShadow: '0px 1px 5px 0px rgba(0, 0, 0, 0.2)',
+        justifyContent: 'space-between',
+        boxShadow: 'none',
     },
     loginButton: {
         backgroundColor: '#80cbc4',
@@ -89,7 +91,7 @@ const Navbar = ({isAuthenticated, logout, userCases}) => {
 
     return (
         <ThemeProvider theme={theme}>
-            <MuiAppBar position="static" className={classes.appBar} >
+            <AppBar component="nav" position="static" className={classes.appBar} >
                 <Toolbar className={classes.toolbar} variant="dense">
                     <Grid container justifyContent="space-between" alignItems="center">
                         <Grid item>
@@ -165,7 +167,7 @@ const Navbar = ({isAuthenticated, logout, userCases}) => {
                         </Grid>
                     </Grid>
                 </Toolbar>
-            </MuiAppBar>
+            </AppBar>
         </ThemeProvider>
     );
 };

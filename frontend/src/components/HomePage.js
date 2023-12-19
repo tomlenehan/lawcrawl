@@ -74,7 +74,7 @@ const useStyles = makeStyles((theme) => ({
     },
     loginButton: {
         backgroundColor: '#B2DFDB',
-        color: '#0C7EBF',
+        color: '#26a69a',
         fontWeight: 'bold',
         fontSize: 16,
         padding: '8px 30px',

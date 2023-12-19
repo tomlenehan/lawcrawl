@@ -30,9 +30,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("SECRET_KEY")
 
-# Used in email templates etc
-SITE_NAME = "LawCrawl"
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -109,27 +106,27 @@ WSGI_APPLICATION = "lawcrawl.wsgi.application"
 # ASGI_APPLICATION = "lawcrawl.asgi.application"
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated'
     ],
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
 }
 SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("JWT",),
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=3),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=2),
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
 }
 
 DJOSER = {
-    "PASSWORD_RESET_CONFIRM_URL": "/password/reset/confirm/{uid}/{token}",
-    "USERNAME_RESET_CONFIRM_URL": "/username/reset/confirm/{uid}/{token}",
-    "ACTIVATION_URL": "/activate/{uid}/{token}",
+    "PASSWORD_RESET_CONFIRM_URL": "password/reset/confirm/{uid}/{token}",
+    "USERNAME_RESET_CONFIRM_URL": "username/reset/confirm/{uid}/{token}",
+    "ACTIVATION_URL": "activation/{uid}/{token}",
+    "LOGIN_FIELD": "email",
     "SEND_ACTIVATION_EMAIL": True,
     "SEND_CONFIRMATION_EMAIL": True,
-    "LOGIN_FIELD": "email",
     "USERNAME_CHANGED_EMAIL_CONFIRMATION": True,
     "PASSWORD_CHANGED_EMAIL_CONFIRMATION": True,
     "SOCIAL_AUTH_TOKEN_STRATEGY": "djoser.social.token.jwt.TokenStrategy",
@@ -140,7 +137,10 @@ DJOSER = {
         "https://lawcrawl.com/upload",
     ],
     "SERIALIZERS": {
-        'user_create': 'users.serializers.UserCreateSerializer',
+        "user_create": "users.serializers.UserCreateSerializer",
+        "user": "users.serializers.UserCreateSerializer",
+        "current_user": "users.serializers.UserCreateSerializer",
+        "user_delete": "djoser.serializers.UserDeleteSerializer",
     },
 }
 AUTHENTICATION_BACKENDS = (
@@ -150,12 +150,18 @@ AUTHENTICATION_BACKENDS = (
 )
 
 # SMTP settings
+# Used in email templates etc
+SITE_NAME = "LawCrawl"
+
+
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+DEFAULT_FROM_EMAIL = os.getenv("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
 
 SOCIAL_AUTH_TWITTER_KEY = os.getenv("TWITTER_API_KEY")
 SOCIAL_AUTH_TWITTER_SECRET = os.getenv("TWITTER_API_KEY_SECRET")

@@ -43,10 +43,6 @@ const useStyles = makeStyles((theme) => ({
         fontFamily: "DMSans, sans-serif",
         marginBottom: 0,
     },
-    loginBody: {
-        maxWidth: 400,
-        textAlign: "center"
-    },
     formContainer: {
         display: "flex",
         flexDirection: "column",
@@ -57,7 +53,6 @@ const useStyles = makeStyles((theme) => ({
     },
     textField: {
         minWidth: 200,
-        height: 55,
         width: '100%',
         color: '#3a3a3a',
     },
@@ -67,8 +62,8 @@ const useStyles = makeStyles((theme) => ({
     creamInput: {
         backgroundColor: '#fdfbee',
         '&:-webkit-autofill': {
-            WebkitBoxShadow: `0 0 0 1000px #fdfbee inset`, // Override the autofill background color
-            WebkitTextFillColor: '#3a3a3a', // You can also change the text color if needed
+            WebkitBoxShadow: `0 0 0 1000px #fdfbee inset`,
+            WebkitTextFillColor: '#3a3a3a',
         },
     },
     loginButton: {
@@ -79,7 +74,7 @@ const useStyles = makeStyles((theme) => ({
         padding: '4px 25px',
         width: 140,
         height: 40,
-        marginTop: 18,
+        marginTop: 22,
         "&:hover": {
             backgroundColor: '#26a69a',
         },
@@ -87,7 +82,8 @@ const useStyles = makeStyles((theme) => ({
     signUpLink: {
         marginTop: theme.spacing(2),
         textDecoration: 'none',
-        color: theme.palette.primary.main, // Use primary color or any color you prefer
+        cursor: 'pointer',
+        color: "#4285F4",
         '&:hover': {
             textDecoration: 'underline',
         },
@@ -186,14 +182,13 @@ const LoginPage = ({login, isAuthenticated}) => {
                             </Button>
                         </form>
 
-                        <Link to="/sign_up" className={classes.signUpLink}>
+                        <Link to="/signup" className={classes.signUpLink}>
                             Don't have an account? <br/>
                             Sign up
                         </Link>
 
                         {/* Social Login Buttons */}
                         <LoginSocial/>
-
 
                     </Box>
                 </Container>
