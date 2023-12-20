@@ -5,6 +5,8 @@ import {
     USER_LOADED_FAIL,
     AUTHENTICATED_SUCCESS,
     AUTHENTICATED_FAIL,
+    AUTHENTICATED_RESEND_SUCCESS,
+    AUTHENTICATED_RESEND_FAIL,
     PASSWORD_RESET_SUCCESS,
     PASSWORD_RESET_FAIL,
     PASSWORD_RESET_CONFIRM_SUCCESS,
@@ -187,6 +189,8 @@ export const verify = (uid, token) => async dispatch => {
 
     const body = JSON.stringify({uid, token});
 
+    console.log("verifying");
+
     try {
         await axios.post(`${process.env.REACT_APP_API_URL}/auth/users/activation/`, body, config);
 
@@ -258,6 +262,28 @@ export const reset_password = (email) => async dispatch => {
     } catch (err) {
         dispatch({
             type: PASSWORD_RESET_FAIL
+        });
+    }
+};
+
+export const resend_activation = (email) => async dispatch => {
+    const config = {
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    };
+
+    const body = JSON.stringify({ email });
+
+    try {
+        await axios.post(`${process.env.REACT_APP_API_URL}/auth/users/resend_activation/`, body, config);
+
+        dispatch({
+            type: AUTHENTICATED_RESEND_SUCCESS
+        });
+    } catch (err) {
+        dispatch({
+            type: AUTHENTICATED_RESEND_FAIL
         });
     }
 };

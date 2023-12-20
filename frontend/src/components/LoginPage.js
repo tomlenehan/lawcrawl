@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react'
-import {useNavigate} from 'react-router-dom';
+import {useNavigate, useLocation} from 'react-router-dom';
 import {useForm} from 'react-hook-form';
 import {Link, Navigate} from 'react-router-dom'
 import {connect, useDispatch, useSelector} from 'react-redux'
@@ -42,6 +42,12 @@ const useStyles = makeStyles((theme) => ({
     loginHeadline: {
         fontFamily: "DMSans, sans-serif",
         marginBottom: 0,
+        color: '#3a3a3a',
+    },
+    loginDescription: {
+        fontFamily: "DMSans, sans-serif",
+        marginBottom: 0,
+        color: '#3a3a3a',
     },
     formContainer: {
         display: "flex",
@@ -88,21 +94,35 @@ const useStyles = makeStyles((theme) => ({
             textDecoration: 'underline',
         },
     },
+    passwordLink: {
+        marginTop: theme.spacing(2),
+        textDecoration: 'none',
+        cursor: 'pointer',
+        color: '#F44336',
+        '&:hover': {
+            textDecoration: 'underline',
+        },
+    },
 }));
 
 const LoginPage = ({login, isAuthenticated}) => {
+
+    const useQuery = () => {
+        return new URLSearchParams(useLocation().search);
+    }
+
     const classes = useStyles();
     const navigate = useNavigate();
+    const query = useQuery();
+    const activationEmail = query.get("activation_email");
     const authError = useSelector(state => state.auth.authError);
     const {register, handleSubmit, formState: {errors}} = useForm();
 
     const onSubmit = data => {
-        console.log("submitting_login", data);
         login(data.email, data.password);
     };
 
     if (isAuthenticated) {
-        console.log("isAuthenticated");
         navigate('/upload');
     }
 
@@ -123,8 +143,21 @@ const LoginPage = ({login, isAuthenticated}) => {
                             Login
                         </Typography>
 
-                        {authError &&
-                            <Alert variant="filled" severity="error">{authError}</Alert>}
+                        {activationEmail && (
+                            <Grid item xs={12}>
+                                <Alert variant="filled" severity="info">
+                                    Account created. Please check your email to activate your
+                                    account.
+                                </Alert>
+                            </Grid>
+                        )}
+
+                        {/* Display Djoser error */}
+                        {authError && (
+                            <Alert variant="filled" severity="error">
+                                {authError.field ? `${authError.field}: ` : ''}{authError.message}
+                            </Alert>
+                        )}
 
                         <form onSubmit={handleSubmit(onSubmit)}>
                             <TextField
@@ -181,6 +214,10 @@ const LoginPage = ({login, isAuthenticated}) => {
                                 Login
                             </Button>
                         </form>
+
+                        <Link to="/reset_password" className={classes.passwordLink}>
+                            Forgot your password?
+                        </Link>
 
                         <Link to="/signup" className={classes.signUpLink}>
                             Don't have an account? <br/>

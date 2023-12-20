@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {useForm} from 'react-hook-form';
 import {useDispatch, useSelector} from 'react-redux';
+import {useNavigate} from 'react-router-dom';
 import {
     makeStyles,
     TextField,
@@ -48,6 +49,7 @@ const useStyles = makeStyles((theme) => ({
     loginHeadline: {
         fontFamily: "DMSans, sans-serif",
         marginBottom: 0,
+        color: '#3a3a3a',
     },
     form: {
         width: '100%',
@@ -95,12 +97,25 @@ const useStyles = makeStyles((theme) => ({
 const SignupPage = () => {
     const classes = useStyles();
     const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const [accountCreated, setAccountCreated] = useState(false);
+    const [accountEmail, setAccountEmail] = useState(null);
     const authError = useSelector(state => state.auth.authError);
+    const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
     const {register, handleSubmit, formState: {errors}} = useForm();
 
     const onSubmit = (data) => {
         dispatch(signup(data.first_name, data.last_name, data.email, data.password, data.re_password));
+        setAccountEmail(data.email);
+        setAccountCreated(true);
     };
+
+    if (isAuthenticated) {
+        navigate('/upload');
+    }
+    if (accountCreated && accountEmail) {
+        navigate("/send_activation?activation_email=" + accountEmail);
+    }
 
     return (
         <ThemeProvider theme={theme}>

@@ -2,6 +2,7 @@ import React, {useEffect} from 'react'
 import Navbar from "./Navbar";
 import {twitterAuthenticate} from "../actions/auth";
 import {googleAuthenticate} from "../actions/auth";
+import { checkAuthenticated, load_user } from '../actions/auth';
 import {connect} from "react-redux";
 import {useLocation} from "react-router-dom";
 import queryString from "query-string";
@@ -9,6 +10,12 @@ import {GATrackPageViews} from "./GATrackPageViews";
 
 const Layout = (props) => {
     const location = useLocation()
+
+    // Check if user is authenticated
+    // useEffect(() => {
+    //     checkAuthenticated();
+    //     load_user();
+    // }, []);
 
     // Scroll to top effect
     useEffect(() => {
