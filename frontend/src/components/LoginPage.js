@@ -16,6 +16,7 @@ import {
 import Alert from '@material-ui/lab/Alert';
 import LoginSocial from "./LoginSocial";
 import Footer from "./Footer";
+import AuthErrorAlert from "./utils";
 import theme from "./Theme";
 import Grid from "@material-ui/core/Grid";
 import config from "./config";
@@ -153,11 +154,7 @@ const LoginPage = ({login, isAuthenticated}) => {
                         )}
 
                         {/* Display Djoser error */}
-                        {authError && (
-                            <Alert variant="filled" severity="error">
-                                {authError.field ? `${authError.field}: ` : ''}{authError.message}
-                            </Alert>
-                        )}
+                        <AuthErrorAlert authError={authError} />
 
                         <form onSubmit={handleSubmit(onSubmit)}>
                             <TextField

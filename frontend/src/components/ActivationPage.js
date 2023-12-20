@@ -50,21 +50,18 @@ const useStyles = makeStyles((theme) => ({
         marginBottom: 0,
         color: '#3a3a3a',
     },
-    loginButton: {
-        backgroundColor: '#B2DFDB',
-        color: '#26a69a',
-        fontWeight: 'bold',
-        fontSize: 16,
-        padding: '8px 30px',
-        '&:hover': {
-            backgroundColor: '#80cbc4',
-        },
-        borderRadius: '10px',
-        border: '2px solid #1DA1F2',
-        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
+    submitButton: {
+        backgroundColor: '#80cbc4',
+        borderRadius: '50px',
+        color: '#3a3a3a',
         textTransform: 'none',
-        marginTop: 4,
-        marginBottom: 30,
+        padding: '4px 25px',
+        width: 140,
+        height: 40,
+        marginTop: 22,
+        "&:hover": {
+            backgroundColor: '#26a69a',
+        },
     },
     signupLink: {
         marginTop: theme.spacing(2),
@@ -93,6 +90,17 @@ const ActivationPage = () => {
         setVerified(true);
     };
 
+    const renderAuthError = () => {
+        if (typeof authError === 'string') {
+            return <Alert variant="filled" severity="error">{authError}</Alert>;
+        } else if (authError && authError.field && authError.message) {
+            return (
+                <Alert variant="filled" severity="error">
+                    {`${authError.field}: ${authError.message}`}
+                </Alert>
+            );
+        }
+    };
 
     if (verified) {
         navigate('/login')
@@ -130,7 +138,7 @@ const ActivationPage = () => {
                             onClick={verify_account}
                             style={{marginTop: '20px'}}
                             type='button'
-                            className={classes.loginButton}
+                            className={classes.verifyButton}
                         >
                             Verify
                         </Button>

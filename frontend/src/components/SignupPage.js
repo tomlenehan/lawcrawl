@@ -18,6 +18,7 @@ import theme from "./Theme";
 import Footer from "./Footer";
 import {Link} from "react-router-dom";
 import Alert from "@material-ui/lab/Alert";
+import AuthErrorAlert from "./utils";
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -114,7 +115,7 @@ const SignupPage = () => {
         navigate('/upload');
     }
     if (accountCreated && accountEmail) {
-        navigate("/send_activation?activation_email=" + accountEmail);
+        navigate("/login?activation_email=" + accountEmail);
     }
 
     return (
@@ -135,11 +136,7 @@ const SignupPage = () => {
                         </Typography>
 
                         {/* Display Djoser error */}
-                        {authError && (
-                            <Alert variant="filled" severity="error">
-                                {authError.field ? `${authError.field}: ` : ''}{authError.message}
-                            </Alert>
-                        )}
+                        <AuthErrorAlert authError={authError} />
 
                         <form className={classes.form} onSubmit={handleSubmit(onSubmit)}>
                             <TextField

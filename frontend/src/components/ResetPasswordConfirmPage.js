@@ -17,6 +17,7 @@ import theme from "./Theme";
 import Footer from "./Footer";
 import {Link} from "react-router-dom";
 import Alert from "@material-ui/lab/Alert";
+import AuthErrorAlert from "./utils";
 import {useForm} from "react-hook-form";
 import CircularProgress from "@material-ui/core/CircularProgress";
 
@@ -130,11 +131,7 @@ const ResetPasswordConfirmPage = () => {
                         </Typography>
 
                         {/* Display Djoser error */}
-                        {authError && (
-                            <Alert variant="filled" severity="error">
-                                {authError.field ? `${authError.field}: ` : ''}{authError.message}
-                            </Alert>
-                        )}
+                        <AuthErrorAlert authError={authError} />
 
                         {formSubmitted ? (
                             <Typography className={classes.loginDescription}>
