@@ -80,7 +80,7 @@ const useStyles = makeStyles((theme) => ({
     },
     inputButton: {
         color: '#3a3a3a',
-        marginTop: 12,
+        marginTop: 18,
         padding: '8px 30px',
         backgroundColor: '#80cbc4',
         '&:hover': {

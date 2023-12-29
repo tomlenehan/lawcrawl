@@ -2,14 +2,20 @@ import React, {useEffect} from 'react'
 import Navbar from "./Navbar";
 import {twitterAuthenticate} from "../actions/auth";
 import {googleAuthenticate} from "../actions/auth";
-import { checkAuthenticated, load_user } from '../actions/auth';
+import {checkAuthenticated, load_user} from '../actions/auth';
 import {connect} from "react-redux";
 import {useLocation} from "react-router-dom";
 import queryString from "query-string";
 import {GATrackPageViews} from "./GATrackPageViews";
+import Hotjar from '@hotjar/browser';
 
 const Layout = (props) => {
     const location = useLocation()
+
+    const siteId = 3808648;
+    const hotjarVersion = 6;
+
+    Hotjar.init(siteId, hotjarVersion);
 
     // Check if user is authenticated
     // useEffect(() => {
@@ -46,7 +52,7 @@ const Layout = (props) => {
     return (
         <div className="container">
             <Navbar/>
-            <GATrackPageViews />
+            <GATrackPageViews/>
             {props.children}
         </div>
     )

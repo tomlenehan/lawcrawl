@@ -24,7 +24,8 @@ const useStyles = makeStyles((theme) => ({
         flexGrow: 1,
         overflowY: "scroll",
         justifyContent: "center",
-        height: "100vh",
+        minHeight: "100vh",
+        paddingBottom: 35,
     },
     contentContainer: {
         display: "flex",
@@ -49,11 +50,12 @@ const useStyles = makeStyles((theme) => ({
         alignItems: "center",
         textAlign: "center",
         marginBottom: 20,
-        maxWidth: 220,
+        maxWidth: 500,
     },
     card: {
         maxWidth: 800,
         margin: 'auto',
+        backgroundColor: '#fdfbee',
     },
     media: {
         height: 300,

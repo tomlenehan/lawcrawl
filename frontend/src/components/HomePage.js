@@ -233,7 +233,7 @@ const HomePage = ({isAuthenticated}) => {
 
                             <Grid item xs={12}>
                                 <Typography style={{fontSize: 16, marginBottom: 14}}>
-                                    Or Learn More Here:</Typography>
+                                    Learn More:</Typography>
                                 <Box display="flex" justifyContent="center" mt={3}>
                                     <Button
                                         variant="contained"
@@ -248,12 +248,8 @@ const HomePage = ({isAuthenticated}) => {
 
                             </Grid>
 
-
                         </Grid>
 
-
-                        {/*</div>*/}
-                        {/*<div className={classes.cardSection}>*/}
 
                         {/* Description Cards */}
                         <Grid container spacing={2} style={{marginTop: 30}}>

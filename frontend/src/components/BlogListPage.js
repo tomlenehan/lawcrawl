@@ -9,8 +9,10 @@ import {
     CardMedia,
     Typography,
     Button,
-    Link as MuiLink, Box, Container
+    Link as MuiLink, Box, Container, TextField
 } from '@material-ui/core';
+import SearchIcon from '@material-ui/icons/Search';
+import Pagination from '@material-ui/lab/Pagination';
 import {connect} from "react-redux";
 import {Link} from "react-router-dom";
 import config from "./config";
@@ -24,7 +26,8 @@ const useStyles = makeStyles((theme) => ({
         flexGrow: 1,
         overflowY: "scroll",
         justifyContent: "center",
-        height: "100vh",
+        minHeight: "100vh",
+        paddingBottom: 35,
     },
     contentContainer: {
         display: "flex",
@@ -37,6 +40,7 @@ const useStyles = makeStyles((theme) => ({
         maxWidth: 600,
         margin: 'auto',
         marginBottom: theme.spacing(2),
+        backgroundColor: '#fdfbee',
     },
     media: {
         height: 140,
@@ -83,12 +87,44 @@ const useStyles = makeStyles((theme) => ({
             backgroundColor: '#26a69a',
         },
     },
+    searchButton: {
+        fontSize: 25,
+        height: 45,
+        marginTop: 10,
+                backgroundColor: '#80cbc4',
+        borderRadius: '12px',
+        color: '#3a3a3a',
+        textTransform: 'none',
+        width: 140,
+        "&:hover": {
+            backgroundColor: '#26a69a',
+        },
+    },
+    textField: {
+        minWidth: 200,
+        marginTop: 12,
+        width: '100%',
+        color: '#3a3a3a',
+    },
+    blackLabel: {
+        color: '#3a3a3a',
+    },
+    creamInput: {
+        backgroundColor: '#fdfbee',
+    },
 }));
 
 const BlogListPage = ({isAuthenticated}) => {
     const classes = useStyles();
-
     const [blogPosts, setBlogPosts] = useState([])
+    const [searchQuery, setSearchQuery] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPosts, setTotalPosts] = useState(0);
+    const postsPerPage = 24;
+
+    useEffect(() => {
+        getAllEntries();
+    }, [currentPage]);
 
     const client = contentful.createClient({
         space: '2fv6bnf49mi7',
@@ -96,19 +132,29 @@ const BlogListPage = ({isAuthenticated}) => {
         accessToken: 'ArdbUL67iqccrue3LoaydRznq-5MT9jGhgteDtJKCW4'
     })
 
-    useEffect(() => {
-        const getAllEntries = async () => {
-            try {
-                const response = await client.getEntries();
-                if (response.items) {
-                    setBlogPosts(response.items);
-                }
-            } catch (error) {
-                console.log(`Error fetching blog posts: ${error}`);
-            }
-        };
+    const getAllEntries = async () => {
+        try {
+            const response = await client.getEntries({
+                content_type: 'blogPost',
+                limit: postsPerPage,
+                skip: (currentPage - 1) * postsPerPage,
+                'fields.blogTitle[match]': searchQuery,
+                'fields.published': true,
+            });
+
+            setBlogPosts(response.items);
+            setTotalPosts(response.total);
+        } catch (error) {
+            console.log(`Error fetching blog posts: ${error}`);
+        }
+    };
+
+
+    const handlePageChange = (event, value) => {
+        setCurrentPage(value);
         getAllEntries();
-    }, []);
+        window.scrollTo(0, 0);
+    };
 
 
     return (
@@ -122,15 +168,47 @@ const BlogListPage = ({isAuthenticated}) => {
                                  alt="Lawcrawl Logo"
                                  className={classes.mainLogo}/>
                         </Grid>
-                        <Grid item xs={12}>
 
+                        <Grid item xs={12}>
                             <Typography className={classes.loginHeadline} variant="h4"
                                         gutterBottom>
-                                Blog
+                                Law Blog
                             </Typography>
-
                         </Grid>
+
+                        <Grid item xs={12}>
+                            <Box display="flex" alignItems="center" justifyContent="center"
+                                 marginBottom={2}>
+                                <TextField
+                                    label="Search Posts"
+                                    variant="outlined"
+                                    value={searchQuery}
+                                    InputLabelProps={{className: classes.blackLabel}}
+                                    InputProps={{
+                                        className: classes.creamInput
+                                    }}
+                                    className={`${classes.textField}`}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyPress={(e) => {
+                                        if (e.key === 'Enter') {
+                                            getAllEntries();
+                                        }
+                                    }}
+                                    style={{marginRight: theme.spacing(1)}}
+                                />
+                                <Button
+                                    variant="contained"
+                                    onClick={() => getAllEntries()}
+                                    startIcon={<SearchIcon/>}
+                                    className={classes.searchButton}
+                                >
+                                    {/*Search*/}
+                                </Button>
+                            </Box>
+                        </Grid>
+
                     </Grid>
+
 
                     <Grid container spacing={3} justifyContent="center" style={{marginTop: 10}}>
                         {Array.isArray(blogPosts) && blogPosts.length > 0 ? (
@@ -184,6 +262,19 @@ const BlogListPage = ({isAuthenticated}) => {
                                 loading...</Typography>
                         )}
                     </Grid>
+
+                    <Box display="flex" justifyContent="center" my={4}>
+                        <Pagination
+                            count={Math.ceil(totalPosts / postsPerPage)}
+                            page={currentPage}
+                            onChange={handlePageChange}
+                            color="secondary"
+                            size="large"
+                            variant="outlined"
+                            shape="rounded"
+                        />
+                    </Box>
+
                 </Container>
             </Box>
             <Footer/>
