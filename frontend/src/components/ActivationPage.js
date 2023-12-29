@@ -50,18 +50,21 @@ const useStyles = makeStyles((theme) => ({
         marginBottom: 0,
         color: '#3a3a3a',
     },
-    submitButton: {
-        backgroundColor: '#80cbc4',
-        borderRadius: '50px',
-        color: '#3a3a3a',
-        textTransform: 'none',
-        padding: '4px 25px',
-        width: 140,
-        height: 40,
-        marginTop: 22,
-        "&:hover": {
-            backgroundColor: '#26a69a',
+    verifyButton: {
+        backgroundColor: '#B2DFDB',
+        color: '#26a69a',
+        fontWeight: 'bold',
+        fontSize: 16,
+        padding: '8px 30px',
+        '&:hover': {
+            backgroundColor: '#80cbc4',
         },
+        borderRadius: '10px',
+        border: '2px solid #1DA1F2',
+        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
+        textTransform: 'none',
+        marginTop: 4,
+        marginBottom: 30,
     },
     signupLink: {
         marginTop: theme.spacing(2),

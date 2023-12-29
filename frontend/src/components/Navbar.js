@@ -71,6 +71,10 @@ const Navbar = ({isAuthenticated, logout, userCases}) => {
 
     const renderMenuItems = () => (
         <>
+            <Button className={classes.menuButton} color="inherit" component={Link}
+                    to="/blog_list">
+                Blog
+            </Button>
             {isAuthenticated && (
                 <box>
                     <Button className={classes.menuButton} color="inherit" component={Link}
@@ -91,7 +95,7 @@ const Navbar = ({isAuthenticated, logout, userCases}) => {
 
     return (
         <ThemeProvider theme={theme}>
-            <AppBar component="nav" position="static" className={classes.appBar} >
+            <AppBar component="nav" position="static" className={classes.appBar}>
                 <Toolbar className={classes.toolbar} variant="dense">
                     <Grid container justifyContent="space-between" alignItems="center">
                         <Grid item>
@@ -122,6 +126,15 @@ const Navbar = ({isAuthenticated, logout, userCases}) => {
                                     open={Boolean(mobileMenuAnchorEl)}
                                     onClose={handleMobileMenuClose}
                                 >
+                                    <Box>
+                                        <MenuItem
+                                            onClick={handleMobileMenuClose}
+                                            component={Link}
+                                            to="/blog_list"
+                                        >
+                                            Blog
+                                        </MenuItem>
+                                    </Box>
                                     {isAuthenticated && (
                                         <Box>
                                             <MenuItem

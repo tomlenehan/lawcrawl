@@ -40,6 +40,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
 
+    # make auth lookups to email case-insensitive
+    # def get_by_natural_key(self, email):
+    #     return User.objects.get(email__iexact=email)
+
     def get_full_name(self):
         return f"{self.first_name}{self.last_name}"
 

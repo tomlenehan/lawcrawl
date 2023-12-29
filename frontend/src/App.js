@@ -17,6 +17,8 @@ import ResetPasswordPage from "./components/ResetPasswordPage";
 import ResetPasswordConfirmationPage from "./components/ResetPasswordConfirmPage";
 import ChatPage from "./components/ChatPage";
 import TermsOfServicePage from "./components/TermsOfServicePage";
+import BlogPostPage from "./components/BlogPostPage";
+import BlogListPage from "./components/BlogListPage";
 
 
 const bodyStyles = makeStyles(() => ({
@@ -60,13 +62,11 @@ export default function App() {
                                 <Route path="/upload" element={<UploadPage/>}/>
                                 <Route path="/chat" element={<ChatPage/>}/>
                                 <Route path="/terms" element={<TermsOfServicePage/>}/>
+                                <Route path="/blog_post/:id" element={<BlogPostPage/>}/>
+                                <Route path="/blog_list" element={<BlogListPage/>}/>
 
+                                {/*example of pw protected route*/}
                                 {/*<PasswordProtectedRoute path="/" element={<HomePage/>}/>*/}
-                                {/*<PasswordProtectedRoute path="/home" element={<HomePage/>}/>*/}
-                                {/*<PasswordProtectedRoute path="/login" element={<LoginPage/>}/>*/}
-                                {/*<PasswordProtectedRoute path="/upload" element={<UploadPage/>}/>*/}
-                                {/*<PasswordProtectedRoute path="/chat" element={<ChatPage/>}/>*/}
-
                             </Routes>
                         </div>
                     </Layout>

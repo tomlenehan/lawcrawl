@@ -397,10 +397,11 @@ def sanitize_pdf(uploaded_file_obj):
 
 def retriever_runner(retrieval_qa, conversation, query, chat_history, done_event):
     # Run the agent and save the conversation
-    prompt = f"Answer the following question in-depth \n\nQUESTION: {query}\n\nANSWER:"
+    prompt = (f"Answer the following question in-depth. Make references to document context if "
+              f"appropriate. \n\nQUESTION: {query}\n\nANSWER:")
     response = ""
     try:
-        response = retrieval_qa({"question": query, "chat_history": chat_history})
+        response = retrieval_qa({"question": prompt, "chat_history": chat_history})
 
     finally:
         if "answer" in response:
@@ -518,7 +519,7 @@ def chat_message(request):
     processor = DocumentProcessor(case.uid)
     vectorstore = processor.get_vector_store()
     retriever = vectorstore.as_retriever(
-        search_kwargs={"filter": filter_query, "k": 6},
+        search_kwargs={"filter": filter_query, "k": 12},
         retriever_kwargs={
             "search_kwargs": {"filter": filter_query},
         },

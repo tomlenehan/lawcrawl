@@ -14,7 +14,7 @@ const useFetchUserCases = () => {
             if (!response.ok) {
                 if (response.status === 401) {
                     // Dispatch a logout action
-                    dispatch(logout());
+                    // dispatch(logout());
                 }
                 return response.status;
             }

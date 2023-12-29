@@ -11,13 +11,16 @@ import ChatIcon from '@material-ui/icons/Chat';
 import Footer from "./Footer";
 import theme from './Theme';
 import {Box, Button, ThemeProvider} from "@material-ui/core";
-import LibraryBooksIcon from "@material-ui/icons/LibraryBooks";
-import UploadFileIcon from '@mui/icons-material/UploadFile';
-import AddIcon from '@mui/icons-material/Add';
+import LoginIcon from '@mui/icons-material/Login';
+import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import {Link} from 'react-router-dom';
 import config from './config';
 import {connect} from "react-redux";
 import ParticlesBackground from "./ParticlesBackground";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
+import MailOutlineIcon from '@material-ui/icons/MailOutline';
+
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -74,9 +77,9 @@ const useStyles = makeStyles((theme) => ({
     },
     loginButton: {
         backgroundColor: '#B2DFDB',
-        color: '#26a69a',
+        color: '#3a3a3a',
         fontWeight: 'bold',
-        fontSize: 16,
+        fontSize: 14,
         padding: '8px 30px',
         '&:hover': {
             backgroundColor: '#80cbc4',
@@ -85,8 +88,32 @@ const useStyles = makeStyles((theme) => ({
         border: '2px solid #1DA1F2',
         boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
         textTransform: 'none',
-        marginTop: 4,
-        marginBottom: 30,
+        marginBottom: 20,
+    },
+    blogButton: {
+        backgroundColor: '#B2DFDB',
+        color: '#3a3a3a',
+        fontWeight: 'bold',
+        fontSize: 14,
+        padding: '8px 30px',
+        '&:hover': {
+            backgroundColor: '#80cbc4',
+        },
+        borderRadius: '10px',
+        border: '2px solid #F44336',
+        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
+        textTransform: 'none',
+        marginBottom: 20,
+    },
+    contactButton: {
+        backgroundColor: '#26a69a', // Adjust color as needed
+        color: '#3a3a3a',
+        '&:hover': {
+            backgroundColor: '#80cbc4',
+        },
+        padding: '10px 20px',
+        textTransform: 'none',
+        borderRadius: '5px',
     },
     card: {
         boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)',
@@ -129,10 +156,9 @@ const useStyles = makeStyles((theme) => ({
         fontSize: 14,
         color: '#F44336',
         fontWeight: 'bold',
-        marginLeft: theme.spacing(1), // Add some space between the image and the text
+        marginLeft: theme.spacing(1),
     },
     gradientBackground: {
-        // background: 'linear-gradient(270deg, #26a69a, #B2DFDB, #26a69a)',
         background: 'linear-gradient(270deg, #B2DFDB, #26a69a, #B2DFDB)',
         backgroundSize: '600% 600%',
         animation: '$gradientAnimation 25s ease infinite',
@@ -195,6 +221,7 @@ const HomePage = ({isAuthenticated}) => {
                                         <Button
                                             variant="contained"
                                             className={classes.loginButton}
+                                            startIcon={<LoginIcon/>}
                                             component={Link}
                                             to="/login"
                                         >
@@ -203,6 +230,25 @@ const HomePage = ({isAuthenticated}) => {
                                     </Box>
                                 )}
                             </Grid>
+
+                            <Grid item xs={12}>
+                                <Typography style={{fontSize: 16, marginBottom: 14}}>
+                                    Or Learn More Here:</Typography>
+                                <Box display="flex" justifyContent="center" mt={3}>
+                                    <Button
+                                        variant="contained"
+                                        className={classes.blogButton}
+                                        startIcon={<LibraryBooksIcon/>}
+                                        component={Link}
+                                        to="/blog_list"
+                                    >
+                                        Blog
+                                    </Button>
+                                </Box>
+
+                            </Grid>
+
+
                         </Grid>
 
 
@@ -263,6 +309,21 @@ const HomePage = ({isAuthenticated}) => {
                                     </CardContent>
                                 </Card>
                             </Grid>
+
+                            <Grid item xs={12}>
+                                <Typography style={{fontSize: 16, marginBottom: 14}}>
+                                    Any Questions?</Typography>
+                                <Button
+                                    variant="contained"
+                                    color="primary"
+                                    className={classes.contactButton}
+                                    startIcon={<MailOutlineIcon/>}
+                                    href="mailto:tess@lawcrawl.com,tom@lawcrawl.com"
+                                >
+                                    Contact Us
+                                </Button>
+                            </Grid>
+
                         </Grid>
                     </div>
                     <Footer/>

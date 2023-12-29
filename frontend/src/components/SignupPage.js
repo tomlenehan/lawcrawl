@@ -114,7 +114,7 @@ const SignupPage = () => {
     if (isAuthenticated) {
         navigate('/upload');
     }
-    if (accountCreated && accountEmail) {
+    if ((accountCreated && accountEmail) && !authError) {
         navigate("/login?activation_email=" + accountEmail);
     }
 

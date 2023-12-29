@@ -187,7 +187,6 @@ const LoginPage = ({login, isAuthenticated}) => {
                                     className: classes.creamInput
                                 }}
                                 variant="outlined"
-
                                 type="password"
                                 name="password"
                                 {...register('password', {

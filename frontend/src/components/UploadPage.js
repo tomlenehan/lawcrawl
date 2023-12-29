@@ -163,9 +163,16 @@ const UploadPage = ({token, isAuthenticated, userCases}) => {
     const dispatch = useDispatch();
     const fetchUserCases = useFetchUserCases();
 
-    const handleUploadClick = (event) => {
-        const fileInput = document.getElementById('fileInput');
-        fileInput.click();
+    // const handleUploadClick = (event) => {
+    //     console.log("handling_upload_click");
+    //     const fileInput = document.getElementById('fileInput');
+    //     fileInput.click();
+    // };
+
+    const handleUploadClick = () => {
+        // Directly access the file input and trigger the click
+        console.log("handling_upload_click");
+        document.getElementById('fileInput').click();
     };
 
     const handleLogout = () => {
@@ -300,13 +307,14 @@ const UploadPage = ({token, isAuthenticated, userCases}) => {
 
                         <Box container className={classes.formContainer}>
 
-                            <Typography className={classes.loginHeadline} variant="h4" gutterBottom>
+                            <Typography className={classes.loginHeadline} variant="h4"
+                                        gutterBottom>
                                 Upload
                             </Typography>
 
                             {/* Processing message */}
                             {loading && (
-                                <Alert severity="info" style={{marginTop: 20}}>
+                                <Alert variant="filled" severity="info" style={{marginTop: 20}}>
                                     Processing your document. This will take a few minutes.
                                 </Alert>
                             )}
@@ -336,7 +344,7 @@ const UploadPage = ({token, isAuthenticated, userCases}) => {
                                 />
                             </Grid>
 
-                            <Grid item xs={12} >
+                            <Grid item xs={12}>
                                 <FormControl variant="outlined" className={classes.textField}
                                              disabled={loading}>
                                     <InputLabel id="state-label"
@@ -458,36 +466,28 @@ const UploadPage = ({token, isAuthenticated, userCases}) => {
                             </Grid>
 
                             <Grid item xs={12}>
+
                                 <input
                                     accept="application/pdf"
-                                    className={`${classes.fileInput} ${classes.inputButton}`}
+                                    className={classes.fileInput}
                                     id="fileInput"
                                     multiple
                                     type="file"
                                     onChange={handleFileChange}
                                     disabled={loading}
                                 />
-                                <Tooltip
-                                    title="Must be a PDF file < 20 pages and < 10MB"
-                                    enterDelay={500}
-                                    leaveDelay={200}
+
+                                <Button
+                                    variant="contained"
+                                    component="span"
+                                    className={classes.inputButton}
+                                    startIcon={fileLoaded ? <CheckBoxIcon/> : <AttachFileIcon/>}
+                                    disabled={loading}
+                                    onClick={handleUploadClick} // Assign the click handler directly to the button
                                 >
-                                    <label htmlFor="fileInput">
-                                        <Button
-                                            variant="contained"
-                                            component="span"
-                                            className={classes.inputButton}
-                                            startIcon={fileLoaded ? <CheckBoxIcon/> :
-                                                <AttachFileIcon/>}
-                                            disabled={loading}
-                                        >
-                                            {fileLoaded ? truncateString(fileName, 8) : 'Select PDF'}
-                                        </Button>
-                                    </label>
-                                </Tooltip>
-                                {/*<Typography variant="caption" display="block" gutterBottom>*/}
-                                {/*    Must be a PDF file less than 20 pages and less than 10MB*/}
-                                {/*</Typography>*/}
+                                    {fileLoaded ? truncateString(fileName, 8) : 'Select PDF'}
+                                </Button>
+
                             </Grid>
 
                             <Grid item xs={12}>
