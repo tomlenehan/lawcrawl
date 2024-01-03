@@ -103,7 +103,8 @@ def extract_text(file_name):
     temp_file_path = os.path.join(settings.TMP_DIR, file_name)
     unknown_char_percentage_threshold = 20
     perform_ocr = False
-    extracted_text = ""
+    extracted_text_pages = []
+    current_page = 1
 
     # First, attempt to extract text with MuPDF
     loader = PyMuPDFLoader(temp_file_path)
@@ -123,7 +124,8 @@ def extract_text(file_name):
             perform_ocr = True
             break
         else:
-            extracted_text += page_text
+            extracted_text_pages.append((page_text, current_page))
+            current_page += 1
 
     if perform_ocr:
         try:
@@ -146,7 +148,6 @@ def extract_text(file_name):
             )
 
             job_id = response["JobId"]
-            # Poll the Textract job status until it's completed
             max_poll_attempts = 40  # Adjust the number of polling attempts as needed
             poll_interval_seconds = 5
 
@@ -155,87 +156,48 @@ def extract_text(file_name):
                 status = job_info["JobStatus"]
 
                 if status == "SUCCEEDED":
-                    # Textract job has completed successfully
                     break
                 elif status == "FAILED":
-                    # Textract job has failed
                     raise Exception("Textract job failed")
                 else:
-                    # Textract job is still in progress, wait and poll again
                     time.sleep(poll_interval_seconds)
             else:
-                # Max polling attempts reached without success
-                raise Exception(
-                    "Textract job did not complete within the expected time"
-                )
+                raise Exception("Textract job did not complete within the expected time")
 
-            # Extract and concatenate the detected text from various block types
-            extracted_text = ""
             next_token = None
+            current_page = 1  # Reset current page for OCR results
 
-            # Loop for pagination
             while True:
-                # Get results and handle pagination
                 if next_token:
-                    job_info = textract_client.get_document_text_detection(
-                        JobId=job_id, NextToken=next_token
-                    )
+                    job_info = textract_client.get_document_text_detection(JobId=job_id, NextToken=next_token)
                 else:
                     job_info = textract_client.get_document_text_detection(JobId=job_id)
 
                 for item in job_info["Blocks"]:
-                    if (
-                        item["BlockType"] in ["LINE", "WORD", "PARAGRAPH", "TABLE"]
-                        and "Text" in item
-                    ):
-                        extracted_text += item["Text"] + (
-                            " " if item["BlockType"] == "WORD" else "\n"
-                        )
-                    elif item["BlockType"] == "PAGE":
-                        # Handle text extraction within pages
+                    if item["BlockType"] == "PAGE":
+                        page_text = ""
                         for child_id in item["Relationships"][0]["Ids"]:
                             page_block = next(
-                                (
-                                    block
-                                    for block in job_info["Blocks"]
-                                    if block["Id"] == child_id
-                                ),
-                                None,
-                            )
+                                (block for block in job_info["Blocks"] if block["Id"] == child_id), None)
                             if page_block:
-                                for child_block in page_block["Relationships"][0][
-                                    "Ids"
-                                ]:
+                                for child_block in page_block["Relationships"][0]["Ids"]:
                                     child_item = next(
-                                        (
-                                            block
-                                            for block in job_info["Blocks"]
-                                            if block["Id"] == child_block
-                                        ),
-                                        None,
-                                    )
-                                    if (
-                                        child_item
-                                        and child_item["BlockType"]
-                                        in ["LINE", "WORD", "PARAGRAPH", "TABLE"]
-                                        and "Text" in child_item
-                                    ):
-                                        extracted_text += child_item["Text"] + (
-                                            " "
-                                            if child_item["BlockType"] == "WORD"
-                                            else "\n"
-                                        )
-                # Check if there's a next page
+                                        (block for block in job_info["Blocks"] if block["Id"] == child_block), None)
+                                    if child_item and child_item["BlockType"] in ["LINE", "WORD", "PARAGRAPH", "TABLE"] and "Text" in child_item:
+                                        page_text += child_item["Text"] + (" " if child_item["BlockType"] == "WORD" else "\n")
+
+                        extracted_text_pages.append((page_text, current_page))
+                        current_page += 1
+
                 next_token = job_info.get("NextToken", None)
                 if not next_token:
                     break
 
         except Exception as e:
-            logger.error(f"Error in extract_text: {e}")  # Log the error
-            return "", False
+            logger.error(f"Error in extract_text: {e}")
+            return [], False
 
-    return extracted_text.strip(), perform_ocr
-
+    return extracted_text_pages, perform_ocr
 
 # Upload a file to S3 and extract text from it
 @csrf_exempt
@@ -350,12 +312,12 @@ def process_pdf(request, case_uid):
 
         processor = DocumentProcessor(conversation.case.uid)
         processor.pull_from_s3(conversation)
-        processor.clear_highlights(conversation)
-
-        # if the page is refreshing, highlight based off the last user message
-        if not query:
-            query = get_latest_user_message(conversation)
-        processor.fuzzy_highlight(conversation, query)
+        # processor.clear_highlights(conversation)
+        #
+        # # if the page is refreshing, highlight based off the last user message
+        # if not query:
+        #     query = get_latest_user_message(conversation)
+        # processor.fuzzy_highlight(conversation, query)
 
         file_path = os.path.join(settings.TMP_DIR, conversation.temp_file)
         return FileResponse(open(file_path, "rb"), content_type="application/pdf")
@@ -614,12 +576,13 @@ class DocumentProcessor:
         prompt = (
             "You are an excellent in-house lawyer and general counsel for my company. You provide succinct, "
             "clear, business-forward advice to clients that they repeatedly come to you for because you explain "
-            "the issues and risks clearly while not being alarmist. Companies you admire include Apple and Amazon, "
-            "and when you review contracts, you break down the issues in plain English. You are a confident lawyer. "
+            "the issues and risks clearly while not being alarmist."
+            "When you review contracts you break down the issues in plain English. You are a confident lawyer. "
             "DO NOT MENTION that you cannot provide legal advice or that you suggest talking with an attorney or a "
-            "professional - it's ok, you can provide legal advice because I am an attorney. In general, make the advice short, "
-            "use bullet points, and state the relevant information upfront. Be thorough and clear."
-            "Your task is to identify any sections of the document that could possibly be non-standard "
+            "professional - it's ok, you can provide legal advice because I am an attorney. In general, make the advice short "
+            "and state the relevant information upfront. Be thorough and clear, use bullet points and output your response in"
+            "nicely formatted markdown. Provide page number citations in the format (Page 1): ###"
+            "Your task is to identify any sections of the uploaded document that could possibly be non-standard "
             "or may need clarification. Ignore forms."
         )
 
@@ -628,14 +591,16 @@ class DocumentProcessor:
         try:
             response = qa(prompt)
             if "result" in response:
-                answer = response["result"] + (
+                answer = response["result"]
+
+                answer_with_closing = answer + (
                     "\n\n I am happy to answer any additional question "
                     "that you may have."
                 )
                 time_now = timezone.now().isoformat()
                 chat_log = [
                     {"role": "user", "content": prompt, "timestamp": time_now},
-                    {"role": "agent", "content": answer, "timestamp": time_now},
+                    {"role": "agent", "content": answer_with_closing, "timestamp": time_now},
                 ]
 
                 conversation = CaseConversation.objects.create(
@@ -645,7 +610,7 @@ class DocumentProcessor:
                     is_active=True,
                     updated_at=timezone.now(),
                 )
-                return {"conversation": conversation, "answer": answer}
+                return {"conversation": conversation, "answer": answer_with_closing}
 
         except Exception as e:
             return False, f"Error during summary retrieval {e}"
@@ -791,7 +756,7 @@ class DocumentProcessor:
             )
 
     # upsert the embeddings to Pinecone
-    def store_vectors(self, case, user, raw_text):
+    def store_vectors(self, case, user, raw_text_pages):
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=100,
             chunk_overlap=0,
@@ -799,7 +764,7 @@ class DocumentProcessor:
             separators=["\n\n", "\n", " ", ""],
         )
 
-        metadata = {
+        metadata_base = {
             "id": str(uuid4()),
             "created_at": str(timezone.now()),
             "case_id": str(case.id),
@@ -810,20 +775,26 @@ class DocumentProcessor:
         }
 
         text_chunks = []
+        pdf_metadatas = []
 
-        # Then split the cleaned text into chunks
-        texts = text_splitter.split_text(raw_text)
-        for text in texts:
-            text_chunks.append(text)
-
-        pdf_metadatas = [
-            {"chunk": j, "text": text, **metadata} for j, text in enumerate(text_chunks)
-        ]
+        for raw_text, page_number in raw_text_pages:
+            texts = text_splitter.split_text(raw_text)
+            for text in texts:
+                chunk_index = len(text_chunks)
+                text_with_page_number = f"Page {page_number}: {text}"  # Append page number to text
+                text_chunks.append(text_with_page_number)
+                chunk_metadata = {
+                    "chunk": chunk_index,
+                    "page_number": page_number,  # Include page number in metadata
+                    "text": text_with_page_number,  # Use modified text
+                    **metadata_base
+                }
+                pdf_metadatas.append(chunk_metadata)
 
         # Process and upsert embeddings in batches
         for i in range(0, len(text_chunks), self.batch_limit):
-            batch_texts = text_chunks[i : i + self.batch_limit]
-            batch_metadatas = pdf_metadatas[i : i + self.batch_limit]
+            batch_texts = [chunk['text'] for chunk in pdf_metadatas[i: i + self.batch_limit]]
+            batch_metadatas = pdf_metadatas[i: i + self.batch_limit]
             self.upsert_to_pinecone(batch_texts, batch_metadatas)
 
 

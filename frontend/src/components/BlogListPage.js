@@ -88,8 +88,7 @@ const useStyles = makeStyles((theme) => ({
         },
     },
     searchButton: {
-        fontSize: 25,
-        height: 45,
+        height: 43,
         marginTop: 10,
                 backgroundColor: '#80cbc4',
         borderRadius: '12px',
@@ -101,7 +100,7 @@ const useStyles = makeStyles((theme) => ({
         },
     },
     textField: {
-        minWidth: 200,
+        minWidth: 210,
         marginTop: 12,
         width: '100%',
         color: '#3a3a3a',
@@ -199,7 +198,7 @@ const BlogListPage = ({isAuthenticated}) => {
                                 <Button
                                     variant="contained"
                                     onClick={() => getAllEntries()}
-                                    startIcon={<SearchIcon/>}
+                                    startIcon={<SearchIcon style={{fontSize: 25}} />}
                                     className={classes.searchButton}
                                 >
                                     {/*Search*/}

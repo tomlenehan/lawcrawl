@@ -68,6 +68,7 @@ const useStyles = makeStyles((theme) => ({
     content: {
         marginTop: theme.spacing(2),
         color: '#3a3a3a',
+        textAlign: 'left',
     },
     backButton: {
         backgroundColor: '#80cbc4',

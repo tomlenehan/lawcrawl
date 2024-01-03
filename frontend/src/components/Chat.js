@@ -12,6 +12,7 @@ import PrivacyTip from '@mui/icons-material/PrivacyTip';
 import axios from "axios";
 import {Box} from "@material-ui/core";
 import config from "./config";
+import ReactMarkdown from 'react-markdown';
 import AdComponent from "./AdComponent"
 import AdSenseAd from './AdSenseAd';
 import TermsOfService from "./TermsOfService";
@@ -21,6 +22,7 @@ import useFetchUserCases from './hooks/useFetchUserCases';
 import Modal from "@material-ui/core/Modal";
 import {logout} from "../actions/auth";
 import {InputAdornment} from "@mui/material";
+import ArrowForwardIosIcon from "@material-ui/icons/ArrowForwardIos";
 
 // Chat Component
 const useStyles = makeStyles((theme) => ({
@@ -86,7 +88,6 @@ const useStyles = makeStyles((theme) => ({
     chatLog: {
         width: '50%',
         textAlign: 'left',
-        whiteSpace: 'pre-wrap',
         overflowY: 'scroll',
         borderRadius: 15,
         flex: 1,
@@ -166,11 +167,10 @@ const useStyles = makeStyles((theme) => ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        height: '100%', // Take up all the available height
+        height: '100%',
     },
     chatInputForm: {
         display: 'flex',
-        // justifyContent: 'space-between',
         justifyContent: 'center',
         alignItems: 'center',
         width: '100%',
@@ -190,10 +190,25 @@ const useStyles = makeStyles((theme) => ({
         animation: '$blink 1s linear infinite',
         fontSize: 25,
     },
-
     '@keyframes blink': {
         '0%, 100%': {opacity: 1},
         '50%': {opacity: 0},
+    },
+    pageLinkButton: {
+        marginLeft: 22,
+        padding: theme.spacing(1),
+        textTransform: 'none',
+        backgroundColor: '#B2DFDB',
+        color: '#3a3a3a',
+        '&:hover': {
+            backgroundColor: '#80cbc4',
+        },
+        display: 'flex',
+        alignItems: 'center',
+    },
+    rightArrowIcon: {
+        marginLeft: theme.spacing(1),
+        fontSize: 14,
     },
 }));
 
@@ -220,6 +235,7 @@ const Chat = () => {
     const fetchUserCases = useFetchUserCases();
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const [currentPage, setCurrentPage] = useState(null);
     const ad_interval = 0;
     const [feedback, setFeedback] = useState({});
 
@@ -254,7 +270,7 @@ const Chat = () => {
     };
 
     useEffect(() => {
-        if(token) {
+        if (token) {
             processPDF(currentCase, token, "");
         }
     }, [token, currentCase]);
@@ -280,7 +296,7 @@ const Chat = () => {
         };
 
         console.log("setting_case");
-        if(token != null) {
+        if (token != null) {
             if (userCases.length === 0) {
                 fetchUserCases(token, dispatch)
                     .then((status) => {
@@ -358,7 +374,7 @@ const Chat = () => {
             {role: "agent", content: <span className={classes.blinkingEmoji}>🤔</span>}
         ]);
 
-         // re-process the PDF
+        // re-process the PDF
         processPDF(currentCase, token, input);
 
         try {
@@ -413,7 +429,7 @@ const Chat = () => {
         setTermsOpen(false);
     };
 
-    // Scroll the chat log to the bottom whenever the chatLog state changes
+
     useEffect(() => {
         if (chatLogRef.current) {
             setTimeout(() => {
@@ -421,6 +437,12 @@ const Chat = () => {
             }, 100);
         }
     }, [chatLog]);
+
+
+    const handleNavigateToPage = (pageNumber) => {
+        setCurrentPage(pageNumber);
+    };
+
 
     return (
         <div className={classes.App}>
@@ -486,7 +508,8 @@ const Chat = () => {
                                 <React.Fragment key={index}>
                                     <ChatMessage className={classes.lineBreak}
                                                  content={chat.content}
-                                                 role={chat.role}/>
+                                                 role={chat.role}
+                                                 onNavigateToPage={handleNavigateToPage} />
                                     {/*{(index + 1) % ad_interval === 0 && <AdSenseAd/>}*/}
                                 </React.Fragment>
                             )
@@ -512,7 +535,7 @@ const Chat = () => {
                                 <LinearProgress color="primary" size="lg" style={{width: '50%'}}/>
                             </div>
                         ) : (
-                            file && <PdfViewer file={file}/>
+                            file && <PdfViewer file={file} currentPage={currentPage} />
                         )}
                     </div>
 
@@ -553,8 +576,21 @@ const Chat = () => {
     );
 }
 
-const ChatMessage = ({content, role}) => {
+const ChatMessage = ({content, role, onNavigateToPage}) => {
+
+    const formatContentWithLinks = (text) => {
+        const pageLinkRegex = /\(Page (\d+)\):/g;
+        return text.split(pageLinkRegex).map((part, index) => {
+            if ((index % 2) === 1) { // This is a page number
+                return <PageLinkButton key={index} pageNumber={parseInt(part, 10)} onNavigate={onNavigateToPage} />;
+            }
+            return part;
+        });
+    };
+
     const classes = useStyles();
+    const formattedContent = formatContentWithLinks(content);
+
     if (role === "agent") {
         return (
             <div className={classes.chatMessageGPT}>
@@ -569,7 +605,12 @@ const ChatMessage = ({content, role}) => {
                                  marginLeft: 2
                              }}/>
                     </div>
-                    <div className={classes.message}>{content}</div>
+                    <div className={classes.message}>
+                        {formattedContent.map((part, index) =>
+                            (typeof part === 'string') ?
+                                <ReactMarkdown key={index}>{part}</ReactMarkdown> : part
+                        )}
+                    </div>
 
                     {/*<div className={classes.feedbackButtons}>*/}
                     {/*    <IconButton onClick={() => onFeedback(index, 'up')}>*/}
@@ -590,7 +631,9 @@ const ChatMessage = ({content, role}) => {
                     <div className={classes.avatarME}>
                         YOU
                     </div>
-                    <div className={classes.message}>{content}</div>
+                    <div className={classes.message}>
+                        {content}
+                    </div>
                 </div>
             </div>
         );
@@ -598,3 +641,21 @@ const ChatMessage = ({content, role}) => {
 }
 
 export default Chat;
+
+
+const PageLinkButton = ({pageNumber, onNavigate}) => {
+    const classes = useStyles();
+
+    const handleNavigate = () => {
+        console.log("Navigating to page: " + pageNumber);
+        onNavigate(pageNumber);
+    };
+
+    return (
+        <Button variant="contained" className={classes.pageLinkButton} onClick={handleNavigate}>
+            Page {pageNumber}
+            <ArrowForwardIosIcon className={classes.rightArrowIcon} />
+        </Button>
+    );
+};
+
