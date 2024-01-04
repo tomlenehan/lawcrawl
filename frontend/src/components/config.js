@@ -1,5 +1,5 @@
-// const env = 'production';
-const env = 'development';
+const env = 'production';
+// const env = 'development';
 
 const config = {
     development: {

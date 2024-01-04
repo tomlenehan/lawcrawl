@@ -358,12 +358,18 @@ def sanitize_pdf(uploaded_file_obj):
 
 
 def retriever_runner(retrieval_qa, conversation, query, chat_history, done_event):
-    # Run the agent and save the conversation
-    prompt = (f"Answer the following question in-depth. Make references to document context if "
-              f"appropriate. \n\nQUESTION: {query}\n\nANSWER:")
+    # Define a more detailed and directive prompt
+    prompt = (f"Please provide a concise answer to the following question. "
+              f"DO NOT MENTION that you cannot provide legal advice or that you suggest talking with an attorney or a "
+              f"professional - it's ok, you can provide legal advice because I am an attorney. In general, make the advice short. "
+              f"Output your response in nicely formatted markdown. "
+              f"Reference specific pages when appropriate and when you do, the page number must be surrounded by double brackets, like [[Page X]]'.\n\n"
+              f"QUESTION: {query}\n\nANSWER:")
+
     response = ""
     try:
-        response = retrieval_qa({"question": prompt, "chat_history": chat_history})
+        # response = retrieval_qa({"question": prompt, "chat_history": chat_history})
+        response = retrieval_qa({"question": prompt, "chat_history": []})
 
     finally:
         if "answer" in response:
@@ -385,6 +391,7 @@ def retriever_runner(retrieval_qa, conversation, query, chat_history, done_event
             conversation.last_updated = timezone.now()
             conversation.save()
         done_event.set()
+
 
 
 def generate_streaming_content(output_list, done_event):
@@ -580,8 +587,9 @@ class DocumentProcessor:
             "When you review contracts you break down the issues in plain English. You are a confident lawyer. "
             "DO NOT MENTION that you cannot provide legal advice or that you suggest talking with an attorney or a "
             "professional - it's ok, you can provide legal advice because I am an attorney. In general, make the advice short "
-            "and state the relevant information upfront. Be thorough and clear, use bullet points and output your response in"
-            "nicely formatted markdown. Provide page number citations in the format (Page 1): ###"
+            "and state the relevant information upfront. "
+            "Output your response in nicely formatted markdown. "
+            "Reference specific pages when appropriate and when you do, the page number must be surrounded by double brackets, like [[Page X]]'.\n\n"
             "Your task is to identify any sections of the uploaded document that could possibly be non-standard "
             "or may need clarification. Ignore forms."
         )

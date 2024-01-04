@@ -1,8 +1,9 @@
-import { addUserCase } from "../../actions/user";
+import {addUserCase} from "../../actions/user";
+import {logout} from "../../actions/auth";
 
 const useFetchUserCases = () => {
 
-    const fetchUserCases = async (token, dispatch) => {
+    const fetchUserCases = async (token, dispatch, navigate) => {
         try {
             const response = await fetch('/api/user/cases/', {
                 method: 'GET',
@@ -13,8 +14,9 @@ const useFetchUserCases = () => {
 
             if (!response.ok) {
                 if (response.status === 401) {
-                    // Dispatch a logout action
-                    // dispatch(logout());
+                    console.log("Unauthorized, logging out");
+                    dispatch(logout());
+                    navigate('/login');
                 }
                 return response.status;
             }

@@ -1,4 +1,6 @@
 import React, {useCallback, useEffect, useRef, useState} from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { setCurrentPage } from '../actions/page';
 import {Document, Page} from 'react-pdf';
 // import { Page, Text, View, Document, StyleSheet } from '@react-pdf/renderer';
 import {StyleSheet} from '@react-pdf/renderer';
@@ -88,8 +90,9 @@ const useStyles = makeStyles({
     }
 });
 
-const PdfViewer = ({file, currentPage: externalCurrentPage}) => {
+const PdfViewer = ({file}) => {
     const classes = useStyles();
+    const dispatch = useDispatch();
     const [numPages, setNumPages] = useState(null);
     const [searchText, setSearchText] = useState('');
     const [loaded, setLoaded] = useState(false);
@@ -101,7 +104,9 @@ const PdfViewer = ({file, currentPage: externalCurrentPage}) => {
     const isPrevDisabled = currentRegionIndex === 0;
     const isNextDisabled = currentRegionIndex >= highlightedRegions.length - 1;
     // const [currentPage, setCurrentPage] = useState(1);
-    const [internalCurrentPage, setInternalCurrentPage] = useState(1);
+    // const currentPage = useSelector(state => state.page.currentPage);
+    const externalCurrentPage = useSelector(state => state.page.currentPage);
+    const [internalCurrentPage, setInternalCurrentPage] = useState(externalCurrentPage);
     const pageRefs = useRef([]);
     const containerRef = useRef();
 
@@ -113,37 +118,39 @@ const PdfViewer = ({file, currentPage: externalCurrentPage}) => {
         }
     };
 
-    // Effect for handling external page changes
-    useEffect(() => {
-        if (externalCurrentPage && externalCurrentPage !== internalCurrentPage) {
-            setInternalCurrentPage(externalCurrentPage);
+    const scrollToPage = (pageNumber) => {
+        // Scroll logic
+        if (pageRefs.current[pageNumber - 1]) {
+            pageRefs.current[pageNumber - 1].current.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+            });
         }
-        // setInternalCurrentPage(externalCurrentPage);
+    };
+
+    const handleInternalPageChange = (newPage) => {
+        // Update internal state and Redux state
+        if (newPage >= 1 && newPage <= numPages) {
+            setInternalCurrentPage(newPage);
+            dispatch(setCurrentPage(newPage));
+        }
+    };
+
+    // Effect to handle external page changes
+    useEffect(() => {
+        if (externalCurrentPage !== internalCurrentPage) {
+            setInternalCurrentPage(externalCurrentPage);
+            scrollToPage(externalCurrentPage);
+        }
     }, [externalCurrentPage]);
 
-    // Effect for handling internal page changes
+    // Effect to handle internal page changes
     useEffect(() => {
         if (internalCurrentPage) {
             scrollToPage(internalCurrentPage);
         }
     }, [internalCurrentPage]);
 
-
-    const handlePageChange = (event) => {
-        let page = parseInt(event.target.value, 10);
-        if (page >= 1 && page <= numPages) {
-            setInternalCurrentPage(page); // Update internal page state
-            scrollToPage(page); // Scroll to the page
-        } else {
-            console.error("Invalid page number");
-        }
-    };
-
-    const handleInternalPageChange = (newPage) => {
-        if (newPage >= 1 && newPage <= numPages) {
-            setInternalCurrentPage(newPage);
-        }
-    };
 
     function onChange(event) {
         setSearchText(event.target.value);
@@ -155,14 +162,6 @@ const PdfViewer = ({file, currentPage: externalCurrentPage}) => {
         pageRefs.current = Array(numPages).fill().map((_, i) => pageRefs.current[i] || React.createRef());
     };
 
-    const scrollToPage = (pageNumber) => {
-        if (pageRefs.current[pageNumber - 1]) {
-            pageRefs.current[pageNumber - 1].current.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-            });
-        }
-    };
 
     // useEffect(() => {
     //     // Scroll to the current page when it changes

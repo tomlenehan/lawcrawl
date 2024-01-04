@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from "react";
 import {makeStyles} from '@material-ui/core/styles';
 import {Link, useNavigate} from 'react-router-dom';
 import {connect, useDispatch, useSelector} from 'react-redux';
+import { setCurrentPage } from '../actions/page';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import ThumbUpIcon from '@material-ui/icons/ThumbUp';
@@ -195,7 +196,6 @@ const useStyles = makeStyles((theme) => ({
         '50%': {opacity: 0},
     },
     pageLinkButton: {
-        marginLeft: 22,
         padding: theme.spacing(1),
         textTransform: 'none',
         backgroundColor: '#B2DFDB',
@@ -209,6 +209,7 @@ const useStyles = makeStyles((theme) => ({
     rightArrowIcon: {
         marginLeft: theme.spacing(1),
         fontSize: 14,
+        color: '#1DA1F2',
     },
 }));
 
@@ -235,7 +236,9 @@ const Chat = () => {
     const fetchUserCases = useFetchUserCases();
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    const [currentPage, setCurrentPage] = useState(null);
+    // const [currentPage, setCurrentPage] = useState(null);
+    const currentPage = useSelector(state => state.page.currentPage);
+    const [isStreamingComplete, setIsStreamingComplete] = useState(false);
     const ad_interval = 0;
     const [feedback, setFeedback] = useState({});
 
@@ -298,7 +301,7 @@ const Chat = () => {
         console.log("setting_case");
         if (token != null) {
             if (userCases.length === 0) {
-                fetchUserCases(token, dispatch)
+                fetchUserCases(token, dispatch, navigate)
                     .then((status) => {
                         if (status !== 401) {
                             setCurrentCaseFromLocation();
@@ -371,11 +374,15 @@ const Chat = () => {
         // set placeholder while agent "thinks"
         setChatLog(prevChatLog => [
             ...prevChatLog,
-            {role: "agent", content: <span className={classes.blinkingEmoji}>🤔</span>}
+            // {role: "agent", content: <span className={classes.blinkingEmoji}>🤔</span>}
+            {role: "agent", content: ""}
         ]);
 
         // re-process the PDF
-        processPDF(currentCase, token, input);
+        // processPDF(currentCase, token, input);
+
+        // Reset streaming completion state on new submission
+        // setIsStreamingComplete(false);
 
         try {
             // Establish SSE connection
@@ -440,9 +447,8 @@ const Chat = () => {
 
 
     const handleNavigateToPage = (pageNumber) => {
-        setCurrentPage(pageNumber);
+        dispatch(setCurrentPage(pageNumber));
     };
-
 
     return (
         <div className={classes.App}>
@@ -579,7 +585,13 @@ const Chat = () => {
 const ChatMessage = ({content, role, onNavigateToPage}) => {
 
     const formatContentWithLinks = (text) => {
-        const pageLinkRegex = /\(Page (\d+)\):/g;
+
+        // Ensure that 'text' is a string
+        // if (typeof text !== 'string') {
+        //     return text;
+        // }
+
+        const pageLinkRegex = /\[\[Page (\d+)\]\]/g;
         return text.split(pageLinkRegex).map((part, index) => {
             if ((index % 2) === 1) { // This is a page number
                 return <PageLinkButton key={index} pageNumber={parseInt(part, 10)} onNavigate={onNavigateToPage} />;

@@ -146,6 +146,14 @@ const useStyles = makeStyles((theme) => ({
         padding: '8px 30px',
         color: '#80cbc4',
     },
+    infoProgress: {
+        // Set the track color
+        backgroundColor: theme.palette.info.light,
+        // Set the bar color
+        '& .MuiLinearProgress-bar': {
+            backgroundColor: theme.palette.info.main,
+        },
+    },
 }));
 
 const UploadPage = ({token, isAuthenticated, userCases}) => {
@@ -184,7 +192,7 @@ const UploadPage = ({token, isAuthenticated, userCases}) => {
     useEffect(() => {
         if (isAuthenticated === true && token != null) {
             if (!userCases || userCases.length === 0) {
-                fetchUserCases(token, dispatch).catch(error => {
+                fetchUserCases(token, dispatch, navigate).catch(error => {
                     console.error('Error fetching user cases:', error);
                     handleLogout();
                 });
@@ -321,7 +329,7 @@ const UploadPage = ({token, isAuthenticated, userCases}) => {
 
                             <Grid item xs={12}>
                                 {/*show progress*/}
-                                {loading && <LinearProgress color="primary" size="lg"/>}
+                                {loading && <LinearProgress className={classes.infoProgress} size="lg"/>}
                                 {/*Display errors*/}
                                 {
                                     // errorMessage && <div className={classes.error}>{errorMessage}</div>
