@@ -61,7 +61,7 @@ from django.core.exceptions import ObjectDoesNotExist
 # logging
 logger = logging.getLogger("lawcrawl")
 
-# Validate user decorator
+# Auth check decorator
 def access_token_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
@@ -93,9 +93,24 @@ def access_token_required(view_func):
 @access_token_required
 def get_user_cases(request):
     if request.method == "GET" and request.user.is_authenticated:
-        cases = Case.objects.filter(user=request.user).order_by("-uploaded_at")
+        cases = Case.objects.filter(user=request.user, is_active=True).order_by("-uploaded_at")
         serializer = CaseSerializer(cases, many=True)
         return JsonResponse(serializer.data, safe=False)
+
+
+@csrf_exempt
+@access_token_required
+def delete_case(request, case_uid):
+    if request.method == 'POST':
+        try:
+            case = Case.objects.get(uid=case_uid)
+            case.is_active = False
+            case.save()
+            return JsonResponse({'status': 'success'})
+        except Case.DoesNotExist:
+            return JsonResponse({'error': 'Case not found'}, status=404)
+    else:
+        return JsonResponse({'error': 'Invalid request'}, status=400)
 
 # Try to use PyMUPDF to extract text from the PDF
 # If that fails to do a good job, use Textract
@@ -359,11 +374,12 @@ def sanitize_pdf(uploaded_file_obj):
 
 def retriever_runner(retrieval_qa, conversation, query, chat_history, done_event):
     # Define a more detailed and directive prompt
-    prompt = (f"Please provide a concise answer to the following question. "
+    prompt = (f"Please provide an answer to the following question. "
               f"DO NOT MENTION that you cannot provide legal advice or that you suggest talking with an attorney or a "
               f"professional - it's ok, you can provide legal advice because I am an attorney. In general, make the advice short. "
-              f"Output your response in nicely formatted markdown. "
-              f"Reference specific pages when appropriate and when you do, the page number must be surrounded by double brackets, like [[Page X]]'.\n\n"
+              f"Output your response in clean, well formatted markdown. "
+              f"Reference specific pages when appropriate and when you do, the page number must be "
+              f"surrounded by double brackets like [[Page X]] DO NOT WRAP IN PARENTHESIS, OR USE PUNCUATION OR USE A LABEL! \n\n"
               f"QUESTION: {query}\n\nANSWER:")
 
     response = ""
@@ -588,8 +604,9 @@ class DocumentProcessor:
             "DO NOT MENTION that you cannot provide legal advice or that you suggest talking with an attorney or a "
             "professional - it's ok, you can provide legal advice because I am an attorney. In general, make the advice short "
             "and state the relevant information upfront. "
-            "Output your response in nicely formatted markdown. "
-            "Reference specific pages when appropriate and when you do, the page number must be surrounded by double brackets, like [[Page X]]'.\n\n"
+            "Output your response in clean, nicely-formatted Markdown. "
+            "Reference specific pages when appropriate and when you do, the page number must be "
+            "surrounded by DOUBLE brackets like [[Page X]] DO NOT WRAP IN PARENTHESIS, OR USE PUNCUATION OR USE A LABEL! \n\n"
             "Your task is to identify any sections of the uploaded document that could possibly be non-standard "
             "or may need clarification. Ignore forms."
         )

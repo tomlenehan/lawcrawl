@@ -5,6 +5,7 @@ import theme from './Theme';
 import {ThemeProvider} from "@material-ui/core";
 import Footer from "./Footer";
 import Chat from "./Chat";
+import Hotjar from '@hotjar/browser';
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -16,6 +17,12 @@ const useStyles = makeStyles((theme) => ({
 
 
 const ChatPage = ({isAuthenticated}) => {
+
+    // Hotjar
+    const siteId = 3808648;
+    const hotjarVersion = 6;
+    Hotjar.init(siteId, hotjarVersion);
+
     const classes = useStyles();
     const token = localStorage.getItem('access');
 

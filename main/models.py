@@ -60,6 +60,7 @@ class Case(models.Model):
     uid = models.UUIDField(default=uuid4, unique=True, verbose_name="UID")
     name = models.CharField(max_length=255)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     state = models.CharField(max_length=2, choices=STATES, default="NY")
 

@@ -25,7 +25,7 @@ import {
 } from "@material-ui/core";
 import LinearProgress from '@material-ui/core/LinearProgress';
 import {useDispatch} from 'react-redux';
-import {addUserCase} from '../actions/user';
+import {addUserCases} from '../actions/user';
 import TermsOfService from "./TermsOfService";
 import useFetchUserCases from './hooks/useFetchUserCases';
 import config from "./config";
@@ -229,7 +229,7 @@ const UploadPage = ({token, isAuthenticated, userCases}) => {
             setErrorMessage("Please select a file before proceeding.");
             return;
         } else if (!caseName) {
-            setErrorMessage("Please provide a document name before proceeding.");
+            setErrorMessage("Please provide a chat name before proceeding.");
             return;
         } else if (!selectedState) {
             setErrorMessage("Please select a state before proceeding.");
@@ -269,7 +269,7 @@ const UploadPage = ({token, isAuthenticated, userCases}) => {
             if (response.ok) {
                 const data = await response.json();
                 const updatedUserCases = [data.case, ...userCases];
-                dispatch(addUserCase(updatedUserCases));
+                dispatch(addUserCases(updatedUserCases));
                 navigate(`/chat?uid=${data.case.uid}`);
             } else {
                 const errorData = await response.json();
@@ -305,27 +305,35 @@ const UploadPage = ({token, isAuthenticated, userCases}) => {
                 <Box className={classes.root}>
                     <Container className={classes.contentContainer}>
 
-                        <Grid container>
-                            <Grid item xs={12}>
-                                <img src={`${config.STATIC_URL}images/logos/LogoLG.png`}
-                                     alt="Lawcrawl Logo"
-                                     className={classes.mainLogo}/>
-                            </Grid>
-                        </Grid>
-
-                        <Box container className={classes.formContainer}>
-
-                            <Typography className={classes.loginHeadline} variant="h4"
-                                        gutterBottom>
-                                Upload
-                            </Typography>
+                        <Grid container style={{justifyContent: 'center', maxWidth: 210}}>
+                            {!loading && (
+                                <Box>
+                                    <Grid item xs={12}>
+                                        <img src={`${config.STATIC_URL}images/logos/LogoLG.png`}
+                                             alt="Lawcrawl Logo"
+                                             className={classes.mainLogo}/>
+                                    </Grid>
+                                    <Typography className={classes.loginHeadline} variant="h4"
+                                                gutterBottom>
+                                        Upload
+                                    </Typography>
+                                </Box>
+                            )}
 
                             {/* Processing message */}
                             {loading && (
-                                <Alert variant="filled" severity="info" style={{marginTop: 20}}>
-                                    Processing your document. This will take a few minutes.
-                                </Alert>
+                                <Box>
+                                    <Alert variant="filled" severity="info"
+                                           style={{marginTop: 20}}>
+                                        Processing your document. This might take a minute.
+                                    </Alert>
+                                </Box>
                             )}
+                            {/*{loading && <LinearProgress className={classes.infoProgress} size="lg"/>}*/}
+                        </Grid>
+
+
+                        <Box container className={classes.formContainer}>
 
                             <Grid item xs={12}>
                                 {/*show progress*/}
@@ -338,7 +346,7 @@ const UploadPage = ({token, isAuthenticated, userCases}) => {
                                 }
 
                                 <TextField
-                                    label="Document Name"
+                                    label="Chat Name"
                                     variant="outlined"
                                     value={caseName}
                                     InputLabelProps={{className: classes.blackLabel}}

@@ -70,23 +70,26 @@ const useStyles = makeStyles({
     },
     pageSelector: {
         position: 'absolute',
-        fontSize: 20,
         color: '#3a3a3a',
+        maxWidth: 150,
+        maxHeight: 36,
+        backgroundColor: '#B3DFDB',
+        borderRadius: 20,
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 1000,
         display: 'flex',
         alignItems: 'center',
+        '&:hover': {
+            boxShadow: '0 0 10px #719ECE',
+        },
+        boxShadow: '0 0 5px #3a3a3a',
     },
     pageInput: {
-        width: '70px',
+        width: 60,
     },
     pageButton: {
         color: '#3a3a3a',
-        fontSize: 30,
-        // '&:hover': {
-        //     backgroundColor: '#26a69a',
-        // },
     }
 });
 

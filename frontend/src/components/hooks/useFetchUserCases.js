@@ -1,4 +1,4 @@
-import {addUserCase} from "../../actions/user";
+import {addUserCases} from "../../actions/user";
 import {logout} from "../../actions/auth";
 
 const useFetchUserCases = () => {
@@ -23,7 +23,7 @@ const useFetchUserCases = () => {
             const data = await response.json();
 
             if (data) {
-                dispatch(addUserCase(data));
+                dispatch(addUserCases(data));
             }
         } catch (error) {
             console.error('Error fetching user cases:', error);

@@ -2,12 +2,12 @@ import React, {useEffect, useRef, useState} from "react";
 import {makeStyles} from '@material-ui/core/styles';
 import {Link, useNavigate} from 'react-router-dom';
 import {connect, useDispatch, useSelector} from 'react-redux';
-import { setCurrentPage } from '../actions/page';
+import {setCurrentPage} from '../actions/page';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import ThumbUpIcon from '@material-ui/icons/ThumbUp';
 import ThumbDownIcon from '@material-ui/icons/ThumbDown';
-import {Button, IconButton, TextField} from '@material-ui/core';
+import {Button, IconButton, TextField, Tooltip, Menu, MenuItem} from '@material-ui/core';
 import SendIcon from '@material-ui/icons/Send';
 import PrivacyTip from '@mui/icons-material/PrivacyTip';
 import axios from "axios";
@@ -20,10 +20,16 @@ import TermsOfService from "./TermsOfService";
 import PdfViewer from "./PdfViewer";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import useFetchUserCases from './hooks/useFetchUserCases';
+import {updateUserCases} from '../actions/user';
 import Modal from "@material-ui/core/Modal";
 import {logout} from "../actions/auth";
 import {InputAdornment} from "@mui/material";
 import ArrowForwardIosIcon from "@material-ui/icons/ArrowForwardIos";
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import MoreHorizIcon from '@material-ui/icons/MoreHoriz';
+import Delete from '@material-ui/icons/Delete';
+import Typography from "@material-ui/core/Typography";
+
 
 // Chat Component
 const useStyles = makeStyles((theme) => ({
@@ -42,7 +48,7 @@ const useStyles = makeStyles((theme) => ({
         flexDirection: 'column',
     },
     sideMenuButton: {
-        padding: 15,
+        padding: "5px 0px 5px 14px",
         border: '1px solid #fdfbee',
         marginTop: 4,
         color: '#fdfbee !important',
@@ -52,18 +58,38 @@ const useStyles = makeStyles((theme) => ({
         '&:hover': {
             backgroundColor: '#2a2a2a',
         },
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+    },
+    chatLink: {
+        textDecoration: 'none',
+        color: 'inherit',
+        display: 'flex',
+        alignItems: 'center',
+        width: '100%',
+    },
+    optionLink: {
+        // color: '#3a3a3a',
+        '&:hover': {
+            color: '#fdfbee',
+        },
+    },
+    deleteItem: {
+        color: '#F44336',
     },
     chatMessage: {
-        backgroundColor: '#e0f2f1',
-        display: 'flex',
-        justifyContent: 'center',
-        borderRadius: 40,
-    },
-    chatMessageGPT: {
         backgroundColor: '#80cbc4',
         display: 'flex',
         justifyContent: 'center',
-        borderRadius: 40,
+        borderRadius: 24,
+    },
+    chatMessageGPT: {
+        backgroundColor: '#B2DFDB',
+        display: 'flex',
+        justifyContent: 'center',
+        borderRadius: 24,
     },
     chatMessageCenter: {
         maxWidth: 640,
@@ -72,6 +98,10 @@ const useStyles = makeStyles((theme) => ({
         padding: 12,
         paddingLeft: 24,
         paddingRight: 24,
+    },
+    chatMessageBody: {
+        position: 'relative',
+        padding: '8px',
     },
     chatBox: {
         display: 'flex',
@@ -97,6 +127,27 @@ const useStyles = makeStyles((theme) => ({
         width: '50%',
         flex: 1,
     },
+    chatInputHolder: {
+        flex: 1,
+        padding: 12,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+    },
+    chatInputForm: {
+        display: 'flex',
+        maxWidth: 880,
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    disclaimerText: {
+        color: 'gray', // Example color
+        fontSize: '0.8rem', // Example font size
+        textAlign: 'center', // Center align the text
+        maxWidth: 880, // Match width with chat input form
+    },
     chatInputTextArea: {
         backgroundColor: '#e0f2f1',
         fontSize: '1.1em',
@@ -110,19 +161,15 @@ const useStyles = makeStyles((theme) => ({
         boxShadow: '0 0 5px #3a3a3a',
         resize: 'none',
     },
-    chatInputHolder: {
-        flex: 1,
-        padding: 12,
-    },
     avatarGPT: {
-        backgroundColor: '#B2DFDB',
+        backgroundColor: '#e0f2f1',
         borderRadius: '50%',
         minWidth: 40,
         height: 40,
         marginRight: 10,
     },
     avatarME: {
-        backgroundColor: '#ffffff',
+        backgroundColor: '#e0f2f1',
         borderRadius: '50%',
         minWidth: 40,
         height: 40,
@@ -130,7 +177,7 @@ const useStyles = makeStyles((theme) => ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#80cbc4',
+        color: '#25A69A',
         fontWeight: 'bold',
     },
     message: {
@@ -170,22 +217,19 @@ const useStyles = makeStyles((theme) => ({
         justifyContent: 'center',
         height: '100%',
     },
-    chatInputForm: {
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: '100%',
-    },
     sendButton: {
         borderRadius: 10,
     },
     sendButtonEnabled: {
         backgroundColor: '#B2DFDB',
         color: '#5C6BC0',
+        marginRight: -10,
         '&:hover': {
             backgroundColor: '#80cbc4',
             color: '#5C6BC0',
+            boxShadow: '0 0 10px #719ECE',
         },
+        boxShadow: '0 0 5px #3a3a3a',
     },
     blinkingEmoji: {
         animation: '$blink 1s linear infinite',
@@ -197,6 +241,7 @@ const useStyles = makeStyles((theme) => ({
     },
     pageLinkButton: {
         padding: theme.spacing(1),
+        marginLeft: 18,
         textTransform: 'none',
         backgroundColor: '#B2DFDB',
         color: '#3a3a3a',
@@ -211,15 +256,22 @@ const useStyles = makeStyles((theme) => ({
         fontSize: 14,
         color: '#1DA1F2',
     },
+    copyButton: {
+        marginLeft: 8,
+        color: '#25A69A',
+        fontSize: 24,
+        zIndex: 300,
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        // '&:hover': {
+        //     boxShadow: '0 0 10px #719ECE',
+        // },
+        // boxShadow: '0 0 5px #3a3a3a',
+    },
 }));
 
 const Chat = () => {
-    const chatLogBaseline = [{
-        user: "gpt",
-        message: "Hello, I am your friendly Lawbot. " +
-            "I'm not a lawyer, but I read your documents and I'm here to " +
-            "answer all of your legal questions.",
-    }];
     const classes = useStyles();
     const [input, setInput] = useState('');
     const [loadingChatLog, setLoadingChatLog] = useState(false);
@@ -236,9 +288,9 @@ const Chat = () => {
     const fetchUserCases = useFetchUserCases();
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    // const [currentPage, setCurrentPage] = useState(null);
     const currentPage = useSelector(state => state.page.currentPage);
-    const [isStreamingComplete, setIsStreamingComplete] = useState(false);
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [selectedCase, setSelectedCase] = useState(null);
     const ad_interval = 0;
     const [feedback, setFeedback] = useState({});
 
@@ -272,6 +324,7 @@ const Chat = () => {
         }
     };
 
+    // Process PDF on initial load
     useEffect(() => {
         if (token) {
             processPDF(currentCase, token, "");
@@ -279,6 +332,7 @@ const Chat = () => {
     }, [token, currentCase]);
 
 
+    // Set current case from URL
     useEffect(() => {
         const setCurrentCaseFromLocation = () => {
             try {
@@ -298,7 +352,6 @@ const Chat = () => {
             }
         };
 
-        console.log("setting_case");
         if (token != null) {
             if (userCases.length === 0) {
                 fetchUserCases(token, dispatch, navigate)
@@ -320,6 +373,7 @@ const Chat = () => {
     }, [token, userCases, location.search]);
 
 
+    // Fetch chat log for current case
     useEffect(() => {
         const fetchCaseConversation = async () => {
             if (currentCase) {
@@ -348,21 +402,17 @@ const Chat = () => {
         fetchCaseConversation();
     }, [token, currentCase]);
 
-    const handleFeedback = (messageIndex, type) => {
-        setFeedback(prevFeedback => ({
-            ...prevFeedback,
-            [messageIndex]: type
-        }));
-    };
+    // const handleFeedback = (messageIndex, type) => {
+    //     setFeedback(prevFeedback => ({
+    //         ...prevFeedback,
+    //         [messageIndex]: type
+    //     }));
+    // };
 
     async function handleSubmit(e) {
         e.preventDefault();
-
-        console.log('submitting_input');
-
         const userInput = input;
         setChatLog([...chatLog, {role: "user", content: input}]);
-
         setInput("");
 
         // Construct the SSE URL with query parameters
@@ -374,9 +424,15 @@ const Chat = () => {
         // set placeholder while agent "thinks"
         setChatLog(prevChatLog => [
             ...prevChatLog,
-            // {role: "agent", content: <span className={classes.blinkingEmoji}>🤔</span>}
             {role: "agent", content: ""}
         ]);
+
+        // Send the message to the server
+        if (chatLogRef.current) {
+            setTimeout(() => {
+                chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
+            }, 100);
+        }
 
         // re-process the PDF
         // processPDF(currentCase, token, input);
@@ -428,58 +484,119 @@ const Chat = () => {
         }
     }
 
+    // TOS Modal
     const handleTermsOpen = () => {
         setTermsOpen(true);
     };
-
     const handleTermsClose = () => {
         setTermsOpen(false);
     };
 
-
-    useEffect(() => {
-        if (chatLogRef.current) {
-            setTimeout(() => {
-                chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
-            }, 100);
-        }
-    }, [chatLog]);
+    // Scroll to bottom of chat log when it updates
+    // useEffect(() => {
+    //     if (chatLogRef.current) {
+    //         setTimeout(() => {
+    //             chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
+    //         }, 100);
+    //     }
+    // }, [chatLog]);
 
 
     const handleNavigateToPage = (pageNumber) => {
         dispatch(setCurrentPage(pageNumber));
     };
 
+    // Reset currentPage to 1 when the case changes
+    useEffect(() => {
+        if (currentCase) {
+            dispatch(setCurrentPage(1));
+        }
+    }, [currentCase, dispatch]);
+
+    const handleMenuClick = (event, userCase) => {
+        setAnchorEl(event.currentTarget);
+        setSelectedCase(userCase);
+    };
+
+    const handleClose = () => {
+        setAnchorEl(null);
+    };
+
+    const handleDeleteChat = async () => {
+        console.log("Deleting chat for case:", selectedCase.name);
+        handleClose();
+
+        try {
+            const response = await axios.post(`/api/user/cases/delete/${selectedCase.uid}/`, {}, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+
+            if (response.data.status === 'success') {
+                // Remove the deleted case from the Redux state
+                const updatedCases = userCases.filter(c => c.uid !== selectedCase.uid);
+                dispatch(updateUserCases(updatedCases));
+
+                // If no cases are left, navigate to /upload, else set a new current case
+                if (updatedCases.length === 0) {
+                    navigate('/upload');
+                } else {
+                    setCurrentCase(updatedCases[0]);
+                }
+            } else {
+                console.error('Deletion was not successful');
+            }
+        } catch (error) {
+            console.error('Error deleting case:', error);
+            // TODO: display some kind of error message
+        }
+    };
+
+
     return (
         <div className={classes.App}>
             <aside className={classes.sideMenu}>
                 {userCases.map((userCase, index) => (
-                    <div key={index}>
+                    <div key={index}
+                         className={classes.sideMenuButton}
+                         style={{
+                             backgroundColor: currentCase && userCase.uid === currentCase.uid ? '#2a2a2a' : 'transparent',
+                         }}
+                    >
                         <Link
                             to={`/chat?uid=${userCase.uid}`}
-                            onClick={() => {
-                                setCurrentCase(userCase);
-                                // setChatLog(chatLogBaseline);
-                            }}
-                            style={{
-                                backgroundColor: currentCase && userCase.uid === currentCase.uid ? '#2a2a2a' : 'transparent',
-                                textDecoration: 'none',
-                                color: 'inherit',
-                                display: 'block',
-                            }}
-                            className={classes.sideMenuButton}
+                            onClick={() => setCurrentCase(userCase)}
+                            className={classes.chatLink}
                         >
-                            <Box display="flex" alignItems="center" justifyContent="space-between"
-                                 width="100%">
-                                <ChatBubbleOutlineIcon
-                                    style={{marginRight: '8px', fontSize: '1.2rem'}}/>
-                                <Box textAlign="center" flexGrow={1}>
-                                    {userCase.name}
-                                </Box>
+                            <ChatBubbleOutlineIcon
+                                style={{marginRight: '8px', fontSize: '1.2rem'}}/>
+                            <Box textAlign="center" flexGrow={1}>
+                                {userCase.name}
                             </Box>
                         </Link>
+
+                        <IconButton onClick={(e) => handleMenuClick(e, userCase)}>
+                            <MoreHorizIcon className={classes.optionLink}/>
+                        </IconButton>
                     </div>
                 ))}
+
+                <Menu
+                    id="options-menu"
+                    anchorEl={anchorEl}
+                    keepMounted
+                    open={Boolean(anchorEl)}
+                    onClose={handleClose}
+                >
+                    <MenuItem
+                        onClick={handleDeleteChat}
+                        className={classes.deleteItem}
+                    >
+                        <Delete style={{marginRight: 8, fontSize: '1.6vw'}}/>
+                        Delete Chat
+                    </MenuItem>
+                </Menu>
 
                 {/*<Box style={{height: '100vh'}}/>*/}
                 <div style={{flexGrow: 1}}></div>
@@ -515,7 +632,7 @@ const Chat = () => {
                                     <ChatMessage className={classes.lineBreak}
                                                  content={chat.content}
                                                  role={chat.role}
-                                                 onNavigateToPage={handleNavigateToPage} />
+                                                 onNavigateToPage={handleNavigateToPage}/>
                                     {/*{(index + 1) % ad_interval === 0 && <AdSenseAd/>}*/}
                                 </React.Fragment>
                             )
@@ -541,7 +658,7 @@ const Chat = () => {
                                 <LinearProgress color="primary" size="lg" style={{width: '50%'}}/>
                             </div>
                         ) : (
-                            file && <PdfViewer file={file} currentPage={currentPage} />
+                            file && <PdfViewer file={file} currentPage={currentPage}/>
                         )}
                     </div>
 
@@ -561,10 +678,8 @@ const Chat = () => {
                                     <InputAdornment position="end">
                                         <IconButton
                                             type="submit"
-                                            className={
-                                                input.trim() ? `${classes.sendButton} ${classes.sendButtonEnabled}` : classes.sendButton
-                                            }
-                                            disabled={!input.trim()} // Button disabled when input is empty or just whitespace
+                                            className={input.trim() ? `${classes.sendButton} ${classes.sendButtonEnabled}` : classes.sendButton}
+                                            disabled={!input.trim()}
                                         >
                                             <SendIcon/>
                                         </IconButton>
@@ -575,7 +690,14 @@ const Chat = () => {
                             rows={1}
                         />
                     </form>
+
+                    <Typography className={classes.disclaimerText}>
+                        LawCrawl can make mistakes. Consider consulting with a legal professional in
+                        important matters.
+                    </Typography>
                 </div>
+
+
             </div>
 
         </div>
@@ -586,15 +708,13 @@ const ChatMessage = ({content, role, onNavigateToPage}) => {
 
     const formatContentWithLinks = (text) => {
 
-        // Ensure that 'text' is a string
-        // if (typeof text !== 'string') {
-        //     return text;
-        // }
+        const pageLinkRegex = /\[\[Page (\d+)\]\][.,]?/g;
+        // const pageLinkRegex = /\(?\[\[Page (\d+)\]\]\)?[.,]?/g;
 
-        const pageLinkRegex = /\[\[Page (\d+)\]\]/g;
         return text.split(pageLinkRegex).map((part, index) => {
             if ((index % 2) === 1) { // This is a page number
-                return <PageLinkButton key={index} pageNumber={parseInt(part, 10)} onNavigate={onNavigateToPage} />;
+                return <PageLinkButton key={index} pageNumber={parseInt(part, 10)}
+                                       onNavigate={onNavigateToPage}/>;
             }
             return part;
         });
@@ -603,54 +723,50 @@ const ChatMessage = ({content, role, onNavigateToPage}) => {
     const classes = useStyles();
     const formattedContent = formatContentWithLinks(content);
 
-    if (role === "agent") {
-        return (
-            <div className={classes.chatMessageGPT}>
-                <div className={classes.chatMessageCenter}>
-                    <div className={classes.avatarGPT}>
-                        <img src={`${config.STATIC_URL}images/logos/BotChatLogo.png`}
-                             alt="Bot Avatar"
-                             style={{
-                                 width: 35,
-                                 borderRadius: '50%',
-                                 marginTop: 7,
-                                 marginLeft: 2
-                             }}/>
-                    </div>
-                    <div className={classes.message}>
-                        {formattedContent.map((part, index) =>
-                            (typeof part === 'string') ?
-                                <ReactMarkdown key={index}>{part}</ReactMarkdown> : part
-                        )}
-                    </div>
+    // Function to copy text to clipboard
+    const copyToClipboard = (text) => {
+        navigator.clipboard.writeText(text).then(() => {
+            // Optional: Display a message or change the icon to indicate success.
+        });
+    };
 
-                    {/*<div className={classes.feedbackButtons}>*/}
-                    {/*    <IconButton onClick={() => onFeedback(index, 'up')}>*/}
-                    {/*        <ThumbUpIcon/>*/}
-                    {/*    </IconButton>*/}
-                    {/*    <IconButton onClick={() => onFeedback(index, 'down')}>*/}
-                    {/*        <ThumbDownIcon/>*/}
-                    {/*    </IconButton>*/}
-                    {/*</div>*/}
+    // Updated rendering code for agent and user messages
+    const messageContent = formattedContent.map((part, index) =>
+        (typeof part === 'string') ? <ReactMarkdown key={index}>{part}</ReactMarkdown> : part
+    );
 
+    const chatMessage = (role === "agent") ? classes.chatMessageGPT : classes.chatMessage;
+    const chatMessageCenter = classes.chatMessageCenter;
+    const avatarClass = (role === "agent") ? classes.avatarGPT : classes.avatarME;
+    const avatarContent = (role === "agent") ? (
+        <img src={`${config.STATIC_URL}images/logos/BotChatLogo.png`} alt="Bot Avatar"
+             style={{width: 35, borderRadius: '50%', marginTop: 7, marginLeft: 2}}/>
+    ) : "ME";
+
+    return (
+        <div className={chatMessage}>
+            <div className={chatMessageCenter}>
+                <div className={avatarClass}>
+                    {avatarContent}
+                </div>
+                <div className={classes.chatMessageBody}>
+                    {messageContent}
+                    {role === "agent" && messageContent && (
+                        <Tooltip title="Copy to clipboard">
+                            <IconButton
+                                onClick={() => copyToClipboard(content)}
+                                className={classes.copyButton}
+                                size="small"
+                            >
+                                <ContentCopyIcon/>
+                            </IconButton>
+                        </Tooltip>
+                    )}
                 </div>
             </div>
-        );
-    } else {
-        return (
-            <div className={classes.chatMessage}>
-                <div className={classes.chatMessageCenter}>
-                    <div className={classes.avatarME}>
-                        YOU
-                    </div>
-                    <div className={classes.message}>
-                        {content}
-                    </div>
-                </div>
-            </div>
-        );
-    }
-}
+        </div>
+    );
+};
 
 export default Chat;
 
@@ -665,8 +781,8 @@ const PageLinkButton = ({pageNumber, onNavigate}) => {
 
     return (
         <Button variant="contained" className={classes.pageLinkButton} onClick={handleNavigate}>
-            Page {pageNumber}
-            <ArrowForwardIosIcon className={classes.rightArrowIcon} />
+            pg {pageNumber}
+            <ArrowForwardIosIcon className={classes.rightArrowIcon}/>
         </Button>
     );
 };
