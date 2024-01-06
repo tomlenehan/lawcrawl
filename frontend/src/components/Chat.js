@@ -72,6 +72,7 @@ const useStyles = makeStyles((theme) => ({
     },
     optionLink: {
         // color: '#3a3a3a',
+        zIndex: 300,
         '&:hover': {
             color: '#fdfbee',
         },
@@ -207,9 +208,14 @@ const useStyles = makeStyles((theme) => ({
         left: '50%',
         transform: 'translate(-50%, -50%)',
         position: 'absolute',
-        maxWidth: 400,
+        maxWidth: 520,
         overflowY: 'auto',
         maxHeight: '80vh',
+    },
+    closeButton: {
+        position: 'absolute',
+        right: 4,
+        top: 4,
     },
     progressContainer: {
         display: 'flex',
@@ -219,6 +225,7 @@ const useStyles = makeStyles((theme) => ({
     },
     sendButton: {
         borderRadius: 10,
+        marginRight: -10,
     },
     sendButtonEnabled: {
         backgroundColor: '#B2DFDB',
@@ -264,10 +271,22 @@ const useStyles = makeStyles((theme) => ({
         position: 'absolute',
         top: 0,
         right: 0,
-        // '&:hover': {
-        //     boxShadow: '0 0 10px #719ECE',
-        // },
-        // boxShadow: '0 0 5px #3a3a3a',
+    },
+    fadeText: {
+        position: 'relative',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        maxWidth: 160,
+        '&:after': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '15%',
+            height: '100%',
+            background: 'linear-gradient(to right, rgba(255, 255, 255, 0), rgb(44 44 44) 100%)',
+            pointerEvents: 'none',
+        }
     },
 }));
 
@@ -276,6 +295,7 @@ const Chat = () => {
     const [input, setInput] = useState('');
     const [loadingChatLog, setLoadingChatLog] = useState(false);
     const [loadingPDF, setLoadingPDF] = useState(false);
+    const [initialLoad, setInitialLoad] = useState(true);
     const userCases = useSelector((state) => state.userCases);
     const token = useSelector((state) => state.auth.access);
     const [currentCase, setCurrentCase] = useState(null);
@@ -409,6 +429,21 @@ const Chat = () => {
     //     }));
     // };
 
+    // After the initial load, scroll to the bottom of the chat log when it updates
+    useEffect(() => {
+        if (!initialLoad && chatLogRef.current) {
+            setTimeout(() => {
+                chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
+            }, 100);
+        }
+    }, [chatLog]);
+
+    useEffect(() => {
+        if (chatLog && chatLog.length > 0) {
+            setInitialLoad(false);
+        }
+    }, [chatLog]);
+
     async function handleSubmit(e) {
         e.preventDefault();
         const userInput = input;
@@ -426,13 +461,6 @@ const Chat = () => {
             ...prevChatLog,
             {role: "agent", content: ""}
         ]);
-
-        // Send the message to the server
-        if (chatLogRef.current) {
-            setTimeout(() => {
-                chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
-            }, 100);
-        }
 
         // re-process the PDF
         // processPDF(currentCase, token, input);
@@ -571,7 +599,9 @@ const Chat = () => {
                         >
                             <ChatBubbleOutlineIcon
                                 style={{marginRight: '8px', fontSize: '1.2rem'}}/>
-                            <Box textAlign="center" flexGrow={1}>
+                            <Box textAlign="center" flexGrow={1}
+                                 className={classes.fadeText}
+                            >
                                 {userCase.name}
                             </Box>
                         </Link>
@@ -617,7 +647,7 @@ const Chat = () => {
                     className={classes.modal}
                 >
                     <div className={classes.modalText}>
-                        <TermsOfService/>
+                        <TermsOfService onClose={handleTermsClose}/>
                     </div>
                 </Modal>
             </aside>
@@ -692,7 +722,7 @@ const Chat = () => {
                     </form>
 
                     <Typography className={classes.disclaimerText}>
-                        LawCrawl can make mistakes. Consider consulting with a legal professional in
+                        LawCrawl can make mistakes. Consult with a legal professional in
                         important matters.
                     </Typography>
                 </div>

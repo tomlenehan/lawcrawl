@@ -351,7 +351,8 @@ const UploadPage = ({token, isAuthenticated, userCases}) => {
                                     value={caseName}
                                     InputLabelProps={{className: classes.blackLabel}}
                                     InputProps={{
-                                        className: classes.creamInput
+                                        className: classes.creamInput,
+                                        inputProps: { maxLength: 25 }
                                     }}
                                     onChange={e => setCaseName(e.target.value)}
                                     className={`${classes.textField}`}

@@ -1,8 +1,10 @@
-// src/components/TermsOfService.js
 import React from 'react';
 import {makeStyles} from '@material-ui/core/styles';
+import ReactMarkdown from 'react-markdown';
 import Typography from '@material-ui/core/Typography';
 import {Link} from "react-router-dom";
+import {Button} from "@material-ui/core";
+import DisabledByDefaultIcon from '@mui/icons-material/DisabledByDefault';
 
 const useStyles = makeStyles((theme) => ({
     termsText: {
@@ -10,15 +12,22 @@ const useStyles = makeStyles((theme) => ({
         padding: 20,
         border: '2px solid #80cbc4',
         borderRadius: '10px',
+        position: 'relative', // For positioning the close button
     },
     heading: {
         color: '#3a3a3a',
         marginBottom: theme.spacing(1),
+        fontWeight: 'bold', // Make headings bold
     },
     paragraph: {
         color: '#3a3a3a',
         marginBottom: theme.spacing(2),
     },
+    closeButton: {
+        position: 'absolute',
+        right: 4,
+        top: 4,
+    }
 }));
 
 const TermsOfService = ({open, onClose}) => {
@@ -26,6 +35,10 @@ const TermsOfService = ({open, onClose}) => {
 
     return (
         <div className={classes.termsText}>
+            <Button className={classes.closeButton} onClick={onClose}>
+                <DisabledByDefaultIcon style={{color: '#26a69a'}}/>
+            </Button>
+
             <Typography variant="h6" className={classes.heading}>
                 Terms of Service for LawCrawl
             </Typography>
@@ -92,7 +105,8 @@ const TermsOfService = ({open, onClose}) => {
                 7. Contact Us
             </Typography>
             <Typography variant="body2" className={classes.paragraph}>
-                If you have any questions about these Terms of Service, please contact us at <a href="mailto:tom@lawcrawl.com">tom@lawcrawl.com</a>.
+                If you have any questions about these Terms of Service, please contact us at
+                <a href="mailto:tom@lawcrawl.com">tom@lawcrawl.com</a> or <a href="mailto:tom@lawcrawl.com">tess@lawcrawl.com</a>
             </Typography>
 
             <Typography variant="subtitle1" className={classes.heading}>
@@ -126,6 +140,16 @@ const TermsOfService = ({open, onClose}) => {
                 of our users' data. Learn more about how Google helps users share their data safely
                 via this <Link href="https://support.google.com/accounts/answer/7675428?hl=en"
                                target="_blank" rel="noopener noreferrer">Google article</Link>.
+            </Typography>
+
+            <Typography variant="subtitle1" className={classes.heading}>
+                11. Changes to the Service
+            </Typography>
+            <Typography variant="body2" className={classes.paragraph}>
+                Please note that LawCrawl reserves the right to regulate or throttle usage at our
+                discretion to ensure optimal service performance as well as transition to a paid
+                service model, which may affect access to certain features and functionality
+                without an upgrade.
             </Typography>
         </div>
     );
