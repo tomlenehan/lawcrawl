@@ -78,6 +78,7 @@ const useStyles = makeStyles((theme) => ({
     loginButton: {
         backgroundColor: '#B2DFDB',
         color: '#3a3a3a',
+        height: 48,
         fontWeight: 'bold',
         fontSize: 14,
         padding: '8px 30px',
@@ -94,6 +95,7 @@ const useStyles = makeStyles((theme) => ({
         backgroundColor: '#B2DFDB',
         color: '#3a3a3a',
         fontWeight: 'bold',
+        height: 48,
         fontSize: 14,
         padding: '8px 30px',
         '&:hover': {
@@ -103,7 +105,8 @@ const useStyles = makeStyles((theme) => ({
         border: '1px solid #F44336',
         boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
         textTransform: 'none',
-        marginBottom: 20,
+        marginBottom: 4,
+        marginLeft: 16,
     },
     contactButton: {
         backgroundColor: '#26a69a', // Adjust color as needed
@@ -168,9 +171,17 @@ const useStyles = makeStyles((theme) => ({
         '50%': {backgroundPosition: '100% 50%'},
         '100%': {backgroundPosition: '0% 50%'},
     },
-    // cardSection: {
-    //     backgroundColor: '#B2DFDB',
-    // },
+    videoContainer: {
+        textAlign: 'center',
+        marginBottom: theme.spacing(4),
+        marginTop: theme.spacing(4),
+    },
+    videoEmbed: {
+        width: '100%',
+        maxWidth: 560,
+        height: 315,
+        margin: 'auto',
+    },
 }));
 
 const HomePage = ({isAuthenticated}) => {
@@ -200,11 +211,12 @@ const HomePage = ({isAuthenticated}) => {
                             </Grid>
 
                             <Grid item xs={12}>
-                                <Typography className={classes.subTitle}>The AI legal
-                                    assistant</Typography>
-                                <Typography style={{fontSize: 16, marginBottom: 14}}>See
-                                    what's hidden
-                                    <br/>in your legal documents</Typography>
+                                <Typography className={classes.subTitle}>
+                                    Contract Review, Simplified
+                                </Typography>
+                                {/*<Typography style={{fontSize: 16, marginBottom: 14}}>See*/}
+                                {/*    what's hidden*/}
+                                {/*    <br/>in your legal documents</Typography>*/}
                             </Grid>
 
                             {/*<Grid item xs={12}>*/}
@@ -231,21 +243,17 @@ const HomePage = ({isAuthenticated}) => {
                                 )}
                             </Grid>
 
+                            {/* Embed YouTube Video */}
                             <Grid item xs={12}>
-                                <Typography style={{fontSize: 16, marginBottom: 14}}>
-                                    Learn More:</Typography>
-                                <Box display="flex" justifyContent="center" mt={3}>
-                                    <Button
-                                        variant="contained"
-                                        className={classes.blogButton}
-                                        startIcon={<LibraryBooksIcon/>}
-                                        component={Link}
-                                        to="/blog_list"
-                                    >
-                                        Blog
-                                    </Button>
-                                </Box>
-
+                                <div className={classes.videoContainer}>
+                                    <iframe
+                                        className={classes.videoEmbed}
+                                        src="https://www.youtube.com/embed/SkCE3Wcq3mo?si=KvU9SlKD1RhpfQzk?color=white"
+                                        frameBorder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    ></iframe>
+                                </div>
                             </Grid>
 
                         </Grid>
@@ -306,21 +314,43 @@ const HomePage = ({isAuthenticated}) => {
                                 </Card>
                             </Grid>
 
-                            <Grid item xs={12}>
-                                <Typography style={{fontSize: 16, marginBottom: 14}}>
-                                    Any Questions?</Typography>
-                                <Button
-                                    variant="contained"
-                                    color="primary"
-                                    className={classes.contactButton}
-                                    startIcon={<MailOutlineIcon/>}
-                                    href="mailto:tess@lawcrawl.com,tom@lawcrawl.com"
-                                >
-                                    Contact Us
-                                </Button>
+                            <Grid item xs={12} style={{marginTop: 80}}>
+                                <Box display="flex" alignItems="center" justifyContent="center">
+                                    <Typography style={{fontSize: 16, marginRight: 8}}>
+                                        Learn More:
+                                    </Typography>
+                                    <Button
+                                        variant="contained"
+                                        className={classes.blogButton}
+                                        startIcon={<LibraryBooksIcon/>}
+                                        component={Link}
+                                        to="/blog_list"
+                                    >
+                                        Blog
+                                    </Button>
+                                </Box>
                             </Grid>
 
+                            <Grid item xs={12} style={{marginTop: 30}}>
+                                <Box display="flex" alignItems="center" justifyContent="center">
+                                    <Typography style={{fontSize: 16, marginRight: 8}}>
+                                        Have Questions?
+                                    </Typography>
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        className={classes.contactButton}
+                                        startIcon={<MailOutlineIcon/>}
+                                        href="mailto:tess@lawcrawl.com,tom@lawcrawl.com"
+                                    >
+                                        Contact Us
+                                    </Button>
+                                </Box>
+                            </Grid>
+
+
                         </Grid>
+
                     </div>
                     <Footer/>
                 </div>

@@ -103,6 +103,8 @@ const useStyles = makeStyles((theme) => ({
     chatMessageBody: {
         position: 'relative',
         padding: '8px',
+        width: '100%',
+        minHeight: 30,
     },
     chatBox: {
         display: 'flex',
@@ -249,6 +251,7 @@ const useStyles = makeStyles((theme) => ({
     pageLinkButton: {
         padding: theme.spacing(1),
         marginLeft: 18,
+        fontWeight: 700,
         textTransform: 'none',
         backgroundColor: '#B2DFDB',
         color: '#3a3a3a',
@@ -264,19 +267,18 @@ const useStyles = makeStyles((theme) => ({
         color: '#1DA1F2',
     },
     copyButton: {
-        marginLeft: 8,
         color: '#25A69A',
         fontSize: 24,
         zIndex: 300,
         position: 'absolute',
-        top: 0,
-        right: 0,
+        top: 4,
+        right: 4,
     },
-    fadeText: {
+    fadeTextActive: {
         position: 'relative',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
-        maxWidth: 160,
+        maxWidth: 150,
         '&:after': {
             content: '""',
             position: 'absolute',
@@ -284,9 +286,25 @@ const useStyles = makeStyles((theme) => ({
             right: 0,
             width: '15%',
             height: '100%',
-            background: 'linear-gradient(to right, rgba(255, 255, 255, 0), rgb(44 44 44) 100%)',
+            background: `linear-gradient(to right, rgba(255, 255, 255, 0), rgb(43 42 42) 100%)`,
             pointerEvents: 'none',
-        }
+        },
+    },
+    fadeTextInactive: {
+        position: 'relative',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        maxWidth: 150,
+        '&:after': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '15%',
+            height: '100%',
+            background: `linear-gradient(to right, rgba(255, 255, 255, 0), rgb(60 59 59) 100%)`,
+            pointerEvents: 'none',
+        },
     },
 }));
 
@@ -600,13 +618,12 @@ const Chat = () => {
                             <ChatBubbleOutlineIcon
                                 style={{marginRight: '8px', fontSize: '1.2rem'}}/>
                             <Box textAlign="center" flexGrow={1}
-                                 className={classes.fadeText}
-                            >
+                                 className={currentCase && userCase.uid === currentCase.uid ? classes.fadeTextActive : classes.fadeTextInactive}>
                                 {userCase.name}
                             </Box>
                         </Link>
 
-                        <IconButton onClick={(e) => handleMenuClick(e, userCase)}>
+                        <IconButton onClick={(e) => handleMenuClick(e, userCase)} style={{paddingLeft: 0}}>
                             <MoreHorizIcon className={classes.optionLink}/>
                         </IconButton>
                     </div>
@@ -780,8 +797,8 @@ const ChatMessage = ({content, role, onNavigateToPage}) => {
                     {avatarContent}
                 </div>
                 <div className={classes.chatMessageBody}>
-                    {messageContent}
-                    {role === "agent" && messageContent && (
+
+                    {role === "agent" && content && content.length > 60 && (
                         <Tooltip title="Copy to clipboard">
                             <IconButton
                                 onClick={() => copyToClipboard(content)}
@@ -792,6 +809,7 @@ const ChatMessage = ({content, role, onNavigateToPage}) => {
                             </IconButton>
                         </Tooltip>
                     )}
+                    {messageContent}
                 </div>
             </div>
         </div>
