@@ -12,6 +12,7 @@ import {
     IconButton
 } from '@material-ui/core';
 import MenuIcon from '@material-ui/icons/Menu';
+import AccountCircle from '@material-ui/icons/AccountCircle';
 import {Box} from '@material-ui/core';
 import {Link} from 'react-router-dom';
 import {connect} from 'react-redux';
@@ -162,6 +163,19 @@ const Navbar = ({isAuthenticated, logout, userCases}) => {
                         </Grid>
 
                         <Grid item>
+
+                            {isAuthenticated && (
+                                <Button
+                                    className={classes.menuButton}
+                                    color="inherit"
+                                    component={Link}
+                                    to="/account"
+                                    startIcon={<AccountCircle />}
+                                >
+                                    Account
+                                </Button>
+                            )}
+
                             {isAuthenticated ? (
                                 <Button className={classes.menuButton} color="inherit"
                                         href="/" onClick={logout}>

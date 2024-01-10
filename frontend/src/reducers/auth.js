@@ -4,6 +4,7 @@ import {
     LOGOUT,
     USER_LOADED_SUCCESS,
     USER_LOADED_FAIL,
+    USER_ALREADY_EXISTS,
     AUTHENTICATED_SUCCESS,
     AUTHENTICATED_FAIL,
     PASSWORD_RESET_SUCCESS,
@@ -15,6 +16,7 @@ import {
     ACTIVATION_SUCCESS,
     ACTIVATION_FAIL,
     SET_AUTH_ERROR,
+    RESET_AUTH_ERROR,
     TWITTER_AUTH_FAIL,
     TWITTER_AUTH_SUCCESS,
     GOOGLE_AUTH_FAIL,
@@ -28,6 +30,9 @@ const initialState = {
     user: localStorage.getItem('user'),
     token: null,
     secret: null,
+    isUserAlreadyExists: false,
+    authError: null,
+    signupSuccess: false,
 }
 
 export default function(state=initialState, action){
@@ -40,7 +45,13 @@ export default function(state=initialState, action){
         case SET_AUTH_ERROR:
             return {
                 ...state,
-                authError: action.payload
+                authError: action.payload,
+                isUserAlreadyExists: false,
+            };
+        case RESET_AUTH_ERROR:
+            return {
+                ...state,
+                authError: null
             };
         case LOGIN_SUCCESS:
         case TWITTER_AUTH_SUCCESS:
@@ -65,12 +76,14 @@ export default function(state=initialState, action){
                 access: null,
                 refresh: null,
                 isAuthenticated: false,
-                user: null
+                user: null,
+                signupSuccess: false,
             }
         case SIGNUP_SUCCESS:
             return {
                 ...state,
-                isAuthenticated: false
+                isAuthenticated: false,
+                signupSuccess: true,
             }
         case USER_LOADED_SUCCESS:
             return {
@@ -96,6 +109,12 @@ export default function(state=initialState, action){
             return {
                 ...state
             }
+        case USER_ALREADY_EXISTS:
+            return {
+                ...state,
+                isUserAlreadyExists: true,
+                authError: action.payload,
+            };
         default:
             return state
     }

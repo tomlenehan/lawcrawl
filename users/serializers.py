@@ -17,4 +17,5 @@ class UserCreateSerializer(UserCreateSerializer):
             "is_staff",
             "is_superuser",
             "last_login",
+            "newsletter_opt_in",
         )

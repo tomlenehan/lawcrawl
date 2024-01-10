@@ -35,6 +35,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     profile_pic = models.URLField(null=True)
     rate_limited = models.BooleanField(default=True)
 
+    # Preferences
+    newsletter_opt_in = models.BooleanField(default=False)
+    role = models.CharField(max_length=255, null=True)
+
     objects = UserManager()
 
     USERNAME_FIELD = 'email'

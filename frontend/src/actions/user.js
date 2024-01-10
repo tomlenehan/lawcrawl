@@ -4,7 +4,6 @@ import {
 } from "./types";
 
 export const addUserCases = (userCase) => ({
-
   type: ADD_USER_CASE,
   payload: userCase,
 });

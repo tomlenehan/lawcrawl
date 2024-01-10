@@ -3,6 +3,7 @@ import {
     LOGIN_FAIL,
     USER_LOADED_SUCCESS,
     USER_LOADED_FAIL,
+    USER_ALREADY_EXISTS,
     AUTHENTICATED_SUCCESS,
     AUTHENTICATED_FAIL,
     AUTHENTICATED_RESEND_SUCCESS,
@@ -16,6 +17,7 @@ import {
     ACTIVATION_SUCCESS,
     ACTIVATION_FAIL,
     SET_AUTH_ERROR,
+    RESET_AUTH_ERROR,
     TWITTER_AUTH_FAIL,
     TWITTER_AUTH_SUCCESS,
     GOOGLE_AUTH_FAIL,
@@ -146,39 +148,49 @@ export const twitterAuthenticate = (state, code, verifier) => async (dispatch) =
     }
 }
 
-export const signup = (first_name, last_name, email, password, re_password) => async dispatch => {
+
+export const signup = (first_name, last_name, email, password, re_password, newsletter_opt_in) => async dispatch => {
     const config = {
         headers: {
             'Content-Type': 'application/json'
         }
     };
 
-    const body = JSON.stringify({first_name, last_name, email, password, re_password});
+    console.log('trying_signup');
+    const body = JSON.stringify({ first_name, last_name, email, password, re_password, newsletter_opt_in });
 
     try {
-        console.log("creating_user");
-        const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/users/`, body, config);
-
-        dispatch({
-            type: SIGNUP_SUCCESS,
-            payload: res.data
-        });
+        // Check if the user or social user exists with the given email
+        const checkRes = await axios.get(`${process.env.REACT_APP_API_URL}/api/user/check?email=${encodeURIComponent(email)}`);
+        if (checkRes.data.user_exists || checkRes.data.social_user_exists) {
+            dispatch({
+                type: USER_ALREADY_EXISTS,
+                payload: [{ field: 'email', message: "An account with this email already exists. Please login using your account or social login." }]
+            });
+        } else {
+            // If no user is found with the email, proceed to create a new user
+            const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/users/`, body, config);
+            dispatch({
+                type: SIGNUP_SUCCESS,
+                payload: res.data
+            });
+        }
     } catch (err) {
         dispatch({
             type: SIGNUP_FAIL
-        })
-        // Check if the error response has specific field errors
+        });
+        // Handle other errors
         if (err.response && err.response.data) {
             for (let key in err.response.data) {
-                // Dispatch an error for each field
                 dispatch({
                     type: SET_AUTH_ERROR,
-                    payload: { field: key, message: err.response.data[key][0] }
+                    payload: [{ field: key, message: err.response.data[key][0]}]
                 });
             }
         }
     }
 };
+
 
 export const verify = (uid, token) => async dispatch => {
     const config = {
@@ -308,6 +320,13 @@ export const reset_password_confirm = (uid, token, new_password, re_new_password
             type: PASSWORD_RESET_CONFIRM_FAIL
         });
     }
+};
+
+
+export const resetAuthError = () => dispatch => {
+    dispatch({
+        type: RESET_AUTH_ERROR,
+    });
 };
 
 export const logout = () => dispatch => {

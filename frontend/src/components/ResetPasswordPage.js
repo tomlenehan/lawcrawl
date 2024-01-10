@@ -123,7 +123,7 @@ const ResetPasswordPage = () => {
                     <Box className={classes.formContainer}>
                         <Typography className={classes.loginHeadline} variant="h4"
                                     gutterBottom>
-                            pw: Reset
+                            Password Reset
                         </Typography>
 
                         {/* Display Djoser error */}

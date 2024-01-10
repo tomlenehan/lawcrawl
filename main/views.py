@@ -20,10 +20,12 @@ from django.utils import timezone
 from django.http import JsonResponse, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import get_user_model
+from social_django.models import UserSocialAuth
 from django.forms.models import model_to_dict
 from django.shortcuts import get_object_or_404
 from django.http import FileResponse
 from django.http import HttpResponseForbidden
+from django.views.decorators.http import require_http_methods
 from django.contrib.auth import logout
 from django.shortcuts import redirect
 
@@ -96,6 +98,31 @@ def get_user_cases(request):
         cases = Case.objects.filter(user=request.user, is_active=True).order_by("-uploaded_at")
         serializer = CaseSerializer(cases, many=True)
         return JsonResponse(serializer.data, safe=False)
+
+@csrf_exempt
+@access_token_required
+def get_user_details(request):
+    user = request.user
+    return JsonResponse({
+        'id': user.id,
+        'email': user.email,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+        'is_active': user.is_active,
+        'is_staff': user.is_staff,
+        'is_superuser': user.is_superuser,
+        'last_login': user.last_login,
+        'newsletter_opt_in': user.newsletter_opt_in,
+    })
+
+@csrf_exempt
+def check_user_accounts(request):
+    email = request.GET.get('email', None)
+    if email:
+        user_exists = get_user_model().objects.filter(email=email).exists()
+        social_user_exists = UserSocialAuth.objects.filter(user__email=email).exists()
+        return JsonResponse({'user_exists': user_exists, 'social_user_exists': social_user_exists})
+    return JsonResponse({'error': 'Email parameter is missing'}, status=400)
 
 
 @csrf_exempt
@@ -284,11 +311,12 @@ def tiktoken_len(text):
 @csrf_exempt
 @access_token_required
 def fetch_conversation(request, case_uid):
+    # Fetch the case with the given UID or return a 404 error if not found
     case = get_object_or_404(Case, uid=str(case_uid))
+
     # Check if the requested case belongs to the logged-in user
     if request.user != case.user:
         return JsonResponse({"error": "Unauthorized access"}, status=401)
-
     try:
         conversation = CaseConversation.objects.get(case=case)
 
@@ -590,7 +618,7 @@ class DocumentProcessor:
         # Generate the initial "summary" of the document and create conversation
         vectorstore = self.get_vector_store()
         retriever = vectorstore.as_retriever(
-            search_kwargs={"filter": self.filter_query, "k": 6},
+            search_kwargs={"filter": self.filter_query, "k": 16},
             retriever_kwargs={
                 "search_kwargs": {"filter": self.filter_query},
             },
@@ -822,6 +850,22 @@ class DocumentProcessor:
             batch_metadatas = pdf_metadatas[i: i + self.batch_limit]
             self.upsert_to_pinecone(batch_texts, batch_metadatas)
 
+
+@csrf_exempt
+@access_token_required
+@require_http_methods(['PATCH'])
+def update_newsletter_opt_in(request):
+    try:
+        data = json.loads(request.body)
+        newsletter_opt_in = data.get('newsletterOptIn')
+
+        # Update the user's preference
+        request.user.newsletter_opt_in = newsletter_opt_in
+        request.user.save()
+
+        return JsonResponse({'status': 'success', 'newsletterOptIn': newsletter_opt_in})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 # @csrf_exempt
 # def ad_view(request):

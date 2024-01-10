@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {useForm} from 'react-hook-form';
 import {useDispatch, useSelector} from 'react-redux';
 import {useNavigate} from 'react-router-dom';
@@ -9,8 +9,9 @@ import {
     Container,
     Typography,
     Box,
-    ThemeProvider
+    ThemeProvider, FormControl, InputLabel, Select, MenuItem
 } from '@material-ui/core';
+import {Checkbox, FormControlLabel} from '@material-ui/core';
 import {signup} from '../actions/auth';
 import Grid from "@material-ui/core/Grid";
 import config from "./config";
@@ -93,6 +94,12 @@ const useStyles = makeStyles((theme) => ({
             textDecoration: 'underline',
         },
     },
+    customCheckbox: {
+        '&$checked': {
+            color: '#26a69a',
+        },
+    },
+    checked: {},
 }));
 
 const SignupPage = () => {
@@ -101,22 +108,29 @@ const SignupPage = () => {
     const navigate = useNavigate();
     const [accountCreated, setAccountCreated] = useState(false);
     const [accountEmail, setAccountEmail] = useState(null);
+    const signupSuccess = useSelector(state => state.auth.signupSuccess);
+    const [newsletterOptIn, setNewsletterOptIn] = useState(false);
     const authError = useSelector(state => state.auth.authError);
     const isAuthenticated = useSelector(state => state.auth.isAuthenticated);
     const {register, handleSubmit, formState: {errors}} = useForm();
 
-    const onSubmit = (data) => {
-        dispatch(signup(data.first_name, data.last_name, data.email, data.password, data.re_password));
+    const onSubmit = async (data) => {
+        await dispatch(signup(data.first_name, data.last_name, data.email, data.password, data.re_password, newsletterOptIn));
         setAccountEmail(data.email);
-        setAccountCreated(true);
     };
 
-    if (isAuthenticated) {
-        navigate('/upload');
-    }
-    if ((accountCreated && accountEmail) && !authError) {
-        navigate("/login?activation_email=" + accountEmail);
-    }
+    useEffect(() => {
+        if (signupSuccess && !authError && accountEmail) {
+            setAccountCreated(true);
+            navigate("/login?activation_email=" + accountEmail);
+        }
+    }, [signupSuccess, authError, accountEmail, navigate]);
+
+
+    const handleNewsletterChange = (event) => {
+        setNewsletterOptIn(event.target.checked);
+    };
+
 
     return (
         <ThemeProvider theme={theme}>
@@ -135,8 +149,11 @@ const SignupPage = () => {
                             Signup
                         </Typography>
 
+                        {/* Display custom error message */}
+                        {/*{displayErrorMessage()}*/}
+
                         {/* Display Djoser error */}
-                        <AuthErrorAlert authError={authError} />
+                        <AuthErrorAlert authError={authError}/>
 
                         <form className={classes.form} onSubmit={handleSubmit(onSubmit)}>
                             <TextField
@@ -228,6 +245,23 @@ const SignupPage = () => {
                                 error={!!errors.re_password}
                                 helperText={errors.re_password?.message}
                             />
+
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={newsletterOptIn}
+                                        onChange={handleNewsletterChange}
+                                        name="newsletterOptIn"
+                                        classes={{
+                                            root: classes.customCheckbox,
+                                            checked: classes.checked
+                                        }}
+                                    />
+                                }
+                                style={{textAlign: "left", marginLeft: 33, marginTop: 8}}
+                                label="Subscribe to our newsletter"
+                            />
+
                             <Button
                                 type="submit"
                                 fullWidth

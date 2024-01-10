@@ -19,6 +19,7 @@ import ChatPage from "./components/ChatPage";
 import TermsOfServicePage from "./components/TermsOfServicePage";
 import BlogPostPage from "./components/BlogPostPage";
 import BlogListPage from "./components/BlogListPage";
+import AccountPage from "./components/AccountPage";
 
 
 const bodyStyles = makeStyles(() => ({
@@ -55,8 +56,8 @@ export default function App() {
                                 <Route path="/home" element={<HomePage/>}/>
                                 <Route path="/login" element={<LoginPage/>}/>
                                 <Route path="/signup" element={<SignupPage/>}/>
+                                <Route path="/account" element={<AccountPage/>}/>
                                 <Route path='/activation/:uid/:token' element={<ActivationPage/>}/>
-                                {/*<Route exact path='/send_activation/:email' element={<SendActivationPage/>}/>*/}
                                 <Route path='/reset_password' element={<ResetPasswordPage/>}/>
                                 <Route path='/password/reset/confirm/:uid/:token' element={<ResetPasswordConfirmationPage/>}/>
                                 <Route path="/upload" element={<UploadPage/>}/>

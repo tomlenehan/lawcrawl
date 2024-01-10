@@ -467,6 +467,7 @@ const UploadPage = ({token, isAuthenticated, userCases}) => {
                                             root: classes.customCheckbox,
                                             checked: classes.checked
                                         }}
+                                        style={{marginTop: 8}}
                                         disabled={loading}
                                     />
 
