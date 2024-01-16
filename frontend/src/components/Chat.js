@@ -87,7 +87,7 @@ const useStyles = makeStyles((theme) => ({
         borderRadius: 24,
     },
     chatMessageGPT: {
-        backgroundColor: '#B2DFDB',
+        backgroundColor: '#E0F2F1',
         display: 'flex',
         justifyContent: 'center',
         borderRadius: 24,
@@ -112,7 +112,7 @@ const useStyles = makeStyles((theme) => ({
         flex: 1,
         border: '1px solid #3a3a3a',
         backgroundColor: '#B2DFDB',
-        height: 'calc(100vh - 46px)', // height minus navbar height
+        height: 'calc(100vh - 46px)',
     },
     chatContentContainer: {
         flex: 8,
@@ -250,7 +250,7 @@ const useStyles = makeStyles((theme) => ({
     },
     pageLinkButton: {
         padding: theme.spacing(1),
-        marginLeft: 18,
+        // marginLeft: 18,
         fontWeight: 700,
         textTransform: 'none',
         backgroundColor: '#B2DFDB',
@@ -305,6 +305,24 @@ const useStyles = makeStyles((theme) => ({
             background: `linear-gradient(to right, rgba(255, 255, 255, 0), rgb(60 59 59) 100%)`,
             pointerEvents: 'none',
         },
+    },
+    riskBar: (props) => ({
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: '#fdfbee',
+        '& .MuiLinearProgress-barColorPrimary': {
+            backgroundColor: props.color,
+        },
+    }),
+    riskLabel: {
+        fontWeight: 'bold',
+        marginBottom: 5,
+    },
+    riskValue: {
+        fontWeight: 'bold',
+        color: 'black',
+        marginBottom:
+            10,
     },
 }));
 
@@ -753,22 +771,60 @@ const Chat = () => {
 
 const ChatMessage = ({content, role, onNavigateToPage}) => {
 
+    const riskRegex = /\{\{(\d+)%\}\}/;
+
     const formatContentWithLinks = (text) => {
-
         const pageLinkRegex = /\[\[Page (\d+)\]\][.,]?/g;
-        // const pageLinkRegex = /\(?\[\[Page (\d+)\]\]\)?[.,]?/g;
+        const riskRegex = /\{\{(\d+)%\}\}/;
 
-        return text.split(pageLinkRegex).map((part, index) => {
-            if ((index % 2) === 1) { // This is a page number
-                return <PageLinkButton key={index} pageNumber={parseInt(part, 10)}
-                                       onNavigate={onNavigateToPage}/>;
+        // Split the text into parts based on the pageLinkRegex
+        let parts = text.split(pageLinkRegex);
+
+        // Iterate over the parts and process each part
+        return parts.map((part, index) => {
+            // Check if the part is a page number
+            if ((index % 2) === 1) {
+                // This is a page number
+                let pageNumber = parseInt(part, 10);
+                let nextPart = parts[index + 1] || ""; // The part after the page number
+
+                // Extract the risk level from the next part
+                const riskMatch = riskRegex.exec(nextPart);
+                let riskLevel = riskMatch ? parseInt(riskMatch[1], 10) : null;
+
+                // Remove the risk level info from the next part and update it in the array
+                parts[index + 1] = nextPart.replace(riskRegex, '');
+
+                // Return the PageLinkButton component
+                return (<>
+                    {riskLevel &&
+                            <RiskGauge riskLevel={riskLevel}/>
+                    }
+                    <PageLinkButton key={index} pageNumber={pageNumber}
+                                    onNavigate={onNavigateToPage}/>
+                </>);
+            } else {
+                // If not a page number, return the part as is
+                return part;
             }
-            return part;
         });
     };
 
     const classes = useStyles();
-    const formattedContent = formatContentWithLinks(content);
+    // const formattedContent = formatContentWithLinks(content);
+
+    const formattedContent = formatContentWithLinks(content).map((part, index) => {
+        if (typeof part === 'string') {
+            const cleanedPart = part.replace(riskRegex, '');
+
+            return (
+                <div key={index}>
+                    <ReactMarkdown>{cleanedPart}</ReactMarkdown>
+                </div>
+            );
+        }
+        return part;
+    });
 
     // Function to copy text to clipboard
     const copyToClipboard = (text) => {
@@ -819,6 +875,7 @@ const ChatMessage = ({content, role, onNavigateToPage}) => {
 export default Chat;
 
 
+// PageLinkButton component now also accepts riskLevel as a prop
 const PageLinkButton = ({pageNumber, onNavigate}) => {
     const classes = useStyles();
 
@@ -828,10 +885,56 @@ const PageLinkButton = ({pageNumber, onNavigate}) => {
     };
 
     return (
-        <Button variant="contained" className={classes.pageLinkButton} onClick={handleNavigate}>
-            pg {pageNumber}
-            <ArrowForwardIosIcon className={classes.rightArrowIcon}/>
-        </Button>
+        <div>
+            <Button variant="contained" className={classes.pageLinkButton}
+                    onClick={handleNavigate}>
+                pg {pageNumber}
+                <ArrowForwardIosIcon className={classes.rightArrowIcon}/>
+            </Button>
+        </div>
     );
 };
 
+
+const getRiskInfo = (riskLevel) => {
+    let label = "unknown"
+    let color = '#BDBDBD';
+
+    if (riskLevel <= 20) {
+        label = "Very low risk";
+        color = '#039BE5';
+    } else if (riskLevel <= 40) {
+        label = "Low risk";
+        color = '#43A047';
+    } else if (riskLevel <= 60) {
+        label = "Moderate risk";
+        color = '#FDD835';
+    } else if (riskLevel <= 80) {
+        label = "High risk";
+        color = '#FB8C00';
+    } else if (riskLevel <= 100) {
+        label = "Very high risk";
+        color = '#E64A19';
+    }
+    return {'label': label, 'color': color}
+};
+
+
+const RiskGauge = ({riskLevel}) => {
+    const riskInfo = getRiskInfo(riskLevel);
+    const classes = useStyles(riskInfo);
+
+    return (
+        <div style={{width: '60%', marginTop: 10, marginBottom: 10}}>
+            {/*<Typography className={classes.riskLabel}>Risk Level:</Typography>*/}
+            <Typography className={classes.riskValue} style={{color: riskInfo.color}}>
+                {riskInfo.label}
+            </Typography>
+            <LinearProgress
+                variant="determinate"
+                value={riskLevel}
+                className={classes.riskBar}
+            />
+        </div>
+    );
+};

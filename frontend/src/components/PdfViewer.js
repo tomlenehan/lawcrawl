@@ -71,7 +71,7 @@ const useStyles = makeStyles({
     pageSelector: {
         position: 'absolute',
         color: '#3a3a3a',
-        maxWidth: 150,
+        maxWidth: 165,
         maxHeight: 36,
         backgroundColor: '#B3DFDB',
         borderRadius: 20,

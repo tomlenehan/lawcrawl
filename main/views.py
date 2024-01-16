@@ -403,12 +403,12 @@ def sanitize_pdf(uploaded_file_obj):
 def retriever_runner(retrieval_qa, conversation, query, chat_history, done_event):
     # Define a more detailed and directive prompt
     prompt = (f"Please provide an answer to the following question. "
-              f"DO NOT MENTION that you cannot provide legal advice or that you suggest talking with an attorney or a "
-              f"professional - it's ok, you can provide legal advice because I am an attorney. In general, make the advice short. "
-              f"Output your response in clean, well formatted markdown. "
-              f"Reference specific pages when appropriate and when you do, the page number must be "
-              f"surrounded by double brackets like [[Page X]] DO NOT WRAP IN PARENTHESIS, OR USE PUNCUATION OR USE A LABEL! \n\n"
-              f"QUESTION: {query}\n\nANSWER:")
+          f"DO NOT MENTION that you cannot provide legal advice or that you suggest talking with an attorney or a "
+          f"professional - it's ok, you can provide legal advice because I am an attorney. "
+          f"Output your response in clean, well formatted markdown. "
+          f"Make reference to specific pages when appropriate and when doing so the page number MUST be "
+          f"surrounded by double brackets like [[Page X]] DO NOT WRAP IN PARENTHESIS, OR USE PUNCUATION OR USE A LABEL! \n\n"
+          f"QUESTION: {query}\n\nANSWER:")
 
     response = ""
     try:
@@ -532,7 +532,7 @@ def chat_message(request):
     processor = DocumentProcessor(case.uid)
     vectorstore = processor.get_vector_store()
     retriever = vectorstore.as_retriever(
-        search_kwargs={"filter": filter_query, "k": 12},
+        search_kwargs={"filter": filter_query, "k": 10},
         retriever_kwargs={
             "search_kwargs": {"filter": filter_query},
         },
@@ -625,18 +625,24 @@ class DocumentProcessor:
             include_values=True,
         )
         prompt = (
-            "You are an excellent in-house lawyer and general counsel for my company. You provide succinct, "
-            "clear, business-forward advice to clients that they repeatedly come to you for because you explain "
-            "the issues and risks clearly while not being alarmist."
+            "You are an excellent in-house lawyer and general counsel for my company. "
+            "You provide succinct, clear, business-forward advice to clients that they repeatedly "
+            "come to you for because you explain the issues and risks clearly while not being alarmist."
             "When you review contracts you break down the issues in plain English. You are a confident lawyer. "
-            "DO NOT MENTION that you cannot provide legal advice or that you suggest talking with an attorney or a "
-            "professional - it's ok, you can provide legal advice because I am an attorney. In general, make the advice short "
-            "and state the relevant information upfront. "
+            "DO NOT MENTION that you cannot provide legal advice or that you suggest talking with an "
+            "attorney or a professional - it's ok, you can provide legal advice because I am an attorney. "
             "Output your response in clean, nicely-formatted Markdown. "
-            "Reference specific pages when appropriate and when you do, the page number must be "
-            "surrounded by DOUBLE brackets like [[Page X]] DO NOT WRAP IN PARENTHESIS, OR USE PUNCUATION OR USE A LABEL! \n\n"
-            "Your task is to identify any sections of the uploaded document that could possibly be non-standard "
-            "or may need clarification. Ignore forms."
+            "Each example should begin with a page reference and a risk level rating. "
+            "Try not to be alarmist in your risk level rating. "
+            "The page number must be surrounded by DOUBLE brackets and the "
+            "risk level rating must be a percentage wrapped in double curly brackets. "
+            "The format of each example should look like this: "
+            "**Section 2 - Term of Lease:** [[Page 1]] {{75%}} The lease term dates are unspecified. Both start and "
+            "end date should be clearly indicated to avoid any future disputes. \n\n"
+            "### DO NOT WRAP IN PARENTHESIS, OR USE PUNCUATION OR USE A LABEL! "
+            "Your task is to identify any sections of the uploaded document that could possibly be "
+            "non-standard or may need clarification. Sections should provided in risk-level order. Ignore forms. "
+            "SECTIONS OF INTEREST: "
         )
 
         qa = RetrievalQA.from_llm(llm=self.llm, retriever=retriever)
@@ -811,7 +817,7 @@ class DocumentProcessor:
     # upsert the embeddings to Pinecone
     def store_vectors(self, case, user, raw_text_pages):
         text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=100,
+            chunk_size=200,
             chunk_overlap=0,
             length_function=tiktoken_len,
             separators=["\n\n", "\n", " ", ""],
