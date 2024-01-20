@@ -97,7 +97,7 @@ def get_user_cases(request):
     if request.method == "GET" and request.user.is_authenticated:
         cases = Case.objects.filter(user=request.user, is_active=True).order_by("-uploaded_at")
         serializer = CaseSerializer(cases, many=True)
-        return JsonResponse(serializer.data, safe=False)
+        return JsonResponse({'cases': serializer.data}, safe=False)
 
 @csrf_exempt
 @access_token_required

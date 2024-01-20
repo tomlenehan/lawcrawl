@@ -124,7 +124,7 @@ const LoginPage = ({login, isAuthenticated}) => {
     };
 
     if (isAuthenticated) {
-        navigate('/upload');
+        navigate('/chat');
     }
 
     return (

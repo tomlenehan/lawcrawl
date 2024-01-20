@@ -132,9 +132,9 @@ DJOSER = {
     "SOCIAL_AUTH_TOKEN_STRATEGY": "djoser.social.token.jwt.TokenStrategy",
     "SOCIAL_AUTH_ALLOWED_REDIRECT_URIS": [
         "http://127.0.0.1:8000",
-        "http://127.0.0.1:8000/upload",
+        "http://127.0.0.1:8000/chat",
         "https://lawcrawl.com",
-        "https://lawcrawl.com/upload",
+        "https://lawcrawl.com/chat",
     ],
     "SERIALIZERS": {
         "user_create": "users.serializers.UserCreateSerializer",

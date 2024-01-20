@@ -5,6 +5,8 @@ import {connect, useDispatch, useSelector} from 'react-redux';
 import {setCurrentPage} from '../actions/page';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import CloseIcon from '@material-ui/icons/Close';
 import ThumbUpIcon from '@material-ui/icons/ThumbUp';
 import ThumbDownIcon from '@material-ui/icons/ThumbDown';
 import {Button, IconButton, TextField, Tooltip, Menu, MenuItem} from '@material-ui/core';
@@ -17,10 +19,11 @@ import ReactMarkdown from 'react-markdown';
 import AdComponent from "./AdComponent"
 import AdSenseAd from './AdSenseAd';
 import TermsOfService from "./TermsOfService";
+import UploadModal from "./UploadModal";
 import PdfViewer from "./PdfViewer";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import useFetchUserCases from './hooks/useFetchUserCases';
-import {updateUserCases} from '../actions/user';
+import {addUserCases, updateUserCases} from '../actions/user';
 import Modal from "@material-ui/core/Modal";
 import {logout} from "../actions/auth";
 import {InputAdornment} from "@mui/material";
@@ -57,16 +60,44 @@ const useStyles = makeStyles((theme) => ({
         borderRadius: 4,
         '&:hover': {
             backgroundColor: '#2a2a2a',
+            color: '#ffffff'
         },
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         width: '100%',
     },
+    sideMenuButtonUpload: {
+        padding: "5px 0px 5px 14px",
+        marginBottom: 2,
+        backgroundColor: '#1E88E5',
+        color: '#fdfbee',
+        textDecoration: "none",
+        cursor: "pointer",
+        borderRadius: 4,
+        border: '1px solid #fdfbee',
+        '&:hover': {
+            backgroundColor: '#1976D2',
+            color: '#ffffff',
+        },
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '100%',
+    },
+    blinkingBackground: {
+        animation: '$blinkingBackground 3.0s infinite',
+    },
+    '@keyframes blinkingBackground': {
+        '0%': {backgroundColor: '#64B5F6'},
+        '50%': {backgroundColor: '#1E88E5'},
+        '100%': {backgroundColor: '#1976D2'},
+    },
     chatLink: {
         textDecoration: 'none',
         color: 'inherit',
         display: 'flex',
+        height: 48,
         alignItems: 'center',
         width: '100%',
     },
@@ -146,10 +177,10 @@ const useStyles = makeStyles((theme) => ({
         marginBottom: 12,
     },
     disclaimerText: {
-        color: 'gray', // Example color
-        fontSize: '0.8rem', // Example font size
-        textAlign: 'center', // Center align the text
-        maxWidth: 880, // Match width with chat input form
+        color: 'gray',
+        fontSize: '0.8rem',
+        textAlign: 'center',
+        maxWidth: 880,
     },
     chatInputTextArea: {
         backgroundColor: '#e0f2f1',
@@ -165,7 +196,7 @@ const useStyles = makeStyles((theme) => ({
         resize: 'none',
     },
     avatarGPT: {
-        backgroundColor: '#e0f2f1',
+        backgroundColor: '#fdfbee',
         borderRadius: '50%',
         minWidth: 40,
         height: 40,
@@ -213,11 +244,6 @@ const useStyles = makeStyles((theme) => ({
         maxWidth: 520,
         overflowY: 'auto',
         maxHeight: '80vh',
-    },
-    closeButton: {
-        position: 'absolute',
-        right: 4,
-        top: 4,
     },
     progressContainer: {
         display: 'flex',
@@ -324,6 +350,25 @@ const useStyles = makeStyles((theme) => ({
         marginBottom:
             10,
     },
+    uploadModal: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalContent: {
+        position: 'relative',
+        backgroundColor: '#e0f2f1',
+        // backgroundColor: '#e0f2f1',
+        borderRadius: 14,
+        minWidth: 400,
+        boxShadow: theme.shadows[5],
+        padding: theme.spacing(2, 4, 3),
+    },
+    closeButton: {
+        position: 'absolute',
+        right: theme.spacing(1),
+        top: theme.spacing(1),
+    },
 }));
 
 const Chat = () => {
@@ -332,16 +377,18 @@ const Chat = () => {
     const [loadingChatLog, setLoadingChatLog] = useState(false);
     const [loadingPDF, setLoadingPDF] = useState(false);
     const [initialLoad, setInitialLoad] = useState(true);
-    const userCases = useSelector((state) => state.userCases);
+    // const userCases = useSelector((state) => state.userCases);
+    const [userCases, setUserCases] = useState([]);
     const token = useSelector((state) => state.auth.access);
     const [currentCase, setCurrentCase] = useState(null);
     const [conversationID, setConversationID] = useState(null);
     const [sessionID, setSessionID] = useState(null);
     const [termsOpen, setTermsOpen] = useState(false);
-    const [chatLog, setChatLog] = useState(null);
+    const [uploadOpen, setUploadOpen] = useState(false);
+    const [chatLog, setChatLog] = useState([]);
     const [file, setFile] = useState(null);
     const chatLogRef = useRef(null);
-    const fetchUserCases = useFetchUserCases();
+    // const fetchUserCases = useFetchUserCases();
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const currentPage = useSelector(state => state.page.currentPage);
@@ -382,56 +429,78 @@ const Chat = () => {
 
     // Process PDF on initial load
     useEffect(() => {
-        if (token) {
+        if (token && currentCase) {
             processPDF(currentCase, token, "");
         }
     }, [token, currentCase]);
 
 
+    // Fetch the chats
+    useEffect(() => {
+        const fetchUserCases = async () => {
+            try {
+                const response = await axios.get('/api/user/cases/', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                });
+
+                if (response.status) {
+                    if (response.status === 401) {
+                        console.log("Unauthorized, logging out");
+                        dispatch(logout());
+                        navigate('/login');
+                    }
+                    setUserCases(response.data.cases)
+                }
+
+            } catch (error) {
+                console.error('Error fetching user cases:', error);
+            }
+        }
+        fetchUserCases();
+    }, [token]);
+
+
     // Set current case from URL
     useEffect(() => {
-        const setCurrentCaseFromLocation = () => {
-            try {
-                const queryParams = new URLSearchParams(window.location.search);
-                const urlCaseUid = queryParams.get('uid');
+        const setCurrentCaseFromURL = () => {
+            const queryParams = new URLSearchParams(window.location.search);
+            const urlCaseUid = queryParams.get('uid');
 
-                if (urlCaseUid) {
-                    const urlCase = userCases.find(userCase => userCase.uid === urlCaseUid);
-                    if (urlCase && (!currentCase || currentCase.uid !== urlCase.uid)) {
-                        setCurrentCase(urlCase);
-                    }
-                } else if (userCases.length > 0 && !currentCase) {
-                    setCurrentCase(userCases[0]);
+            if (urlCaseUid) {
+                const urlCase = userCases.find(userCase => userCase.uid === urlCaseUid);
+                if (urlCase) {
+                    setCurrentCase(urlCase);
+                } else {
+                    // Handle case where URL parameter does not match any user case
+                    clearChat();
                 }
-            } catch (error) {
-                console.error('Error setting current case:', error);
+            } else if (userCases.length > 0) {
+                // Fallback to the first case in the list if no URL parameter is present
+                setCurrentCase(userCases[userCases.length - 1]);
+            } else {
+                // Handle case where there are no user cases
+                clearChat();
             }
         };
 
-        if (token != null) {
-            if (userCases.length === 0) {
-                fetchUserCases(token, dispatch, navigate)
-                    .then((status) => {
-                        if (status !== 401) {
-                            setCurrentCaseFromLocation();
-                        } else {
-                            handleLogout();
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching user cases:', error);
-                        handleLogout();
-                    });
-            } else {
-                setCurrentCaseFromLocation();
-            }
-        }
-    }, [token, userCases, location.search]);
+        setCurrentCaseFromURL();
+    }, [userCases, location.search]);
+
+
+    // reset the chat pdf components
+    const clearChat = () => {
+        setCurrentCase(null);
+        setChatLog([{}, {role: "agent", content: 'Begin a chat by using the "Upload File" to the left.'}]);
+        setFile(null);
+    }
 
 
     // Fetch chat log for current case
     useEffect(() => {
-        const fetchCaseConversation = async () => {
+        const fetchChatLog = async () => {
             if (currentCase) {
                 try {
                     setLoadingChatLog(true);
@@ -440,7 +509,7 @@ const Chat = () => {
                             'Authorization': `Bearer ${token}`,
                         },
                     });
-                    if (response.status === 200) {
+                    if (response.status === 200 && response.data.conversation.length > 0) {
                         setSessionID(response.data.session_id);
                         setConversationID(response.data.conversation_id);
                         setChatLog(response.data.conversation);
@@ -453,10 +522,10 @@ const Chat = () => {
                     setLoadingChatLog(false);
                 }
             }
-        };
+        }
+        fetchChatLog();
+    }, [currentCase]);
 
-        fetchCaseConversation();
-    }, [token, currentCase]);
 
     // const handleFeedback = (messageIndex, type) => {
     //     setFeedback(prevFeedback => ({
@@ -465,20 +534,6 @@ const Chat = () => {
     //     }));
     // };
 
-    // After the initial load, scroll to the bottom of the chat log when it updates
-    useEffect(() => {
-        if (!initialLoad && chatLogRef.current) {
-            setTimeout(() => {
-                chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
-            }, 100);
-        }
-    }, [chatLog]);
-
-    useEffect(() => {
-        if (chatLog && chatLog.length > 0) {
-            setInitialLoad(false);
-        }
-    }, [chatLog]);
 
     async function handleSubmit(e) {
         e.preventDefault();
@@ -492,11 +547,12 @@ const Chat = () => {
         sseUrl.searchParams.append('conversation_id', conversationID);
         sseUrl.searchParams.append('session_id', sessionID);
 
-        // set placeholder while agent "thinks"
+        // set placeholder while we run the query
         setChatLog(prevChatLog => [
             ...prevChatLog,
             {role: "agent", content: ""}
         ]);
+        scrollChat();
 
         // re-process the PDF
         // processPDF(currentCase, token, input);
@@ -508,6 +564,8 @@ const Chat = () => {
             // Establish SSE connection
             const eventSource = new EventSource(sseUrl.toString());
             let firstMessageReceived = false;
+            let messageCounter = 0;
+            const SCROLL_THRESHOLD = 5;
 
             eventSource.onmessage = (event) => {
                 // Handle incoming data
@@ -526,6 +584,16 @@ const Chat = () => {
                         // Append to the existing message
                         updatedChatLog[lastMessageIndex].content += eventData.token;
                     }
+
+                    // Increment message counter
+                    messageCounter++;
+
+                    // Scroll to bottom of chat if threshold is reached
+                    if (messageCounter >= SCROLL_THRESHOLD) {
+                        scrollChat();
+                        messageCounter = 0;
+                    }
+
                     return updatedChatLog;
                 });
             };
@@ -556,14 +624,22 @@ const Chat = () => {
         setTermsOpen(false);
     };
 
-    // Scroll to bottom of chat log when it updates
-    // useEffect(() => {
-    //     if (chatLogRef.current) {
-    //         setTimeout(() => {
-    //             chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
-    //         }, 100);
-    //     }
-    // }, [chatLog]);
+    // Upload Modal
+    const handleUploadOpen = () => {
+        setUploadOpen(true);
+    };
+    const handleUploadClose = () => {
+        setUploadOpen(false);
+    };
+
+
+    const scrollChat = () => {
+        if (chatLogRef.current) {
+            setTimeout(() => {
+                chatLogRef.current.scrollTop = chatLogRef.current.scrollHeight;
+            }, 100);
+        }
+    }
 
 
     const handleNavigateToPage = (pageNumber) => {
@@ -600,13 +676,14 @@ const Chat = () => {
             if (response.data.status === 'success') {
                 // Remove the deleted case from the Redux state
                 const updatedCases = userCases.filter(c => c.uid !== selectedCase.uid);
-                dispatch(updateUserCases(updatedCases));
+                setUserCases(updatedCases);
 
-                // If no cases are left, navigate to /upload, else set a new current case
-                if (updatedCases.length === 0) {
-                    navigate('/upload');
-                } else {
-                    setCurrentCase(updatedCases[0]);
+                console.log('naving_to_chat');
+                // If deleting the current or last chat, refresh,
+                // else set current chat to the latest
+                if (selectedCase.uid === currentCase?.uid) {
+                    // Redirect to a default route if no cases are left
+                    navigate('/chat');
                 }
             } else {
                 console.error('Deletion was not successful');
@@ -621,6 +698,23 @@ const Chat = () => {
     return (
         <div className={classes.App}>
             <aside className={classes.sideMenu}>
+
+                <div
+                    className={`${classes.sideMenuButtonUpload} ${!userCases || userCases.length === 0 ? classes.blinkingBackground : ''}`}>
+                    <Link
+                        to={'#'}
+                        onClick={() => setUploadOpen(true)}
+                        className={classes.chatLink}
+                    >
+                        <Box textAlign="center" flexGrow={1}>
+                            <CloudUploadIcon
+                                style={{marginRight: 8, marginBottom: -4, fontSize: '1.2rem'}}/>
+                            Upload File
+                        </Box>
+
+                    </Link>
+                </div>
+
                 {userCases.map((userCase, index) => (
                     <div key={index}
                          className={classes.sideMenuButton}
@@ -641,7 +735,8 @@ const Chat = () => {
                             </Box>
                         </Link>
 
-                        <IconButton onClick={(e) => handleMenuClick(e, userCase)} style={{paddingLeft: 0}}>
+                        <IconButton onClick={(e) => handleMenuClick(e, userCase)}
+                                    style={{paddingLeft: 0}}>
                             <MoreHorizIcon className={classes.optionLink}/>
                         </IconButton>
                     </div>
@@ -673,6 +768,30 @@ const Chat = () => {
                     <PrivacyTip style={{marginRight: 8, fontSize: '1.6vw'}}/>
                     <span>Privacy & Terms</span>
                 </Link>
+
+                <Modal
+                    open={uploadOpen}
+                    onClose={handleUploadClose}
+                    aria-labelledby="simple-modal-title"
+                    aria-describedby="simple-modal-description"
+                    className={classes.uploadModal}
+                >
+                    <div className={classes.modalContent}>
+                        <IconButton
+                            aria-label="close"
+                            className={classes.closeButton}
+                            onClick={handleUploadClose}
+                        >
+                            <CloseIcon/>
+                        </IconButton>
+                        <UploadModal
+                            onClose={handleUploadClose}
+                            userCases={userCases}
+                            setUserCases={setUserCases}
+                            // setCurrentCase={setCurrentCase}
+                        />
+                    </div>
+                </Modal>
 
                 <Modal
                     open={termsOpen}
@@ -762,9 +881,7 @@ const Chat = () => {
                     </Typography>
                 </div>
 
-
             </div>
-
         </div>
     );
 }
@@ -798,7 +915,7 @@ const ChatMessage = ({content, role, onNavigateToPage}) => {
                 // Return the PageLinkButton component
                 return (<>
                     {riskLevel &&
-                            <RiskGauge riskLevel={riskLevel}/>
+                        <RiskGauge riskLevel={riskLevel}/>
                     }
                     <PageLinkButton key={index} pageNumber={pageNumber}
                                     onNavigate={onNavigateToPage}/>

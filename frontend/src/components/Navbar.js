@@ -78,16 +78,16 @@ const Navbar = ({isAuthenticated, logout, userCases}) => {
             </Button>
             {isAuthenticated && (
                 <box>
-                    <Button className={classes.menuButton} color="inherit" component={Link}
-                            to="/upload">
-                        Upload
-                    </Button>
-                    {userCases && userCases.length > 0 && (
+                    {/*<Button className={classes.menuButton} color="inherit" component={Link}*/}
+                    {/*        to="/upload">*/}
+                    {/*    Upload*/}
+                    {/*</Button>*/}
+                    {/*{userCases && userCases.length > 0 && (*/}
                         <Button className={classes.menuButton} color="inherit" component={Link}
                                 to="/chat">
                             Chat
                         </Button>
-                    )}
+                    {/*)}*/}
                 </box>
             )}
         </>
@@ -138,15 +138,15 @@ const Navbar = ({isAuthenticated, logout, userCases}) => {
                                     </Box>
                                     {isAuthenticated && (
                                         <Box>
-                                            <MenuItem
-                                                onClick={handleMobileMenuClose}
-                                                component={Link}
-                                                to="/upload"
-                                            >
-                                                Upload
-                                            </MenuItem>
+                                            {/*<MenuItem*/}
+                                            {/*    onClick={handleMobileMenuClose}*/}
+                                            {/*    component={Link}*/}
+                                            {/*    to="/upload"*/}
+                                            {/*>*/}
+                                            {/*    Upload*/}
+                                            {/*</MenuItem>*/}
 
-                                            {userCases && userCases.length > 0 && (
+                                            {/*{userCases && userCases.length > 0 && (*/}
                                                 <MenuItem
                                                     onClick={handleMobileMenuClose}
                                                     component={Link}
@@ -154,7 +154,7 @@ const Navbar = ({isAuthenticated, logout, userCases}) => {
                                                 >
                                                     Chat
                                                 </MenuItem>
-                                            )}
+                                            {/*)}*/}
                                         </Box>
                                     )}
 
