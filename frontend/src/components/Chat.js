@@ -71,19 +71,23 @@ const useStyles = makeStyles((theme) => ({
         padding: "5px 0px 5px 14px",
         marginBottom: 2,
         backgroundColor: '#1E88E5',
-        color: '#fdfbee',
         textDecoration: "none",
         cursor: "pointer",
         borderRadius: 4,
         border: '1px solid #fdfbee',
         '&:hover': {
             backgroundColor: '#1976D2',
-            color: '#ffffff',
         },
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         width: '100%',
+    },
+    uploadButtonContent: {
+        color: '#fdfbee',
+        '&:hover': {
+            color: '#ffffff',
+        },
     },
     blinkingBackground: {
         animation: '$blinkingBackground 3.0s infinite',
@@ -97,7 +101,7 @@ const useStyles = makeStyles((theme) => ({
         textDecoration: 'none',
         color: 'inherit',
         display: 'flex',
-        height: 48,
+        height: 44,
         alignItems: 'center',
         width: '100%',
     },
@@ -479,7 +483,7 @@ const Chat = () => {
                 }
             } else if (userCases.length > 0) {
                 // Fallback to the first case in the list if no URL parameter is present
-                setCurrentCase(userCases[userCases.length - 1]);
+                setCurrentCase(userCases[0]);
             } else {
                 // Handle case where there are no user cases
                 clearChat();
@@ -699,22 +703,24 @@ const Chat = () => {
         <div className={classes.App}>
             <aside className={classes.sideMenu}>
 
+                {/*Upload button*/}
                 <div
-                    className={`${classes.sideMenuButtonUpload} ${!userCases || userCases.length === 0 ? classes.blinkingBackground : ''}`}>
-                    <Link
-                        to={'#'}
-                        onClick={() => setUploadOpen(true)}
-                        className={classes.chatLink}
-                    >
-                        <Box textAlign="center" flexGrow={1}>
+                    className={`${classes.sideMenuButtonUpload} ${!userCases || userCases.length === 0 ? classes.blinkingBackground : ''}`}
+                    onClick={() => setUploadOpen(true)}
+                    role="button"
+                    tabIndex="0"
+                    // onKeyPress={(e) => e.key === 'Enter' && setUploadOpen(true)} // To handle keyboard accessibility
+                >
+                    <Box className={classes.chatLink}>
+                        <Box textAlign="center" flexGrow={1} className={classes.uploadButtonContent} >
                             <CloudUploadIcon
                                 style={{marginRight: 8, marginBottom: -4, fontSize: '1.2rem'}}/>
                             Upload File
                         </Box>
-
-                    </Link>
+                    </Box>
                 </div>
 
+                {/* Chat buttons */}
                 {userCases.map((userCase, index) => (
                     <div key={index}
                          className={classes.sideMenuButton}
