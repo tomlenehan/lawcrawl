@@ -46,7 +46,8 @@ const useStyles = makeStyles((theme) => ({
         width: 260,
         padding: 10,
         overflowY: "scroll",
-        backgroundColor: '#3a3a3a',
+        // backgroundColor: '#3a3a3a',
+        backgroundColor: '#404040',
         display: 'flex',
         flexDirection: 'column',
     },
@@ -54,18 +55,22 @@ const useStyles = makeStyles((theme) => ({
         padding: "5px 0px 5px 14px",
         border: '1px solid #fdfbee',
         marginTop: 4,
-        color: '#fdfbee !important',
         textDecoration: "none",
         cursor: "pointer",
         borderRadius: 4,
+        fontSize: 16,
+        color: '#e6e5e0',
         '&:hover': {
-            backgroundColor: '#2a2a2a',
-            color: '#ffffff'
+            fontSize: 17,
+            color: '#ffffff',
         },
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         width: '100%',
+    },
+    sideMenuButtonActive: {
+        backgroundColor: '#2a2a2a',
     },
     sideMenuButtonUpload: {
         padding: "5px 0px 5px 14px",
@@ -75,19 +80,17 @@ const useStyles = makeStyles((theme) => ({
         cursor: "pointer",
         borderRadius: 4,
         border: '1px solid #fdfbee',
+        fontSize: 16,
+        color: '#e6e5e0',
         '&:hover': {
             backgroundColor: '#1976D2',
+            fontSize: 17,
+            color: '#ffffff',
         },
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         width: '100%',
-    },
-    uploadButtonContent: {
-        color: '#fdfbee',
-        '&:hover': {
-            color: '#ffffff',
-        },
     },
     blinkingBackground: {
         animation: '$blinkingBackground 3.0s infinite',
@@ -332,7 +335,8 @@ const useStyles = makeStyles((theme) => ({
             right: 0,
             width: '15%',
             height: '100%',
-            background: `linear-gradient(to right, rgba(255, 255, 255, 0), rgb(60 59 59) 100%)`,
+            // background: `linear-gradient(to right, rgba(255, 255, 255, 0), rgb(60 59 59) 100%)`,
+            background: `linear-gradient(to right, rgba(255, 255, 255, 0), rgb(64 64 64) 100%)`,
             pointerEvents: 'none',
         },
     },
@@ -545,61 +549,35 @@ const Chat = () => {
         setChatLog([...chatLog, {role: "user", content: input}]);
         setInput("");
 
-        // Construct the SSE URL with query parameters
         const sseUrl = new URL('/api/chat/message/', window.location.origin);
         sseUrl.searchParams.append('message', userInput);
         sseUrl.searchParams.append('conversation_id', conversationID);
         sseUrl.searchParams.append('session_id', sessionID);
 
-        // set placeholder while we run the query
-        setChatLog(prevChatLog => [
-            ...prevChatLog,
-            {role: "agent", content: ""}
-        ]);
+        setChatLog(prevChatLog => [...prevChatLog, {role: "agent", content: ""}]);
         scrollChat();
 
-        // re-process the PDF
-        // processPDF(currentCase, token, input);
-
-        // Reset streaming completion state on new submission
-        // setIsStreamingComplete(false);
-
         try {
-            // Establish SSE connection
             const eventSource = new EventSource(sseUrl.toString());
             let firstMessageReceived = false;
-            let messageCounter = 0;
-            const SCROLL_THRESHOLD = 5;
+            let buffer = "";
+            const BUFFER_THRESHOLD = 5;
 
             eventSource.onmessage = (event) => {
-                // Handle incoming data
-                console.log("incoming_message");
                 const eventData = JSON.parse(event.data);
+                buffer += eventData.token;
 
-                setChatLog(prevChatLog => {
-                    const updatedChatLog = [...prevChatLog];
-                    const lastMessageIndex = updatedChatLog.length - 1;
-
-                    if (!firstMessageReceived) {
-                        // Replace the placeholder with the first part of the message
-                        updatedChatLog[lastMessageIndex].content = eventData.token;
+                if (!firstMessageReceived || buffer.split(' ').length >= BUFFER_THRESHOLD) {
+                    setChatLog(prevChatLog => {
+                        const updatedChatLog = [...prevChatLog];
+                        const lastMessageIndex = updatedChatLog.length - 1;
+                        updatedChatLog[lastMessageIndex].content += buffer;
+                        buffer = "";
                         firstMessageReceived = true;
-                    } else {
-                        // Append to the existing message
-                        updatedChatLog[lastMessageIndex].content += eventData.token;
-                    }
-
-                    // Increment message counter
-                    messageCounter++;
-
-                    // Scroll to bottom of chat if threshold is reached
-                    if (messageCounter >= SCROLL_THRESHOLD) {
-                        scrollChat();
-                        messageCounter = 0;
-                    }
-
-                    return updatedChatLog;
-                });
+                        return updatedChatLog;
+                    });
+                    scrollChat();
+                }
             };
 
             eventSource.onerror = (error) => {
@@ -613,6 +591,7 @@ const Chat = () => {
             setLoadingChatLog(false);
         }
     }
+
 
     const handleKeyPress = (e) => {
         if (e.key === 'Enter' && !e.shiftKey && input.trim()) {
@@ -712,7 +691,7 @@ const Chat = () => {
                     // onKeyPress={(e) => e.key === 'Enter' && setUploadOpen(true)} // To handle keyboard accessibility
                 >
                     <Box className={classes.chatLink}>
-                        <Box textAlign="center" flexGrow={1} className={classes.uploadButtonContent} >
+                        <Box textAlign="center" flexGrow={1} >
                             <CloudUploadIcon
                                 style={{marginRight: 8, marginBottom: -4, fontSize: '1.2rem'}}/>
                             Upload File
@@ -723,14 +702,11 @@ const Chat = () => {
                 {/* Chat buttons */}
                 {userCases.map((userCase, index) => (
                     <div key={index}
-                         className={classes.sideMenuButton}
-                         style={{
-                             backgroundColor: currentCase && userCase.uid === currentCase.uid ? '#2a2a2a' : 'transparent',
-                         }}
+                            className={`${classes.sideMenuButton} ${currentCase && userCase.uid === currentCase.uid ? classes.sideMenuButtonActive : ''}`}
+                            onClick={() => setCurrentCase(userCase)}
                     >
                         <Link
                             to={`/chat?uid=${userCase.uid}`}
-                            onClick={() => setCurrentCase(userCase)}
                             className={classes.chatLink}
                         >
                             <ChatBubbleOutlineIcon
@@ -1024,19 +1000,19 @@ const getRiskInfo = (riskLevel) => {
     let color = '#BDBDBD';
 
     if (riskLevel <= 20) {
-        label = "Very low risk";
+        label = "Very low risk language";
         color = '#039BE5';
     } else if (riskLevel <= 40) {
-        label = "Low risk";
+        label = "Low risk language";
         color = '#43A047';
     } else if (riskLevel <= 60) {
-        label = "Moderate risk";
+        label = "Moderate risk language";
         color = '#FDD835';
     } else if (riskLevel <= 80) {
-        label = "High risk";
+        label = "High risk language";
         color = '#FB8C00';
     } else if (riskLevel <= 100) {
-        label = "Very high risk";
+        label = "Very high risk language";
         color = '#E64A19';
     }
     return {'label': label, 'color': color}
