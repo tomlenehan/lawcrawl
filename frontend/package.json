@@ -53,6 +53,7 @@
     "twilio": "^4.10.0",
     "twilio-client": "^1.15.0",
     "url-polyfill": "^1.1.12",
+    "uuid": "^9.0.1",
     "webpack-stats-plugin": "^1.1.1"
   },
   "devDependencies": {

@@ -42,7 +42,7 @@ from langchain.chains.conversational_retrieval.prompts import (
     CONDENSE_QUESTION_PROMPT,
     QA_PROMPT,
 )
-from .models import CaseConversation, UploadedFile, Case
+from .models import CaseConversation, UploadedFile, Case, Feedback
 from lawcrawl.custom_storages import UploadStorage
 import jwt
 from functools import wraps
@@ -400,14 +400,15 @@ def sanitize_pdf(uploaded_file_obj):
         return False, f"Error opening file: {str(e)}"
 
 
-def retriever_runner(retrieval_qa, conversation, query, chat_history, done_event):
+def retriever_runner(retrieval_qa, qa_uid, conversation, query, chat_history, done_event):
     # Define a more detailed and directive prompt
     prompt = (f"Please provide an answer to the following question. "
           f"DO NOT MENTION that you cannot provide legal advice or that you suggest talking with an attorney or a "
           f"professional - it's ok, you can provide legal advice because I am an attorney. "
           f"Output your response in clean, well formatted markdown. "
-          f"Make reference to specific pages when appropriate and when doing so the page number MUST be "
-          f"surrounded by double brackets like [[Page X]] DO NOT WRAP IN PARENTHESIS, OR USE PUNCUATION OR USE A LABEL! \n\n"
+          f"Make reference to specific pages when appropriate and when doing so the page number ABSOLUTELY MUST be "
+          f"wrapped by double brackets like [[Page X]]  \n"
+          # f"surrounded by double brackets like [[Page X]] DO NOT WRAP IN PARENTHESIS, OR USE PUNCUATION OR USE A LABEL! \n\n"
           f"QUESTION: {query}\n\nANSWER:")
 
     response = ""
@@ -420,6 +421,7 @@ def retriever_runner(retrieval_qa, conversation, query, chat_history, done_event
             time_now = timezone.now().isoformat()
             conversation.conversation.append(
                 {
+                    "qa_uid": qa_uid,
                     "role": "user",
                     "content": query,
                     "timestamp": time_now,
@@ -427,6 +429,7 @@ def retriever_runner(retrieval_qa, conversation, query, chat_history, done_event
             )
             conversation.conversation.append(
                 {
+                    "qa_uid": qa_uid,
                     "role": "agent",
                     "content": response["answer"],
                     "timestamp": time_now,
@@ -525,6 +528,7 @@ def chat_message(request):
     # session_id = request.GET.get("session_id")
     message = request.GET.get("message")
     conversation_id = request.GET.get("conversation_id")
+    qa_uid = request.GET.get("qa_uid")
     conversation = CaseConversation.objects.get(id=conversation_id)
     case = Case.objects.get(id=conversation.case_id)
     filter_query = {"case_uid": str(case.uid)}
@@ -567,6 +571,7 @@ def chat_message(request):
         target=retriever_runner,
         args=(
             qa,
+            qa_uid,
             conversation,
             message,
             chat_history,
@@ -578,6 +583,45 @@ def chat_message(request):
     streaming_content = generate_streaming_content(output_list, done_event)
     return StreamingHttpResponse(streaming_content, content_type="text/event-stream")
 
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def submit_feedback(request):
+    try:
+        data = json.loads(request.body)
+        conversation_id = data['conversation_id']
+        qa_uid = data['qa_uid']
+        feedback_type = data['feedback_type']
+
+        conversation = CaseConversation.objects.get(id=conversation_id)
+        # Find the QA pair to use for fine-tuning
+        qa_pair = [item for item in conversation.conversation if item.get('qa_uid') == qa_uid]
+
+        if qa_pair:
+            # Update feedback in the QA pairs
+            for item in qa_pair:
+                item['feedback_type'] = feedback_type
+
+            # Save the updated conversation to the database
+            conversation.save()
+
+            # Also save feedback to the Feedback model
+            feedback, created = Feedback.objects.get_or_create(
+                conversation=conversation,
+                qa_uid=qa_uid
+            )
+            feedback.qa_pair = qa_pair
+            feedback.feedback_type = feedback_type
+            feedback.save()
+
+            return JsonResponse({"status": "success", "message": "Feedback received and saved successfully."})
+        else:
+            return JsonResponse({"status": "error", "message": "QA pair not found."}, status=404)
+
+    except CaseConversation.DoesNotExist:
+        return JsonResponse({"status": "error", "message": "Conversation not found."}, status=404)
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e)}, status=400)
 
 class DocumentProcessor:
     def __init__(self, case_uid):
@@ -657,9 +701,12 @@ class DocumentProcessor:
                     "that you may have."
                 )
                 time_now = timezone.now().isoformat()
+                #
+                qa_uid = str(uuid.uuid4())
+
                 chat_log = [
-                    {"role": "user", "content": prompt, "timestamp": time_now},
-                    {"role": "agent", "content": answer_with_closing, "timestamp": time_now},
+                    {"qa_uid": qa_uid, "role": "user", "content": prompt, "timestamp": time_now},
+                    {"qa_uid": qa_uid, "role": "agent", "content": answer_with_closing, "timestamp": time_now},
                 ]
 
                 conversation = CaseConversation.objects.create(

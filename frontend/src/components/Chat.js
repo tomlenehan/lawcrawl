@@ -2,13 +2,16 @@ import React, {useEffect, useRef, useState} from "react";
 import {makeStyles} from '@material-ui/core/styles';
 import {Link, useNavigate} from 'react-router-dom';
 import {connect, useDispatch, useSelector} from 'react-redux';
+import {v4 as uuidv4} from 'uuid';
 import {setCurrentPage} from '../actions/page';
 import LinearProgress from '@material-ui/core/LinearProgress';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CloseIcon from '@material-ui/icons/Close';
-import ThumbUpIcon from '@material-ui/icons/ThumbUp';
-import ThumbDownIcon from '@material-ui/icons/ThumbDown';
+import ThumbUpAlt from '@material-ui/icons/ThumbUpAlt';
+import ThumbDownAlt from '@material-ui/icons/ThumbDownAlt';
+import ThumbUpOffAltIcon from '@mui/icons-material/ThumbUpOffAlt';
+import ThumbDownOffAltIcon from '@mui/icons-material/ThumbDownOffAlt';
 import {Button, IconButton, TextField, Tooltip, Menu, MenuItem} from '@material-ui/core';
 import SendIcon from '@material-ui/icons/Send';
 import PrivacyTip from '@mui/icons-material/PrivacyTip';
@@ -303,9 +306,19 @@ const useStyles = makeStyles((theme) => ({
         color: '#25A69A',
         fontSize: 24,
         zIndex: 300,
+    },
+    feedbackButton: {
+        color: '#25A69A',
+        fontSize: 24,
+        zIndex: 300,
+    },
+    actionButtonContainer: {
         position: 'absolute',
         top: 4,
         right: 4,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
     },
     fadeTextActive: {
         position: 'relative',
@@ -464,6 +477,11 @@ const Chat = () => {
                 }
 
             } catch (error) {
+                if(error.response.status === 401){
+                    console.log("Unauthorized, logging out");
+                    dispatch(logout());
+                    navigate('/login');
+                }
                 console.error('Error fetching user cases:', error);
             }
         }
@@ -501,7 +519,10 @@ const Chat = () => {
     // reset the chat pdf components
     const clearChat = () => {
         setCurrentCase(null);
-        setChatLog([{}, {role: "agent", content: 'Begin a chat by using the "Upload File" to the left.'}]);
+        setChatLog([{}, {
+            role: "agent",
+            content: 'Begin a chat by using the "Upload File" to the left.'
+        }]);
         setFile(null);
     }
 
@@ -535,26 +556,22 @@ const Chat = () => {
     }, [currentCase]);
 
 
-    // const handleFeedback = (messageIndex, type) => {
-    //     setFeedback(prevFeedback => ({
-    //         ...prevFeedback,
-    //         [messageIndex]: type
-    //     }));
-    // };
-
-
+    // Submit chat message
     async function handleSubmit(e) {
         e.preventDefault();
         const userInput = input;
-        setChatLog([...chatLog, {role: "user", content: input}]);
+        const qaUid = uuidv4();
+
+        setChatLog([...chatLog, {qa_uid: qaUid, role: "user", content: input}]);
         setInput("");
 
         const sseUrl = new URL('/api/chat/message/', window.location.origin);
         sseUrl.searchParams.append('message', userInput);
         sseUrl.searchParams.append('conversation_id', conversationID);
         sseUrl.searchParams.append('session_id', sessionID);
+        sseUrl.searchParams.append('qa_uid', qaUid);
 
-        setChatLog(prevChatLog => [...prevChatLog, {role: "agent", content: ""}]);
+        setChatLog(prevChatLog => [...prevChatLog, {qa_uid: qaUid, role: "agent", content: ""}]);
         scrollChat();
 
         try {
@@ -691,7 +708,7 @@ const Chat = () => {
                     // onKeyPress={(e) => e.key === 'Enter' && setUploadOpen(true)} // To handle keyboard accessibility
                 >
                     <Box className={classes.chatLink}>
-                        <Box textAlign="center" flexGrow={1} >
+                        <Box textAlign="center" flexGrow={1}>
                             <CloudUploadIcon
                                 style={{marginRight: 8, marginBottom: -4, fontSize: '1.2rem'}}/>
                             Upload File
@@ -702,8 +719,8 @@ const Chat = () => {
                 {/* Chat buttons */}
                 {userCases.map((userCase, index) => (
                     <div key={index}
-                            className={`${classes.sideMenuButton} ${currentCase && userCase.uid === currentCase.uid ? classes.sideMenuButtonActive : ''}`}
-                            onClick={() => setCurrentCase(userCase)}
+                         className={`${classes.sideMenuButton} ${currentCase && userCase.uid === currentCase.uid ? classes.sideMenuButtonActive : ''}`}
+                         onClick={() => setCurrentCase(userCase)}
                     >
                         <Link
                             to={`/chat?uid=${userCase.uid}`}
@@ -792,12 +809,12 @@ const Chat = () => {
                 <div className={classes.chatContentContainer}>
                     <div className={classes.chatLog} ref={chatLogRef}>
                         {/* Chat messages */}
-                        {Array.isArray(chatLog) && chatLog.map((chat, index) => (
+                        {Array.isArray(chatLog) && chatLog.map((chatMessageObj, index) => (
                             index === 0 ? null : (
                                 <React.Fragment key={index}>
                                     <ChatMessage className={classes.lineBreak}
-                                                 content={chat.content}
-                                                 role={chat.role}
+                                                 chatMessageObj={chatMessageObj}
+                                                 conversationID={conversationID}
                                                  onNavigateToPage={handleNavigateToPage}/>
                                     {/*{(index + 1) % ad_interval === 0 && <AdSenseAd/>}*/}
                                 </React.Fragment>
@@ -868,8 +885,16 @@ const Chat = () => {
     );
 }
 
-const ChatMessage = ({content, role, onNavigateToPage}) => {
+export default Chat;
 
+
+const ChatMessage = ({ chatMessageObj, conversationID, onNavigateToPage }) => {
+    console.log('rendering_chat_message');
+    const qaUid = chatMessageObj?.qa_uid;
+    const role = chatMessageObj?.role;
+    const content = chatMessageObj?.content || '';
+    const [feedback, setFeedback] = useState(chatMessageObj?.feedback_type);
+    const classes = useStyles();
     const riskRegex = /\{\{(\d+)%\}\}/;
 
     const formatContentWithLinks = (text) => {
@@ -896,9 +921,11 @@ const ChatMessage = ({content, role, onNavigateToPage}) => {
 
                 // Return the PageLinkButton component
                 return (<>
+                    {/* render risk meter */}
                     {riskLevel &&
                         <RiskGauge riskLevel={riskLevel}/>
                     }
+                    {/* render page link button */}
                     <PageLinkButton key={index} pageNumber={pageNumber}
                                     onNavigate={onNavigateToPage}/>
                 </>);
@@ -908,9 +935,6 @@ const ChatMessage = ({content, role, onNavigateToPage}) => {
             }
         });
     };
-
-    const classes = useStyles();
-    // const formattedContent = formatContentWithLinks(content);
 
     const formattedContent = formatContentWithLinks(content).map((part, index) => {
         if (typeof part === 'string') {
@@ -945,6 +969,90 @@ const ChatMessage = ({content, role, onNavigateToPage}) => {
              style={{width: 35, borderRadius: '50%', marginTop: 7, marginLeft: 2}}/>
     ) : "ME";
 
+    console.log('checking_feedback'+feedback);
+
+    useEffect(() => {
+        setFeedback(chatMessageObj?.feedback_type || '');
+    }, [chatMessageObj?.feedback_type]);
+
+    const handleFeedback = async (feedbackType) => {
+
+        setFeedback(feedbackType);
+
+        const feedbackData = {
+            conversation_id: conversationID,
+            qa_uid: qaUid,
+            feedback_type: feedbackType,
+            content: content,
+            role: role,
+            previous_feedback: feedback
+        };
+        try {
+            const response = await fetch('/api/submit-feedback/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(feedbackData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Feedback submission failed');
+            }
+        } catch (error) {
+            console.error('Error submitting feedback:', error);
+        }
+    };
+
+    const feedbackIcons = {
+        positive: {
+            active: <ThumbUpAlt />,
+            inactive: <ThumbUpOffAltIcon />
+        },
+        negative: {
+            active: <ThumbDownAlt />,
+            inactive: <ThumbDownOffAltIcon />
+        }
+    };
+
+    const renderFeedbackIcon = (type) => {
+        console.log('rendering_feedback_btns');
+        const isActive = feedback === type;
+        const IconComponent = isActive ? feedbackIcons[type].active : feedbackIcons[type].inactive;
+
+        return (
+            <Tooltip title={`Thumbs ${type === 'positive' ? 'Up' : 'Down'}`}>
+                <IconButton
+                    onClick={() => handleFeedback(type)}
+                    className={classes.feedbackButton}
+                    size="small"
+                >
+                    {IconComponent}
+                </IconButton>
+            </Tooltip>
+        );
+    };
+
+    const actionButtons = (
+        <div className={classes.actionButtonContainer}>
+            {qaUid && role === "agent" && content && content.length > 60 && (
+                <>
+                    <Tooltip title="Copy to clipboard">
+                        <IconButton
+                            onClick={() => copyToClipboard(content)}
+                            className={classes.copyButton}
+                            size="small"
+                        >
+                            <ContentCopyIcon/>
+                        </IconButton>
+                    </Tooltip>
+                    {renderFeedbackIcon('positive')}
+                    {renderFeedbackIcon('negative')}
+                </>
+            )}
+        </div>
+    );
+
     return (
         <div className={chatMessage}>
             <div className={chatMessageCenter}>
@@ -952,26 +1060,14 @@ const ChatMessage = ({content, role, onNavigateToPage}) => {
                     {avatarContent}
                 </div>
                 <div className={classes.chatMessageBody}>
-
-                    {role === "agent" && content && content.length > 60 && (
-                        <Tooltip title="Copy to clipboard">
-                            <IconButton
-                                onClick={() => copyToClipboard(content)}
-                                className={classes.copyButton}
-                                size="small"
-                            >
-                                <ContentCopyIcon/>
-                            </IconButton>
-                        </Tooltip>
-                    )}
+                    {/* Feedback and copy buttons */}
+                    {actionButtons}
                     {messageContent}
                 </div>
             </div>
         </div>
     );
 };
-
-export default Chat;
 
 
 // PageLinkButton component now also accepts riskLevel as a prop

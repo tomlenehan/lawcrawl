@@ -103,6 +103,17 @@ class CaseConversation(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
 
+class Feedback(models.Model):
+    conversation = models.ForeignKey(CaseConversation, on_delete=models.CASCADE)
+    qa_uid = models.CharField(unique=True, max_length=255)
+    qa_pair = models.JSONField()
+    feedback_type = models.CharField(max_length=10)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.qa_uid} - {self.feedback_type}"
+
+
 class Ad(models.Model):
     title = models.CharField(max_length=255)
     text = models.TextField()
