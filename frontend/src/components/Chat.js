@@ -316,9 +316,24 @@ const useStyles = makeStyles((theme) => ({
         position: 'absolute',
         top: 4,
         right: 4,
+        marginTop: -16,
+        marginRight: -20,
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
+        backgroundColor: '#B3DFDB',
+        borderRadius: 20,
+        boxShadow: '0 0 5px #3a3a3a',
+        '&:hover': {
+            boxShadow: '0 0 10px #719ECE',
+        },
+        padding: '4px',
+    },
+    actionButtonContainerBottom: {
+        bottom: 4,
+        top: 'auto',
+        marginTop: 0,
+        marginBottom: -16,
     },
     fadeTextActive: {
         position: 'relative',
@@ -477,7 +492,7 @@ const Chat = () => {
                 }
 
             } catch (error) {
-                if(error.response.status === 401){
+                if (error.response.status === 401) {
                     console.log("Unauthorized, logging out");
                     dispatch(logout());
                     navigate('/login');
@@ -888,7 +903,7 @@ const Chat = () => {
 export default Chat;
 
 
-const ChatMessage = ({ chatMessageObj, conversationID, onNavigateToPage }) => {
+const ChatMessage = ({chatMessageObj, conversationID, onNavigateToPage}) => {
     console.log('rendering_chat_message');
     const qaUid = chatMessageObj?.qa_uid;
     const role = chatMessageObj?.role;
@@ -896,6 +911,9 @@ const ChatMessage = ({ chatMessageObj, conversationID, onNavigateToPage }) => {
     const [feedback, setFeedback] = useState(chatMessageObj?.feedback_type);
     const classes = useStyles();
     const riskRegex = /\{\{(\d+)%\}\}/;
+
+    const MESSAGE_LENGTH_THRESHOLD = 600
+    const isLongMessage = content.length > MESSAGE_LENGTH_THRESHOLD;
 
     const formatContentWithLinks = (text) => {
         const pageLinkRegex = /\[\[Page (\d+)\]\][.,]?/g;
@@ -969,7 +987,7 @@ const ChatMessage = ({ chatMessageObj, conversationID, onNavigateToPage }) => {
              style={{width: 35, borderRadius: '50%', marginTop: 7, marginLeft: 2}}/>
     ) : "ME";
 
-    console.log('checking_feedback'+feedback);
+    console.log('checking_feedback' + feedback);
 
     useEffect(() => {
         setFeedback(chatMessageObj?.feedback_type || '');
@@ -1006,12 +1024,12 @@ const ChatMessage = ({ chatMessageObj, conversationID, onNavigateToPage }) => {
 
     const feedbackIcons = {
         positive: {
-            active: <ThumbUpAlt />,
-            inactive: <ThumbUpOffAltIcon />
+            active: <ThumbUpAlt/>,
+            inactive: <ThumbUpOffAltIcon/>
         },
         negative: {
-            active: <ThumbDownAlt />,
-            inactive: <ThumbDownOffAltIcon />
+            active: <ThumbDownAlt/>,
+            inactive: <ThumbDownOffAltIcon/>
         }
     };
 
@@ -1021,7 +1039,8 @@ const ChatMessage = ({ chatMessageObj, conversationID, onNavigateToPage }) => {
         const IconComponent = isActive ? feedbackIcons[type].active : feedbackIcons[type].inactive;
 
         return (
-            <Tooltip title={`Thumbs ${type === 'positive' ? 'Up' : 'Down'}`}>
+            <Tooltip
+                title={`${type === 'positive' ? 'This was helpful' : 'This was NOT helpful'}`}>
                 <IconButton
                     onClick={() => handleFeedback(type)}
                     className={classes.feedbackButton}
@@ -1033,8 +1052,8 @@ const ChatMessage = ({ chatMessageObj, conversationID, onNavigateToPage }) => {
         );
     };
 
-    const actionButtons = (
-        <div className={classes.actionButtonContainer}>
+    const renderActionButtons = () => (
+        <>
             {qaUid && role === "agent" && content && content.length > 60 && (
                 <>
                     <Tooltip title="Copy to clipboard">
@@ -1050,6 +1069,20 @@ const ChatMessage = ({ chatMessageObj, conversationID, onNavigateToPage }) => {
                     {renderFeedbackIcon('negative')}
                 </>
             )}
+        </>
+    );
+
+    // Top action buttons
+    const actionButtons = (
+        <div className={classes.actionButtonContainer}>
+            {renderActionButtons()}
+        </div>
+    );
+
+    // Bottom action buttons for long messages
+    const actionButtonsBottom = isLongMessage && (
+        <div className={`${classes.actionButtonContainer} ${classes.actionButtonContainerBottom}`}>
+            {renderActionButtons()}
         </div>
     );
 
@@ -1060,9 +1093,9 @@ const ChatMessage = ({ chatMessageObj, conversationID, onNavigateToPage }) => {
                     {avatarContent}
                 </div>
                 <div className={classes.chatMessageBody}>
-                    {/* Feedback and copy buttons */}
                     {actionButtons}
                     {messageContent}
+                    {actionButtonsBottom}
                 </div>
             </div>
         </div>
