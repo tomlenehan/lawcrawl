@@ -597,26 +597,29 @@ def submit_feedback(request):
         # Find the QA pair to use for fine-tuning
         qa_pair = [item for item in conversation.conversation if item.get('qa_uid') == qa_uid]
 
-        if qa_pair:
-            # Update feedback in the QA pairs
-            for item in qa_pair:
-                item['feedback_type'] = feedback_type
+        if not qa_pair:
+            return JsonResponse({"status": "error", "message": "QA pair not found."}, status=404)
 
-            # Save the updated conversation to the database
-            conversation.save()
+        # Update feedback in the QA pairs
+        for item in qa_pair:
+            item['feedback_type'] = feedback_type
 
-            # Also save feedback to the Feedback model
-            feedback, created = Feedback.objects.get_or_create(
-                conversation=conversation,
-                qa_uid=qa_uid
-            )
+        # Save the updated conversation to the database
+        conversation.save()
+
+        # Check if the Feedback object for this qa_uid already exists
+        feedback, created = Feedback.objects.get_or_create(
+            qa_uid=qa_uid,
+            defaults={'conversation': conversation, 'qa_pair': qa_pair, 'feedback_type': feedback_type}
+        )
+
+        # If it already exists, update it
+        if not created:
             feedback.qa_pair = qa_pair
             feedback.feedback_type = feedback_type
             feedback.save()
 
-            return JsonResponse({"status": "success", "message": "Feedback received and saved successfully."})
-        else:
-            return JsonResponse({"status": "error", "message": "QA pair not found."}, status=404)
+        return JsonResponse({"status": "success", "message": "Feedback received and saved successfully."})
 
     except CaseConversation.DoesNotExist:
         return JsonResponse({"status": "error", "message": "Conversation not found."}, status=404)
