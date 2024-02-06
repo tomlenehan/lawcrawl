@@ -182,8 +182,8 @@ const ResetPasswordPage = () => {
 
                     </Box>
                 </Container>
-                <Footer/>
             </Box>
+            <Footer/>
         </ThemeProvider>
     );
 };

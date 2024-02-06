@@ -51,8 +51,8 @@ const useStyles = makeStyles((theme) => ({
         color: '#3a3a3a',
     },
     verifyButton: {
-        backgroundColor: '#B2DFDB',
-        color: '#26a69a',
+        backgroundColor: '#fdfbee',
+        color: '#3a3a3a',
         fontWeight: 'bold',
         fontSize: 16,
         padding: '8px 30px',
@@ -152,8 +152,9 @@ const ActivationPage = () => {
 
                     </Box>
                 </Container>
-            <Footer/>
+
             </Box>
+            <Footer/>
         </ThemeProvider>
     );
 };

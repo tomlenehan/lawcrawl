@@ -194,8 +194,8 @@ const ResetPasswordConfirmPage = () => {
 
                     </Box>
                 </Container>
-            <Footer/>
             </Box>
+            <Footer/>
         </ThemeProvider>
     );
 };
