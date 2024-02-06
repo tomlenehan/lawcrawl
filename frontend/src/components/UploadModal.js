@@ -512,13 +512,12 @@ const UploadModal = ({token, isAuthenticated, userCases, setUserCases, onClose})
 
             <Modal
                 open={openModal}
-                onClose={handleCloseModal}
                 aria-labelledby="simple-modal-title"
                 aria-describedby="simple-modal-description"
                 className={classes.modal}
             >
                 <div className={classes.modalText}>
-                    <TermsOfService/>
+                    <TermsOfService onClose={handleCloseModal} />
                 </div>
             </Modal>
         </>

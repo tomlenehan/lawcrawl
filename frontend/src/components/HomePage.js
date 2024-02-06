@@ -19,6 +19,7 @@ import {connect} from "react-redux";
 import ParticlesBackground from "./ParticlesBackground";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import MailOutlineIcon from '@material-ui/icons/MailOutline';
 
 
@@ -81,12 +82,29 @@ const useStyles = makeStyles((theme) => ({
         height: 48,
         fontWeight: 'bold',
         fontSize: 14,
+        marginRight: 12,
         padding: '8px 30px',
         '&:hover': {
             backgroundColor: '#80cbc4',
         },
         borderRadius: '10px',
         border: '1px solid #1DA1F2',
+        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
+        textTransform: 'none',
+        marginBottom: 20,
+    },
+    signupButton: {
+        backgroundColor: '#B2DFDB',
+        color: '#3a3a3a',
+        height: 48,
+        fontWeight: 'bold',
+        fontSize: 14,
+        padding: '8px 30px',
+        '&:hover': {
+            backgroundColor: '#80cbc4',
+        },
+        borderRadius: '10px',
+        border: '1px solid #F44336',
         boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
         textTransform: 'none',
         marginBottom: 20,
@@ -196,38 +214,20 @@ const HomePage = ({isAuthenticated}) => {
 
                     <div className={classes.chatContainer}>
 
-                        <Grid container>
-                            <Grid item xs={12}>
+                        {/* Main logo and video container */}
+                        <Grid container spacing={4} alignItems="center" justifyContent="center">
+                            {/* Logo and Text */}
+                            <Grid item xs={0}  md={1}></Grid>
+                            <Grid item xs={12} md={3} >
                                 <img src={`${config.STATIC_URL}images/logos/LogoLGGreen.png`}
                                      alt="Lawcrawl Logo"
                                      className={classes.mainLogo}/>
-                            </Grid>
-
-                            <Grid item xs={12} className={classes.logoContainer}>
                                 <img src={`${config.STATIC_URL}images/logos/TextLogoLG.png`}
-                                     alt="Lawcrawl Logo"
+                                     alt="Lawcrawl Text Logo"
                                      className={classes.textLogo}/>
-                                <Typography className={classes.alphaText}>alpha</Typography>
-                            </Grid>
-
-                            <Grid item xs={12}>
                                 <Typography className={classes.subTitle}>
                                     Contract Review, Simplified
                                 </Typography>
-                                {/*<Typography style={{fontSize: 16, marginBottom: 14}}>See*/}
-                                {/*    what's hidden*/}
-                                {/*    <br/>in your legal documents</Typography>*/}
-                            </Grid>
-
-                            {/*<Grid item xs={12}>*/}
-                            {/*    {!isAuthenticated && (*/}
-                            {/*        <Typography style={{fontSize: '1.2vw'}}>*/}
-                            {/*            Simply login, then upload your <br/> documents and chat.*/}
-                            {/*        </Typography>*/}
-                            {/*    )}*/}
-                            {/*</Grid>*/}
-
-                            <Grid item xs={12}>
                                 {!isAuthenticated && (
                                     <Box display="flex" justifyContent="center" mt={3}>
                                         <Button
@@ -239,23 +239,33 @@ const HomePage = ({isAuthenticated}) => {
                                         >
                                             Login
                                         </Button>
+                                        <Button
+                                            variant="contained"
+                                            className={classes.signupButton}
+                                            startIcon={<PersonAddIcon/>}
+                                            component={Link}
+                                            to="/signup"
+                                        >
+                                            Signup
+                                        </Button>
                                     </Box>
                                 )}
                             </Grid>
 
-                            {/* Embed YouTube Video */}
-                            <Grid item xs={12}>
+                            {/* YouTube Video */}
+                            <Grid item xs={12} md={8}>
                                 <div className={classes.videoContainer}>
                                     <iframe
-                                        className={classes.videoEmbed}
-                                        src="https://www.youtube.com/embed/SkCE3Wcq3mo?si=KvU9SlKD1RhpfQzk?color=white"
+                                        width="560"
+                                        height="315"
+                                        src="https://www.youtube.com/embed/79sVS0kHBEY?si=paYIRA13WcwRNPTx"
                                         frameBorder="0"
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                         allowFullScreen
+                                        title="Lawcrawl Video"
                                     ></iframe>
                                 </div>
                             </Grid>
-
                         </Grid>
 
 
@@ -289,8 +299,8 @@ const HomePage = ({isAuthenticated}) => {
                                     />
                                     <CardContent>
                                         <Typography variant="body2">
-                                            Our AI analyzes your documents and
-                                            identifies any non-standard or unusual terms.
+                                            Our AI is trained to analyze your document and
+                                            identify any terms that are non-standard or unusual.
                                         </Typography>
                                     </CardContent>
                                 </Card>
@@ -307,7 +317,7 @@ const HomePage = ({isAuthenticated}) => {
                                     />
                                     <CardContent>
                                         <Typography variant="body2">
-                                            Ask questions to gain clarity on areas of
+                                            Continue asking questions to gain clarity on areas of
                                             concern or confusion.
                                         </Typography>
                                     </CardContent>
@@ -317,29 +327,26 @@ const HomePage = ({isAuthenticated}) => {
                             <Grid item xs={12} style={{marginTop: 80}}>
                                 <Box display="flex" alignItems="center" justifyContent="center">
                                     <Typography style={{fontSize: 16, marginRight: 8}}>
-                                        Learn More:
+                                        Learn More Here
                                     </Typography>
                                     <Button
                                         variant="contained"
-                                        className={classes.blogButton}
+                                        className={classes.loginButton}
                                         startIcon={<LibraryBooksIcon/>}
                                         component={Link}
                                         to="/blog_list"
                                     >
                                         Blog
                                     </Button>
-                                </Box>
-                            </Grid>
-
-                            <Grid item xs={12} style={{marginTop: 30}}>
-                                <Box display="flex" alignItems="center" justifyContent="center">
+                                {/*</Box>*/}
+                                {/*<Box display="flex" alignItems="center" justifyContent="center">*/}
                                     <Typography style={{fontSize: 16, marginRight: 8}}>
-                                        Have Questions?
+                                        or
                                     </Typography>
                                     <Button
                                         variant="contained"
                                         color="primary"
-                                        className={classes.contactButton}
+                                        className={classes.signupButton}
                                         startIcon={<MailOutlineIcon/>}
                                         href="mailto:tess@lawcrawl.com,tom@lawcrawl.com"
                                     >
@@ -347,6 +354,23 @@ const HomePage = ({isAuthenticated}) => {
                                     </Button>
                                 </Box>
                             </Grid>
+
+                            {/*<Grid item xs={12} style={{marginTop: 30}}>*/}
+                            {/*    <Box display="flex" alignItems="center" justifyContent="center">*/}
+                            {/*        <Typography style={{fontSize: 16, marginRight: 8}}>*/}
+                            {/*            Have Questions?*/}
+                            {/*        </Typography>*/}
+                            {/*        <Button*/}
+                            {/*            variant="contained"*/}
+                            {/*            color="primary"*/}
+                            {/*            className={classes.contactButton}*/}
+                            {/*            startIcon={<MailOutlineIcon/>}*/}
+                            {/*            href="mailto:tess@lawcrawl.com,tom@lawcrawl.com"*/}
+                            {/*        >*/}
+                            {/*            Contact Us*/}
+                            {/*        </Button>*/}
+                            {/*    </Box>*/}
+                            {/*</Grid>*/}
 
 
                         </Grid>

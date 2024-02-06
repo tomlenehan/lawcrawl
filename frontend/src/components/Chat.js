@@ -414,6 +414,7 @@ const Chat = () => {
     const [loadingPDF, setLoadingPDF] = useState(false);
     const [initialLoad, setInitialLoad] = useState(true);
     // const userCases = useSelector((state) => state.userCases);
+    // const fetchUserCases = useFetchUserCases();
     const [userCases, setUserCases] = useState([]);
     const token = useSelector((state) => state.auth.access);
     const [currentCase, setCurrentCase] = useState(null);
@@ -424,7 +425,6 @@ const Chat = () => {
     const [chatLog, setChatLog] = useState([]);
     const [file, setFile] = useState(null);
     const chatLogRef = useRef(null);
-    // const fetchUserCases = useFetchUserCases();
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const currentPage = useSelector(state => state.page.currentPage);
@@ -1054,22 +1054,43 @@ const ChatMessage = ({chatMessageObj, conversationID, onNavigateToPage}) => {
 
     const renderActionButtons = () => (
         <>
-            {qaUid && role === "agent" && content && content.length > 60 && (
-                <>
-                    <Tooltip title="Copy to clipboard">
-                        <IconButton
-                            onClick={() => copyToClipboard(content)}
-                            className={classes.copyButton}
-                            size="small"
-                        >
-                            <ContentCopyIcon/>
-                        </IconButton>
-                    </Tooltip>
-                    {renderFeedbackIcon('positive')}
-                    {renderFeedbackIcon('negative')}
-                </>
-            )}
+            <Tooltip title="Copy to clipboard">
+                <IconButton
+                    onClick={() => copyToClipboard(content)}
+                    className={classes.copyButton}
+                    size="small"
+                >
+                    <ContentCopyIcon/>
+                </IconButton>
+            </Tooltip>
+            {renderFeedbackIcon('positive')}
+            {renderFeedbackIcon('negative')}
         </>
+    );
+
+    return (
+        <div className={chatMessage}>
+            <div className={chatMessageCenter}>
+                <div className={avatarClass}>
+                    {avatarContent}
+                </div>
+                <div className={classes.chatMessageBody}>
+                    {/* Render action buttons if conditions are met */}
+                    {qaUid && role === "agent" && content && content.length > 60 && (
+                        <div className={classes.actionButtonContainer}>
+                            {renderActionButtons()}
+                        </div>
+                    )}
+                    {messageContent}
+                    {/* Render bottom action buttons if conditions are met and message is long */}
+                    {qaUid && role === "agent" && content && content.length > 60 && isLongMessage && (
+                        <div className={`${classes.actionButtonContainer} ${classes.actionButtonContainerBottom}`}>
+                            {renderActionButtons()}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
     );
 
     // Top action buttons

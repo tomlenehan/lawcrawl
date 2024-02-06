@@ -26,7 +26,7 @@ const useStyles = makeStyles((theme) => ({
         flexGrow: 1,
         overflowY: "scroll",
         justifyContent: "center",
-        height: "100vh",
+        minHeight: "100vh",
     },
     contentContainer: {
         display: "flex",
@@ -147,7 +147,7 @@ const LoginPage = ({login, isAuthenticated}) => {
                         {activationEmail && (
                             <Grid item xs={12}>
                                 <Alert variant="filled" severity="info">
-                                    Account created. Please check your email to activate your
+                                    Account created. Please check your email (and spam folder) to activate your
                                     account.
                                 </Alert>
                             </Grid>
@@ -225,8 +225,8 @@ const LoginPage = ({login, isAuthenticated}) => {
 
                     </Box>
                 </Container>
-            </Box>
             <Footer/>
+            </Box>
         </ThemeProvider>
     );
 };

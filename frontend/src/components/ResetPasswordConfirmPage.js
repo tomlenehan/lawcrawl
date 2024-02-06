@@ -26,7 +26,7 @@ const useStyles = makeStyles((theme) => ({
         flexGrow: 1,
         overflowY: "scroll",
         justifyContent: "center",
-        height: "100vh",
+        minHeight: "100vh",
     },
     contentContainer: {
         display: "flex",
@@ -194,8 +194,8 @@ const ResetPasswordConfirmPage = () => {
 
                     </Box>
                 </Container>
-            </Box>
             <Footer/>
+            </Box>
         </ThemeProvider>
     );
 };

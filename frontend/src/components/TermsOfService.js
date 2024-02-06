@@ -30,7 +30,7 @@ const useStyles = makeStyles((theme) => ({
     }
 }));
 
-const TermsOfService = ({open, onClose}) => {
+const TermsOfService = ({onClose}) => {
     const classes = useStyles();
 
     return (
