@@ -945,7 +945,7 @@ const ChatMessage = ({chatMessageObj, conversationID, onNavigateToPage}) => {
                     <>
                         {riskLevel &&
                             <RiskGauge riskLevel={riskLevel} />}
-                            <PageLinkButton onNavigate={onNavigateToPage}/>
+                            <PageLinkButton onNavigate={onNavigateToPage} pageNumber={pageNumber}/>
                     </>
                 );
             } else {
@@ -959,12 +959,9 @@ const ChatMessage = ({chatMessageObj, conversationID, onNavigateToPage}) => {
             const cleanedPart = part.replace(riskRegex, '');
 
             return (
-                // <div key={index}>
-                // <div key={`part-${index}-${cleanedPart.substring(0, 10)}`}>
                 <>
                     <ReactMarkdown>{cleanedPart}</ReactMarkdown>
                 </>
-                // </div>
             );
         }
         return part;
