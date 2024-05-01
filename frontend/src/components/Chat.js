@@ -611,9 +611,19 @@ const Chat = () => {
                     scrollChat();
                 }
             };
-
             eventSource.onerror = (error) => {
-                console.error("EventSource failed:", error);
+                if (buffer) {
+                    setChatLog(prevChatLog => {
+                        const updatedChatLog = [...prevChatLog];
+                        const lastMessageIndex = updatedChatLog.length - 1;
+                        updatedChatLog[lastMessageIndex].content += buffer;
+                        buffer = "";
+                        firstMessageReceived = true;
+                        return updatedChatLog;
+                    });
+                    scrollChat();
+                }
+                // console.error("EventSource failed:", error);
                 eventSource.close();
                 setLoadingChatLog(false);
             };
@@ -826,7 +836,8 @@ const Chat = () => {
                         {/* Chat messages */}
                         {Array.isArray(chatLog) && chatLog.map((chatMessageObj, index) => (
                             index === 0 ? null : (
-                                <React.Fragment key={index}>
+                                <React.Fragment
+                                    key={chatMessageObj.qa_uid + '-' + index}>
                                     <ChatMessage className={classes.lineBreak}
                                                  chatMessageObj={chatMessageObj}
                                                  conversationID={conversationID}
@@ -885,7 +896,7 @@ const Chat = () => {
                                 ),
                             }}
                             multiline
-                            rows={1}
+                            minRows={1}
                         />
                     </form>
 
@@ -904,14 +915,13 @@ export default Chat;
 
 
 const ChatMessage = ({chatMessageObj, conversationID, onNavigateToPage}) => {
-    console.log('rendering_chat_message');
+    // console.log('rendering_chat_message');
     const qaUid = chatMessageObj?.qa_uid;
     const role = chatMessageObj?.role;
     const content = chatMessageObj?.content || '';
     const [feedback, setFeedback] = useState(chatMessageObj?.feedback_type);
     const classes = useStyles();
     const riskRegex = /\{\{(\d+)%\}\}/;
-
     const MESSAGE_LENGTH_THRESHOLD = 600
     const isLongMessage = content.length > MESSAGE_LENGTH_THRESHOLD;
 
@@ -924,32 +934,22 @@ const ChatMessage = ({chatMessageObj, conversationID, onNavigateToPage}) => {
 
         // Iterate over the parts and process each part
         return parts.map((part, index) => {
-            // Check if the part is a page number
             if ((index % 2) === 1) {
-                // This is a page number
                 let pageNumber = parseInt(part, 10);
-                let nextPart = parts[index + 1] || ""; // The part after the page number
-
-                // Extract the risk level from the next part
+                let nextPart = parts[index + 1] || "";
                 const riskMatch = riskRegex.exec(nextPart);
                 let riskLevel = riskMatch ? parseInt(riskMatch[1], 10) : null;
-
-                // Remove the risk level info from the next part and update it in the array
                 parts[index + 1] = nextPart.replace(riskRegex, '');
 
-                // Return the PageLinkButton component
-                return (<>
-                    {/* render risk meter */}
-                    {riskLevel &&
-                        <RiskGauge riskLevel={riskLevel}/>
-                    }
-                    {/* render page link button */}
-                    <PageLinkButton key={index} pageNumber={pageNumber}
-                                    onNavigate={onNavigateToPage}/>
-                </>);
+                return (
+                    <>
+                        {riskLevel &&
+                            <RiskGauge riskLevel={riskLevel} />}
+                            <PageLinkButton onNavigate={onNavigateToPage}/>
+                    </>
+                );
             } else {
-                // If not a page number, return the part as is
-                return part;
+                return <ReactMarkdown>{part}</ReactMarkdown>;
             }
         });
     };
@@ -959,9 +959,12 @@ const ChatMessage = ({chatMessageObj, conversationID, onNavigateToPage}) => {
             const cleanedPart = part.replace(riskRegex, '');
 
             return (
-                <div key={index}>
+                // <div key={index}>
+                // <div key={`part-${index}-${cleanedPart.substring(0, 10)}`}>
+                <>
                     <ReactMarkdown>{cleanedPart}</ReactMarkdown>
-                </div>
+                </>
+                // </div>
             );
         }
         return part;
@@ -970,7 +973,7 @@ const ChatMessage = ({chatMessageObj, conversationID, onNavigateToPage}) => {
     // Function to copy text to clipboard
     const copyToClipboard = (text) => {
         navigator.clipboard.writeText(text).then(() => {
-            // Optional: Display a message or change the icon to indicate success.
+            // Display a message or change the icon to indicate success.
         });
     };
 
@@ -986,8 +989,6 @@ const ChatMessage = ({chatMessageObj, conversationID, onNavigateToPage}) => {
         <img src={`${config.STATIC_URL}images/logos/BotChatLogo.png`} alt="Bot Avatar"
              style={{width: 35, borderRadius: '50%', marginTop: 7, marginLeft: 2}}/>
     ) : "ME";
-
-    console.log('checking_feedback' + feedback);
 
     useEffect(() => {
         setFeedback(chatMessageObj?.feedback_type || '');
@@ -1034,7 +1035,7 @@ const ChatMessage = ({chatMessageObj, conversationID, onNavigateToPage}) => {
     };
 
     const renderFeedbackIcon = (type) => {
-        console.log('rendering_feedback_btns');
+        // console.log('rendering_feedback_btns');
         const isActive = feedback === type;
         const IconComponent = isActive ? feedbackIcons[type].active : feedbackIcons[type].inactive;
 

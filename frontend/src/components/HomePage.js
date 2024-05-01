@@ -1,4 +1,4 @@
-import React from "react";
+import React, {useState} from 'react';
 import Grid from "@material-ui/core/Grid";
 import {makeStyles} from '@material-ui/core/styles';
 import Typography from "@material-ui/core/Typography";
@@ -21,6 +21,7 @@ import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import MailOutlineIcon from '@material-ui/icons/MailOutline';
+import {LinearProgress} from '@material-ui/core';
 
 
 const useStyles = makeStyles((theme) => ({
@@ -190,20 +191,42 @@ const useStyles = makeStyles((theme) => ({
         '100%': {backgroundPosition: '0% 50%'},
     },
     videoContainer: {
-        textAlign: 'center',
+        position: 'relative',
+        height: 315,
+        width: 560,
+        margin: 'auto',
         marginBottom: theme.spacing(4),
         marginTop: theme.spacing(4),
     },
-    videoEmbed: {
+    loadingContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
         width: '100%',
-        maxWidth: 560,
-        height: 315,
-        margin: 'auto',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 2,
     },
+    iframeStyle: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        zIndex: 1,
+    },
+
 }));
 
 const HomePage = ({isAuthenticated}) => {
     const classes = useStyles();
+    const [iframeLoading, setIframeLoading] = useState(true);
+
+    const handleIframeLoad = () => {
+        setIframeLoading(false);
+    };
 
     return (
         <ThemeProvider theme={theme}>
@@ -215,10 +238,11 @@ const HomePage = ({isAuthenticated}) => {
                     <div className={classes.chatContainer}>
 
                         {/* Main logo and video container */}
-                        <Grid container spacing={4} alignItems="center" justifyContent="center">
+                        <Grid container spacing={4} alignItems="center" justifyContent="center"
+                              style={{minHeight: 450}}>
                             {/* Logo and Text */}
-                            <Grid item xs={0}  md={1}></Grid>
-                            <Grid item xs={12} md={3} >
+                            <Grid item xs={0} md={1}></Grid>
+                            <Grid item xs={12} md={3}>
                                 <img src={`${config.STATIC_URL}images/logos/LogoLGGreen.png`}
                                      alt="Lawcrawl Logo"
                                      className={classes.mainLogo}/>
@@ -255,13 +279,19 @@ const HomePage = ({isAuthenticated}) => {
                             {/* YouTube Video */}
                             <Grid item xs={12} md={8}>
                                 <div className={classes.videoContainer}>
+                                    {iframeLoading && (
+                                        <div className={classes.loadingContainer}>
+                                            <LinearProgress style={{width: '60%'}}/>
+                                        </div>
+                                    )}
                                     <iframe
-                                        width="560"
-                                        height="315"
+                                        className={classes.iframeStyle}
+                                        style={{visibility: iframeLoading ? 'hidden' : 'visible'}}
                                         src="https://www.youtube.com/embed/79sVS0kHBEY?si=paYIRA13WcwRNPTx"
                                         frameBorder="0"
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                         allowFullScreen
+                                        onLoad={() => setIframeLoading(false)}
                                         title="Lawcrawl Video"
                                     ></iframe>
                                 </div>
@@ -338,8 +368,8 @@ const HomePage = ({isAuthenticated}) => {
                                     >
                                         Blog
                                     </Button>
-                                {/*</Box>*/}
-                                {/*<Box display="flex" alignItems="center" justifyContent="center">*/}
+                                    {/*</Box>*/}
+                                    {/*<Box display="flex" alignItems="center" justifyContent="center">*/}
                                     <Typography style={{fontSize: 16, marginRight: 8}}>
                                         or
                                     </Typography>

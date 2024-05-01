@@ -29,6 +29,7 @@ const useStyles = makeStyles((theme) => ({
         border: 'none',
     },
     menuButton: {
+        display: 'inline-block',
         color: '#3a3a3a',
         textTransform: 'none',
     },
@@ -77,7 +78,7 @@ const Navbar = ({isAuthenticated, logout, userCases}) => {
                 Blog
             </Button>
             {isAuthenticated && (
-                <box>
+                <>
                     {/*<Button className={classes.menuButton} color="inherit" component={Link}*/}
                     {/*        to="/upload">*/}
                     {/*    Upload*/}
@@ -88,7 +89,7 @@ const Navbar = ({isAuthenticated, logout, userCases}) => {
                             Chat
                         </Button>
                     {/*)}*/}
-                </box>
+                </>
             )}
         </>
     );
