@@ -146,7 +146,7 @@ const SignupPage = () => {
     useEffect(() => {
         if (signupSuccess && !authError && accountEmail) {
             setAccountCreated(true);
-            navigate("/login?activation_email=" + accountEmail);
+            navigate("/resend_verification?activation_email=" + accountEmail);
         }
     }, [signupSuccess, authError, accountEmail, navigate]);
 

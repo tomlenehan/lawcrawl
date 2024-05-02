@@ -14,7 +14,8 @@ urlpatterns = [
     path('blog_post/<str:post_id>/', index),
 
     # auth
-    re_path(r'^activation/.*$', index, name='activation'),
     path('reset_password', index, name='reset_password'),
+    path('resend_verification', index, name='resend_activation'),
+    re_path(r'^activation/.*$', index, name='activation'),
     re_path(r'^password/reset/confirm/.*$', index, name='password_reset_confirm'),
 ]

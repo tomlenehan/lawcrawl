@@ -15,6 +15,7 @@ import UploadPage from "./components/UploadPage";
 import ActivationPage from "./components/ActivationPage";
 import ResetPasswordPage from "./components/ResetPasswordPage";
 import ResetPasswordConfirmationPage from "./components/ResetPasswordConfirmPage";
+import ResendVerificationPage from "./components/ResendVerificationPage";
 import ChatPage from "./components/ChatPage";
 import TermsOfServicePage from "./components/TermsOfServicePage";
 import BlogPostPage from "./components/BlogPostPage";
@@ -58,6 +59,7 @@ export default function App() {
                                 <Route path="/signup" element={<SignupPage/>}/>
                                 <Route path="/account" element={<AccountPage/>}/>
                                 <Route path='/activation/:uid/:token' element={<ActivationPage/>}/>
+                                <Route path='/resend_verification' element={<ResendVerificationPage/>}/>
                                 <Route path='/reset_password' element={<ResetPasswordPage/>}/>
                                 <Route path='/password/reset/confirm/:uid/:token' element={<ResetPasswordConfirmationPage/>}/>
                                 <Route path="/upload" element={<UploadPage/>}/>
