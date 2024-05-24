@@ -164,7 +164,8 @@ const useStyles = makeStyles((theme) => ({
         paddingTop: 0,
     },
     cardIcon: {
-        fontSize: '2.6rem',
+        fontSize: '3rem',
+        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
         color: '#26a69a',
     },
     logoContainer: {

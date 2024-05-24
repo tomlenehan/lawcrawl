@@ -162,12 +162,19 @@ export const signup = (first_name, last_name, email, password, re_password, news
     try {
         // Check if the user or social user exists with the given email
         const checkRes = await axios.get(`${process.env.REACT_APP_API_URL}/api/user/check?email=${encodeURIComponent(email)}`);
-        if (checkRes.data.user_exists || checkRes.data.social_user_exists) {
+        if (checkRes.data.social_user_exists && checkRes.data.user_exists) {
             dispatch({
                 type: USER_ALREADY_EXISTS,
-                payload: [{ field: 'email', message: "An account with this email already exists. Please login using your account or social login." }]
+                payload: [{ field: 'email', message: "This email is already tied to a social account. Please login that way." }]
             });
-        } else {
+        }
+        else if (checkRes.data.user_exists) {
+            dispatch({
+                type: USER_ALREADY_EXISTS,
+                payload: [{ field: 'email', message: "An account with this email already exists." }]
+            });
+        }
+        else {
             // If no user is found with the email, proceed to create a new user
             const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/users/`, body, config);
             dispatch({

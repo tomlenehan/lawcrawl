@@ -1,6 +1,41 @@
 {
-  "status": "compile",
-  "assets": {},
-  "chunks": {},
+  "status": "done",
+  "assets": {
+    "fonts/MontserratRegular.ttf": {
+      "name": "fonts/MontserratRegular.ttf",
+      "path": "/Users/tomlenehan/Dev/lawcrawl/frontend/static/fonts/MontserratRegular.ttf",
+      "publicPath": "/static/frontend/fonts/MontserratRegular.ttf"
+    },
+    "fonts/Lato-Black.ttf": {
+      "name": "fonts/Lato-Black.ttf",
+      "path": "/Users/tomlenehan/Dev/lawcrawl/frontend/static/fonts/Lato-Black.ttf",
+      "publicPath": "/static/frontend/fonts/Lato-Black.ttf"
+    },
+    "fonts/BarlowCondensed-ExtraBold.ttf": {
+      "name": "fonts/BarlowCondensed-ExtraBold.ttf",
+      "path": "/Users/tomlenehan/Dev/lawcrawl/frontend/static/fonts/BarlowCondensed-ExtraBold.ttf",
+      "publicPath": "/static/frontend/fonts/BarlowCondensed-ExtraBold.ttf"
+    },
+    "fonts/DMSans-Bold.ttf": {
+      "name": "fonts/DMSans-Bold.ttf",
+      "path": "/Users/tomlenehan/Dev/lawcrawl/frontend/static/fonts/DMSans-Bold.ttf",
+      "publicPath": "/static/frontend/fonts/DMSans-Bold.ttf"
+    },
+    "main.js": {
+      "name": "main.js",
+      "path": "/Users/tomlenehan/Dev/lawcrawl/frontend/static/main.js",
+      "publicPath": "/static/frontend/main.js"
+    },
+    "main.js.LICENSE.txt": {
+      "name": "main.js.LICENSE.txt",
+      "path": "/Users/tomlenehan/Dev/lawcrawl/frontend/static/main.js.LICENSE.txt",
+      "publicPath": "/static/frontend/main.js.LICENSE.txt"
+    }
+  },
+  "chunks": {
+    "main": [
+      "main.js"
+    ]
+  },
   "publicPath": "/static/frontend/"
 }

@@ -1,21 +1,16 @@
 import threading
 from threading import Event
-import time
 from typing import Any
-from langchain.agents import initialize_agent, AgentType
 from lawcrawl import settings
 import os
 import time
 import uuid
 from uuid import uuid4
 import requests
-import tempfile
 import shutil
 import logging
 import json
 import fitz
-import ocrmypdf
-from fuzzywuzzy import fuzz
 from django.utils import timezone
 from django.http import JsonResponse, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -26,14 +21,9 @@ from django.shortcuts import get_object_or_404
 from django.http import FileResponse
 from django.http import HttpResponseForbidden
 from django.views.decorators.http import require_http_methods
-from django.contrib.auth import logout
-from django.shortcuts import redirect
-
 from langchain.chains.question_answering import load_qa_chain
-from langchain.prompts import PromptTemplate
-from langchain.document_loaders import PyMuPDFLoader
-from langchain.schema import HumanMessage, SystemMessage, AIMessage
-from langchain.tools import Tool
+# from langchain.document_loaders import PyMuPDFLoader
+from langchain_community.document_loaders.pdf import PyMuPDFLoader
 from langchain.callbacks.streaming_stdout_final_only import (
     FinalStreamingStdOutCallbackHandler,
 )
@@ -49,16 +39,21 @@ from functools import wraps
 import tiktoken
 from langchain.text_splitter import (
     RecursiveCharacterTextSplitter,
-    CharacterTextSplitter,
 )
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import Pinecone
-from langchain.chat_models import ChatOpenAI
+# from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
+# from langchain.vectorstores import Pinecone as PineconeVectorStore
+from langchain_pinecone import PineconeVectorStore
+# from langchain.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQA, ConversationalRetrievalChain, LLMChain
-import pinecone
+# from langchain import RetrievalQA, ConversationalRetrievalChain, LLMChain
+from langchain.chains.retrieval_qa.base import RetrievalQA
+from langchain.chains.conversational_retrieval.base import ConversationalRetrievalChain
+
+from pinecone import Pinecone
 import boto3
 from main.serializers import CaseSerializer
-from django.core.exceptions import ObjectDoesNotExist
 
 # logging
 logger = logging.getLogger("lawcrawl")
@@ -445,7 +440,6 @@ def generate_streaming_content(output_list, done_event):
     while not done_event.is_set() or output_list:
         if output_list:
             part = output_list.pop(0)
-            # Format tokens to be returned with StreamingHTTPResponse
             formatted_part = "data: {}\n\n".format(json.dumps({"token": part}))
             yield formatted_part.encode("utf-8")
         else:
@@ -507,7 +501,7 @@ class DjangoStreamingCallbackHandlerAgent(FinalStreamingStdOutCallbackHandler):
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         super().on_llm_new_token(token, **kwargs)
 
-        # If the answer is reached and we are to stream tokens
+        # If the answer is reached stream the tokens
         if self.answer_reached:
             # Filter out specific unwanted characters from the token
             cleaned_token = token.strip("`}{\n")
@@ -634,8 +628,9 @@ class DocumentProcessor:
         self.embed_model_name = "text-embedding-ada-002"
         self.pinecone_api_key = settings.PINECONE_API_KEY
         self.pinecone_env = settings.PINECONE_ENV
-        self.index_name = "lawcrawl"
+        self.index_name = "lawcrawl-ref"
         self.namespace = "lawcrawl_cases"
+
         self.batch_limit = 50
         self.filter_query = {"case_uid": str(self.case.uid)}
 
@@ -655,9 +650,9 @@ class DocumentProcessor:
         )
 
     def get_vector_store(self):
-        pinecone.init(api_key=self.pinecone_api_key, environment=self.pinecone_env)
-        index = pinecone.Index(self.index_name)
-        vectorstore = Pinecone(index, self.embed, "text", self.namespace)
+        pc = Pinecone(api_key=self.pinecone_api_key)
+        index = pc.Index(self.index_name)
+        vectorstore = PineconeVectorStore(index, self.embed, "text", self.namespace)
 
         return vectorstore
 
@@ -753,100 +748,6 @@ class DocumentProcessor:
             conversation.temp_file = uploaded_file.object_key
             conversation.save()
 
-    def clear_highlights(self, conversation):
-        file_path = os.path.join(settings.TMP_DIR, conversation.temp_file)
-        doc = fitz.open(file_path)
-        # Clear the highlights
-        for page in doc:
-            # Remove the annotations (highlights are a type of annotation)
-            doc.xref_set_key(page.xref, "Annots", "null")
-
-        doc.save(file_path, incremental=1, encryption=0)
-        doc.close()
-        return file_path
-
-    def fuzzy_highlight(self, conversation, query):
-        file_path = os.path.join(settings.TMP_DIR, conversation.temp_file)
-
-        try:
-            doc = fitz.open(file_path)
-            highlight_limit = doc.page_count
-
-            # user_message = get_latest_user_message(conversation)
-            user_message = query
-
-            # get relevant chunks for highlighting
-            processor = DocumentProcessor(conversation.case.uid)
-            vectorstore = processor.get_vector_store()
-            highlight_texts = vectorstore.similarity_search_with_score(
-                user_message, k=highlight_limit, filter=processor.filter_query
-            )
-
-            # sort by score
-            highlight_texts = sorted(
-                [
-                    doc_and_score
-                    for doc_and_score in highlight_texts
-                    if doc_and_score[1] >= 0.75
-                ],
-                key=lambda x: x[1],
-                reverse=True,
-            )[:highlight_limit]
-
-            for highlight_text in highlight_texts:
-                cleaned_text = highlight_text[0].page_content
-
-                for page in doc:
-                    # for page in docs:
-                    page_text = page.get_text("text")
-
-                    # Calculate similarity score
-                    similarity = fuzz.partial_ratio(page_text, cleaned_text)
-
-                    if similarity > 80:
-                        areas = page.search_for(cleaned_text)
-
-                        # If it fails to match exactly, split cleaned
-                        # text into segments and search for each segment
-                        if not areas:
-                            bounding_rects = []
-                            # Split the cleaned text into segments based on newline characters
-                            segments = cleaned_text.split("\n")
-                            # Iterate through each segment and search for areas
-                            for segment in segments:
-                                areas = page.search_for(segment)
-                                if areas:
-                                    # Create a bounding rect around all areas for this segment
-                                    bounding_rect = fitz.Rect(areas[0])
-                                    for area in areas[1:]:
-                                        bounding_rect.include_rect(area)
-
-                                    bounding_rects.append(bounding_rect)
-
-                            # Create a single highlight annotation for the bounding rects of all segments
-                            if bounding_rects:
-                                bounding_rect = bounding_rects[0]
-                                for rect in bounding_rects[1:]:
-                                    bounding_rect.include_rect(rect)
-
-                                highlight = page.add_highlight_annot(bounding_rect)
-                                highlight.set_colors({"stroke": (1.0, 1.0, 0.553)})
-                                highlight.update()
-                        else:
-                            # Create a highlight annotation for the entire cleaned_text
-                            bounding_rect = fitz.Rect(areas[0])
-                            for area in areas[1:]:
-                                bounding_rect.include_rect(area)
-
-                            highlight = page.add_highlight_annot(bounding_rect)
-                            highlight.set_colors({"stroke": (1.0, 1.0, 0.553)})
-                            highlight.update()
-
-            doc.save(file_path, incremental=1, encryption=0)
-            return doc
-
-        except Exception as e:
-            return False, f"Error highlighting text: {e}"
 
     # Function to upsert embeddings to Pinecone
     def upsert_to_pinecone(self, texts, metadatas):
@@ -855,8 +756,11 @@ class DocumentProcessor:
             vectors = self.embed.embed_documents(texts)
             vector_pkg = list(zip(ids, vectors, metadatas))
 
-            pinecone.init(api_key=self.pinecone_api_key, environment=self.pinecone_env)
-            index = pinecone.Index(self.index_name)
+            # pinecone.init(api_key=self.pinecone_api_key, environment=self.pinecone_env)
+            # index = pinecone.Index(self.index_name)
+
+            pc = Pinecone(api_key=self.pinecone_api_key)
+            index = pc.Index(self.index_name)
 
             index.upsert(
                 vectors=vector_pkg,
