@@ -20,7 +20,7 @@ import {Box} from "@material-ui/core";
 import config from "./config";
 import ReactMarkdown from 'react-markdown';
 import AdComponent from "./AdComponent"
-import AdSenseAd from './AdSenseAd';
+import AdSenseAd from './AdsenseAd';
 import TermsOfService from "./TermsOfService";
 import UploadModal from "./UploadModal";
 import PdfViewer from "./PdfViewer";

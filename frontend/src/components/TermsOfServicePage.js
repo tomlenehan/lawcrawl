@@ -15,14 +15,15 @@ const useStyles = makeStyles((theme) => ({
         flexDirection: 'column',
         minHeight: "100vh",
         textAlign: 'center',
+        backgroundColor: '#f6f8f6',
     },
     content: {
         maxWidth: 800,
         margin: '0 auto',
-        padding: theme.spacing(2),
+        padding: theme.spacing(6, 2),
     },
     termsText: {
-        padding: 20,
+        padding: 0,
         // overflowY: 'auto',
         // maxHeight: '80vh',
     }

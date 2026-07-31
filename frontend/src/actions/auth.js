@@ -28,6 +28,7 @@ import {
 import axios from "axios";
 
 axios.defaults.withCredentials = true;
+const API_URL = process.env.REACT_APP_API_URL || window.location.origin;
 
 export const load_user = () => async dispatch => {
     if (localStorage.getItem('access')) {
@@ -40,7 +41,7 @@ export const load_user = () => async dispatch => {
         };
 
         try {
-            const res = await axios.get(`${process.env.REACT_APP_API_URL}/auth/users/me/`, config);
+            const res = await axios.get(`${API_URL}/auth/users/me/`, config);
 
             dispatch({
                 type: USER_LOADED_SUCCESS,
@@ -67,7 +68,7 @@ export const login = (email, password) => async dispatch => {
     }
     const body = JSON.stringify({email, password})
     try {
-        const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/jwt/create/`, body, config);
+        const res = await axios.post(`${API_URL}/auth/jwt/create/`, body, config);
         dispatch({
             type: LOGIN_SUCCESS,
             payload: res.data
@@ -98,7 +99,7 @@ export const googleAuthenticate = (state, code) => async dispatch => {
         }
         const formBody = Object.keys(details).map(key => encodeURIComponent(key) + '=' + encodeURIComponent(details[key])).join('&')
         try {
-            const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/o/google-oauth2/?${formBody}`, config);
+            const res = await axios.post(`${API_URL}/auth/o/google-oauth2/?${formBody}`, config);
             console.log(res.data)
             dispatch({
                 type: GOOGLE_AUTH_SUCCESS,
@@ -131,7 +132,7 @@ export const twitterAuthenticate = (state, code, verifier) => async (dispatch) =
         const formBody = Object.keys(details).map(key => encodeURIComponent(key) + '=' + encodeURIComponent(details[key])).join('&')
         try {
 
-            const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/o/twitter/?${formBody}`, config)
+            const res = await axios.post(`${API_URL}/auth/o/twitter/?${formBody}`, config)
             dispatch({
                 type: TWITTER_AUTH_SUCCESS,
                 payload: res.data
@@ -161,7 +162,7 @@ export const signup = (first_name, last_name, email, password, re_password, news
 
     try {
         // Check if the user or social user exists with the given email
-        const checkRes = await axios.get(`${process.env.REACT_APP_API_URL}/api/user/check?email=${encodeURIComponent(email)}`);
+        const checkRes = await axios.get(`${API_URL}/api/user/check?email=${encodeURIComponent(email)}`);
         if (checkRes.data.social_user_exists && checkRes.data.user_exists) {
             dispatch({
                 type: USER_ALREADY_EXISTS,
@@ -176,7 +177,7 @@ export const signup = (first_name, last_name, email, password, re_password, news
         }
         else {
             // If no user is found with the email, proceed to create a new user
-            const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/users/`, body, config);
+            const res = await axios.post(`${API_URL}/auth/users/`, body, config);
             dispatch({
                 type: SIGNUP_SUCCESS,
                 payload: res.data
@@ -211,7 +212,7 @@ export const verify = (uid, token) => async dispatch => {
     console.log("verifying");
 
     try {
-        await axios.post(`${process.env.REACT_APP_API_URL}/auth/users/activation/`, body, config);
+        await axios.post(`${API_URL}/auth/users/activation/`, body, config);
 
         dispatch({
             type: ACTIVATION_SUCCESS,
@@ -239,7 +240,7 @@ export const checkAuthenticated = () => async dispatch => {
         const body = JSON.stringify({ token: localStorage.getItem('access') });
 
         try {
-            const res = await axios.post(`${process.env.REACT_APP_API_URL}/auth/jwt/verify/`, body, config)
+            const res = await axios.post(`${API_URL}/auth/jwt/verify/`, body, config)
 
             if (res.data.code !== 'token_not_valid') {
                 dispatch({
@@ -273,7 +274,7 @@ export const reset_password = (email) => async dispatch => {
     const body = JSON.stringify({ email });
 
     try {
-        await axios.post(`${process.env.REACT_APP_API_URL}/auth/users/reset_password/`, body, config);
+        await axios.post(`${API_URL}/auth/users/reset_password/`, body, config);
 
         dispatch({
             type: PASSWORD_RESET_SUCCESS
@@ -295,7 +296,7 @@ export const resend_activation = (email) => async dispatch => {
     const body = JSON.stringify({ email });
 
     try {
-        await axios.post(`${process.env.REACT_APP_API_URL}/auth/users/resend_activation/`, body, config);
+        await axios.post(`${API_URL}/auth/users/resend_activation/`, body, config);
 
         dispatch({
             type: AUTHENTICATED_RESEND_SUCCESS
@@ -317,7 +318,7 @@ export const reset_password_confirm = (uid, token, new_password, re_new_password
     const body = JSON.stringify({ uid, token, new_password, re_new_password });
 
     try {
-        await axios.post(`${process.env.REACT_APP_API_URL}/auth/users/reset_password_confirm/`, body, config);
+        await axios.post(`${API_URL}/auth/users/reset_password_confirm/`, body, config);
 
         dispatch({
             type: PASSWORD_RESET_CONFIRM_SUCCESS

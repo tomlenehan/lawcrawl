@@ -14,12 +14,15 @@ export const globalStyles = makeStyles(() => ({
             width: '100%',
             margin: 0,
             padding: 0,
-            backgroundColor: '#B2DFDB',
-            color: '#3a3a3a',
-            overscrollBehavior: 'none', // prevent overscrolling
+            backgroundColor: '#f6f8f6',
+            color: '#202124',
+            overscrollBehavior: 'none',
         },
         '*': {
             boxSizing: 'border-box',
+        },
+        'a': {
+            color: '#0f766e',
         },
         '#root': {
             height: '100%',
@@ -76,12 +79,54 @@ const theme = createTheme({
         @font-face {
             font-family: 'DMSans';
             src: local('DMSans'), local('DMSans-Bold'), url(${DMSansTtf}) format('truetype');
+        }
       `,
         },
     },
+    typography: {
+        fontFamily: [
+            'DMSans',
+            '-apple-system',
+            'BlinkMacSystemFont',
+            '"Segoe UI"',
+            'Roboto',
+            '"Helvetica Neue"',
+            'Arial',
+            'sans-serif',
+        ].join(','),
+        h1: {
+            fontWeight: 800,
+            letterSpacing: 0,
+        },
+        h2: {
+            fontWeight: 800,
+            letterSpacing: 0,
+        },
+        h3: {
+            fontWeight: 800,
+            letterSpacing: 0,
+        },
+        h4: {
+            fontWeight: 800,
+            letterSpacing: 0,
+        },
+        button: {
+            fontWeight: 700,
+            letterSpacing: 0,
+            textTransform: 'none',
+        },
+    },
     palette: {
-        primary: {main: '#B2DFDB'},
-        secondary: {main: '#3a3a3a'},
+        primary: {main: '#0f766e'},
+        secondary: {main: '#202124'},
+        background: {
+            default: '#f6f8f6',
+            paper: '#ffffff',
+        },
+        text: {
+            primary: '#202124',
+            secondary: '#667085',
+        },
     },
 });
 

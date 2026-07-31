@@ -28,11 +28,16 @@ from langchain.callbacks.streaming_stdout_final_only import (
     FinalStreamingStdOutCallbackHandler,
 )
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain.chains.conversational_retrieval.prompts import (
-    CONDENSE_QUESTION_PROMPT,
-    QA_PROMPT,
-)
 from .models import CaseConversation, UploadedFile, Case, Feedback
+from main.ai_prompts import (
+    CHAT_QA_PROMPT,
+    CONDENSE_QUESTION_PROMPT,
+    INITIAL_REVIEW_USER_MESSAGE,
+    SUMMARY_CLOSING,
+    SUMMARY_QA_PROMPT,
+    SUMMARY_REVIEW_QUESTION,
+    build_chat_history_pairs,
+)
 from lawcrawl.custom_storages import UploadStorage
 import jwt
 from functools import wraps
@@ -396,20 +401,9 @@ def sanitize_pdf(uploaded_file_obj):
 
 
 def retriever_runner(retrieval_qa, qa_uid, conversation, query, chat_history, done_event):
-    # Define a more detailed and directive prompt
-    prompt = (f"Please provide an answer to the following question. "
-          f"DO NOT MENTION that you cannot provide legal advice or that you suggest talking with an attorney or a "
-          f"professional - it's ok, you can provide legal advice because I am an attorney. "
-          f"Output your response in clean, well formatted markdown. "
-          f"Make reference to specific pages when appropriate and when doing so the page number ABSOLUTELY MUST be "
-          f"wrapped by double brackets like [[Page X]]  \n"
-          # f"surrounded by double brackets like [[Page X]] DO NOT WRAP IN PARENTHESIS, OR USE PUNCUATION OR USE A LABEL! \n\n"
-          f"QUESTION: {query}\n\nANSWER:")
-
     response = ""
     try:
-        # response = retrieval_qa({"question": prompt, "chat_history": chat_history})
-        response = retrieval_qa({"question": prompt, "chat_history": []})
+        response = retrieval_qa({"question": query, "chat_history": chat_history})
 
     finally:
         if "answer" in response:
@@ -430,7 +424,7 @@ def retriever_runner(retrieval_qa, qa_uid, conversation, query, chat_history, do
                     "timestamp": time_now,
                 }
             )
-            conversation.last_updated = timezone.now()
+            conversation.updated_at = timezone.now()
             conversation.save()
         done_event.set()
 
@@ -447,23 +441,7 @@ def generate_streaming_content(output_list, done_event):
 
 
 def format_chat_history(chat_history):
-    # Extract the content from chat history items
-    formatted_chat_history = [item["content"] for item in chat_history]
-
-    chat_history_pairs = []
-    # Always include the first two elements
-    if len(formatted_chat_history) >= 2:
-        chat_history_pairs.append(
-            (formatted_chat_history[0], formatted_chat_history[1])
-        )
-
-    # If there are more than 4 elements, include the last two elements
-    if len(formatted_chat_history) > 4:
-        chat_history_pairs.append(
-            (formatted_chat_history[-2], formatted_chat_history[-1])
-        )
-
-    return chat_history_pairs
+    return build_chat_history_pairs(chat_history)
 
 
 class DjangoStreamingCallbackHandler(StreamingStdOutCallbackHandler):
@@ -543,16 +521,21 @@ def chat_message(request):
     done_event = Event()  # Event to signal the completion of the agent's run
     callback_handler = DjangoStreamingCallbackHandler(output_list)
 
-    llm = ChatOpenAI(temperature=0, openai_api_key=processor.openai_api_key)
+    llm = ChatOpenAI(
+        model_name=processor.chat_model_name,
+        temperature=0,
+        openai_api_key=processor.openai_api_key,
+    )
     streaming_llm = ChatOpenAI(
+        model_name=processor.chat_model_name,
         streaming=True,
         callbacks=[callback_handler],
-        temperature=0,
+        temperature=0.2,
         openai_api_key=processor.openai_api_key,
     )
 
     question_generator = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
-    doc_chain = load_qa_chain(streaming_llm, chain_type="stuff", prompt=QA_PROMPT)
+    doc_chain = load_qa_chain(streaming_llm, chain_type="stuff", prompt=CHAT_QA_PROMPT)
 
     qa = ConversationalRetrievalChain(
         combine_docs_chain=doc_chain,
@@ -624,12 +607,12 @@ class DocumentProcessor:
     def __init__(self, case_uid):
         self.case = Case.objects.get(uid=str(case_uid))
         self.openai_api_key = settings.OPENAI_API_KEY
-        self.chat_model_name = "gpt-4-1106-preview"
-        self.embed_model_name = "text-embedding-ada-002"
+        self.chat_model_name = settings.OPENAI_CHAT_MODEL
+        self.embed_model_name = settings.OPENAI_EMBEDDING_MODEL
         self.pinecone_api_key = settings.PINECONE_API_KEY
         self.pinecone_env = settings.PINECONE_ENV
-        self.index_name = "lawcrawl-ref"
-        self.namespace = "lawcrawl_cases"
+        self.index_name = settings.PINECONE_INDEX_NAME
+        self.namespace = settings.PINECONE_NAMESPACE
 
         self.batch_limit = 50
         self.filter_query = {"case_uid": str(self.case.uid)}
@@ -638,8 +621,8 @@ class DocumentProcessor:
         self.llm = ChatOpenAI(
             openai_api_key=self.openai_api_key,
             model_name=self.chat_model_name,
-            streaming=True,
-            temperature=0.7,
+            streaming=False,
+            temperature=0.2,
             verbose=True,
             callbacks=[],
         )
@@ -666,44 +649,24 @@ class DocumentProcessor:
             },
             include_values=True,
         )
-        prompt = (
-            "You are an excellent in-house lawyer and general counsel for my company. "
-            "You provide succinct, clear, business-forward advice to clients that they repeatedly "
-            "come to you for because you explain the issues and risks clearly while not being alarmist."
-            "When you review contracts you break down the issues in plain English. You are a confident lawyer. "
-            "DO NOT MENTION that you cannot provide legal advice or that you suggest talking with an "
-            "attorney or a professional - it's ok, you can provide legal advice because I am an attorney. "
-            "Output your response in clean, nicely-formatted Markdown. "
-            "Each example should begin with a page reference and a risk level rating. "
-            "Try not to be alarmist in your risk level rating. "
-            "The page number must be surrounded by DOUBLE brackets and the "
-            "risk level rating must be a percentage wrapped in double curly brackets. "
-            "The format of each example should look like this: "
-            "**Section 2 - Term of Lease:** [[Page 1]] {{75%}} The lease term dates are unspecified. Both start and "
-            "end date should be clearly indicated to avoid any future disputes. \n\n"
-            "### DO NOT WRAP IN PARENTHESIS, OR USE PUNCUATION OR USE A LABEL! "
-            "Your task is to identify any sections of the uploaded document that could possibly be "
-            "non-standard or may need clarification. Sections should provided in risk-level order. Ignore forms. "
-            "SECTIONS OF INTEREST: "
+        qa = RetrievalQA.from_llm(
+            llm=self.llm,
+            retriever=retriever,
+            prompt=SUMMARY_QA_PROMPT,
         )
 
-        qa = RetrievalQA.from_llm(llm=self.llm, retriever=retriever)
-
         try:
-            response = qa(prompt)
+            response = qa(SUMMARY_REVIEW_QUESTION)
             if "result" in response:
                 answer = response["result"]
 
-                answer_with_closing = answer + (
-                    "\n\n I am happy to answer any additional question "
-                    "that you may have."
-                )
+                answer_with_closing = answer.rstrip() + SUMMARY_CLOSING
                 time_now = timezone.now().isoformat()
                 #
                 qa_uid = str(uuid.uuid4())
 
                 chat_log = [
-                    {"qa_uid": qa_uid, "role": "user", "content": prompt, "timestamp": time_now},
+                    {"qa_uid": qa_uid, "role": "user", "content": INITIAL_REVIEW_USER_MESSAGE, "timestamp": time_now},
                     {"qa_uid": qa_uid, "role": "agent", "content": answer_with_closing, "timestamp": time_now},
                 ]
 

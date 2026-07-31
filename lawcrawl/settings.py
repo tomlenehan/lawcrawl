@@ -16,6 +16,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from datetime import timedelta
+from urllib.parse import parse_qs, unquote, urlparse
 
 # Load environment variables from .env file
 load_dotenv()
@@ -31,11 +32,34 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+def env_bool(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.lower() in ("1", "true", "yes", "on")
 
-ALLOWED_HOSTS = ["*"]
 
-CORS_ALLOW_ALL_ORIGINS = True
+def env_list(name, default=""):
+    return [item.strip() for item in os.getenv(name, default).split(",") if item.strip()]
+
+
+DEBUG = env_bool("DEBUG", True)
+
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "*")
+
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
+
+RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+if RENDER_EXTERNAL_HOSTNAME:
+    if "*" not in ALLOWED_HOSTS and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+    render_origin = f"https://{RENDER_EXTERNAL_HOSTNAME}"
+    if render_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(render_origin)
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+CORS_ALLOW_ALL_ORIGINS = env_bool("CORS_ALLOW_ALL_ORIGINS", True)
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -70,6 +94,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -81,7 +106,11 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "lawcrawl.urls"
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = os.getenv("BASE_URL") or (
+    f"https://{RENDER_EXTERNAL_HOSTNAME}"
+    if RENDER_EXTERNAL_HOSTNAME
+    else "http://127.0.0.1:8000"
+)
 # BASE_URL = 'https://lawcrawl.com'
 
 TEMPLATES = [
@@ -120,6 +149,21 @@ SIMPLE_JWT = {
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
 }
 
+SOCIAL_AUTH_ALLOWED_REDIRECT_URIS = [
+    "http://127.0.0.1:8000",
+    "http://127.0.0.1:8000/chat",
+    "https://lawcrawl.com",
+    "https://lawcrawl.com/chat",
+]
+
+if RENDER_EXTERNAL_HOSTNAME:
+    render_origin = f"https://{RENDER_EXTERNAL_HOSTNAME}"
+    SOCIAL_AUTH_ALLOWED_REDIRECT_URIS.extend([render_origin, f"{render_origin}/chat"])
+
+SOCIAL_AUTH_ALLOWED_REDIRECT_URIS.extend(
+    env_list("SOCIAL_AUTH_ALLOWED_REDIRECT_URIS")
+)
+
 DJOSER = {
     "PASSWORD_RESET_CONFIRM_URL": "password/reset/confirm/{uid}/{token}",
     "USERNAME_RESET_CONFIRM_URL": "username/reset/confirm/{uid}/{token}",
@@ -130,12 +174,7 @@ DJOSER = {
     "USERNAME_CHANGED_EMAIL_CONFIRMATION": True,
     "PASSWORD_CHANGED_EMAIL_CONFIRMATION": True,
     "SOCIAL_AUTH_TOKEN_STRATEGY": "djoser.social.token.jwt.TokenStrategy",
-    "SOCIAL_AUTH_ALLOWED_REDIRECT_URIS": [
-        "http://127.0.0.1:8000",
-        "http://127.0.0.1:8000/chat",
-        "https://lawcrawl.com",
-        "https://lawcrawl.com/chat",
-    ],
+    "SOCIAL_AUTH_ALLOWED_REDIRECT_URIS": SOCIAL_AUTH_ALLOWED_REDIRECT_URIS,
     "SERIALIZERS": {
         "user_create": "users.serializers.UserCreateSerializer",
         "user": "users.serializers.UserCreateSerializer",
@@ -176,18 +215,40 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
 ]
 SOCIAL_AUTH_GOOGLE_OAUTH2_EXTRA_DATA = ["first_name", "last_name"]
 
+def database_config_from_url(database_url):
+    parsed = urlparse(database_url)
+    query = parse_qs(parsed.query)
+    config = {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": unquote(parsed.path.lstrip("/")),
+        "USER": unquote(parsed.username or ""),
+        "PASSWORD": unquote(parsed.password or ""),
+        "HOST": parsed.hostname,
+        "PORT": parsed.port or "",
+    }
+
+    sslmode = query.get("sslmode", [os.getenv("POSTGRES_SSLMODE")])[0]
+    if sslmode:
+        config["OPTIONS"] = {"sslmode": sslmode}
+
+    return config
+
+
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB"),
-        "USER": os.getenv("POSTGRES_USER"),
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
-        "HOST": os.getenv("POSTGRES_HOST"),
-        "PORT": os.getenv("POSTGRES_PORT"),
+if os.getenv("DATABASE_URL"):
+    DATABASES = {"default": database_config_from_url(os.getenv("DATABASE_URL"))}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.getenv("POSTGRES_DB"),
+            "USER": os.getenv("POSTGRES_USER"),
+            "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+            "HOST": os.getenv("POSTGRES_HOST"),
+            "PORT": os.getenv("POSTGRES_PORT"),
+        }
     }
-}
 
 
 # Password validation
@@ -267,6 +328,7 @@ if USE_AWS_S3_FOR_STATIC_FILES:
     STATIC_URL = f"https://{AWS_STATIC_BUCKET_NAME}.s3.amazonaws.com/static/"
 else:
     STATIC_URL = "/frontend/static/"
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
     DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
 
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
@@ -291,12 +353,16 @@ GOOGLE_ANALYTICS_MEASUREMENT_ID = os.getenv("GOOGLE_ANALYTICS_MEASUREMENT_ID")
 
 # AI API credentials
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENAI_CHAT_MODEL = os.getenv("OPENAI_CHAT_MODEL", "gpt-4-1106-preview")
+OPENAI_EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL", "text-embedding-ada-002")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 PINECONE_ENV = os.getenv("PINECONE_ENV")
+PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "lawcrawl-ref")
+PINECONE_NAMESPACE = os.getenv("PINECONE_NAMESPACE", "lawcrawl_cases")
 
 LANGCHAIN_API_KEY = os.getenv("LANGCHAIN_API_KEY")
 LANGCHAIN_TRACING_V2 = os.getenv("LANGCHAIN_TRACING_V2")
 LANGCHAIN_ENDPOINT = os.getenv("LANGCHAIN_ENDPOINT")
 LANGCHAIN_PROJECT = os.getenv("LANGCHAIN_PROJECT")
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = os.getenv("BASE_URL", BASE_URL)

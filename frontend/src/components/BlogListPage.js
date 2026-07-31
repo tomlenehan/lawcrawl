@@ -24,92 +24,119 @@ const contentful = require('contentful')
 const useStyles = makeStyles((theme) => ({
     root: {
         flexGrow: 1,
-        overflowY: "scroll",
+        overflowY: "auto",
         justifyContent: "center",
         minHeight: "100vh",
         paddingBottom: 35,
+        backgroundColor: '#f6f8f6',
     },
     contentContainer: {
         display: "flex",
         flexDirection: "column",
-        paddingTop: 60,
+        paddingTop: theme.spacing(7),
+        paddingBottom: theme.spacing(5),
         alignItems: "center",
         textAlign: "center",
     },
     card: {
-        maxWidth: 600,
+        height: '100%',
         margin: 'auto',
         marginBottom: theme.spacing(2),
-        backgroundColor: '#fdfbee',
+        backgroundColor: '#ffffff',
+        borderRadius: 8,
+        border: '1px solid rgba(15, 118, 110, 0.12)',
+        boxShadow: 'none',
+        overflow: 'hidden',
+        transition: 'transform 160ms ease, border-color 160ms ease',
+        '&:hover': {
+            transform: 'translateY(-2px)',
+            borderColor: 'rgba(15, 118, 110, 0.28)',
+        },
     },
     media: {
-        height: 140,
+        height: 172,
     },
     button: {
         marginTop: theme.spacing(1),
     },
     title: {
         fontWeight: 'bold',
-        color: '#3a3a3a',
+        color: '#202124',
     },
     subTitle: {
-        color: '#3a3a3a',
+        color: '#667085',
+        lineHeight: 1.6,
+        marginTop: theme.spacing(1.5),
     },
     mainLogo: {
-        width: 100,
+        width: 76,
         margin: '0 auto',
         display: 'block',
+        marginBottom: theme.spacing(2),
     },
     loginHeadline: {
         fontFamily: "DMSans, sans-serif",
-        marginBottom: 0,
-        color: '#3a3a3a',
+        marginBottom: theme.spacing(1),
+        color: '#202124',
+        fontWeight: 900,
     },
     headlineContainer: {
         display: "flex",
-        color: '#3a3a3a',
+        color: '#202124',
         flexDirection: "column",
         alignItems: "center",
         textAlign: "center",
-        marginBottom: 20,
-        maxWidth: 220,
+        marginBottom: theme.spacing(4),
+        maxWidth: 640,
     },
     readMoreButton: {
-        backgroundColor: '#80cbc4',
-        borderRadius: '50px',
-        color: '#3a3a3a',
+        backgroundColor: '#0f766e',
+        borderRadius: 6,
+        color: '#ffffff',
         textTransform: 'none',
-        padding: '4px 25px',
+        padding: '8px 18px',
         width: 140,
-        height: 40,
+        height: 42,
         marginTop: 22,
+        boxShadow: 'none',
+        fontWeight: 800,
         "&:hover": {
-            backgroundColor: '#26a69a',
+            backgroundColor: '#0b5f59',
+            boxShadow: 'none',
+        },
+        '& .MuiButton-startIcon': {
+            margin: 0,
         },
     },
     searchButton: {
         height: 43,
         marginTop: 10,
-                backgroundColor: '#80cbc4',
-        borderRadius: '12px',
-        color: '#3a3a3a',
+        backgroundColor: '#0f766e',
+        borderRadius: 6,
+        color: '#ffffff',
         textTransform: 'none',
-        width: 140,
+        width: 52,
+        minWidth: 52,
+        boxShadow: 'none',
         "&:hover": {
-            backgroundColor: '#26a69a',
+            backgroundColor: '#0b5f59',
+            boxShadow: 'none',
         },
     },
     textField: {
-        minWidth: 210,
+        minWidth: 280,
         marginTop: 12,
         width: '100%',
-        color: '#3a3a3a',
+        color: '#202124',
+        [theme.breakpoints.down('xs')]: {
+            minWidth: 0,
+        },
     },
     blackLabel: {
-        color: '#3a3a3a',
+        color: '#667085',
     },
     creamInput: {
-        backgroundColor: '#fdfbee',
+        backgroundColor: '#ffffff',
     },
 }));
 
@@ -200,6 +227,7 @@ const BlogListPage = ({isAuthenticated}) => {
                                     onClick={() => getAllEntries()}
                                     startIcon={<SearchIcon style={{fontSize: 25}} />}
                                     className={classes.searchButton}
+                                    aria-label="Search posts"
                                 >
                                     {/*Search*/}
                                 </Button>

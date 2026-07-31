@@ -1,416 +1,650 @@
-import React, {useState} from 'react';
+import React from 'react';
 import Grid from "@material-ui/core/Grid";
 import {makeStyles} from '@material-ui/core/styles';
 import Typography from "@material-ui/core/Typography";
 import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
-import CardHeader from '@material-ui/core/CardHeader';
 import DescriptionIcon from '@material-ui/icons/Description';
 import FindInPageIcon from '@material-ui/icons/FindInPage';
 import ChatIcon from '@material-ui/icons/Chat';
 import Footer from "./Footer";
 import theme from './Theme';
-import {Box, Button, ThemeProvider} from "@material-ui/core";
+import {Box, Button, Container, ThemeProvider} from "@material-ui/core";
 import LoginIcon from '@mui/icons-material/Login';
 import LibraryBooksIcon from '@mui/icons-material/LibraryBooks';
 import {Link} from 'react-router-dom';
 import config from './config';
 import {connect} from "react-redux";
-import ParticlesBackground from "./ParticlesBackground";
-import CheckBoxIcon from "@mui/icons-material/CheckBox";
-import AttachFileIcon from "@mui/icons-material/AttachFile";
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import MailOutlineIcon from '@material-ui/icons/MailOutline';
-import {LinearProgress} from '@material-ui/core';
-
 
 const useStyles = makeStyles((theme) => ({
     root: {
-        flexGrow: 1,
-        overflowY: 'scroll',
-        justifyContent: 'center',
         minHeight: "100vh",
+        backgroundColor: '#f6f8f6',
+        color: '#202124',
+        overflowX: 'hidden',
     },
-    chatContainer: {
-        paddingTop: 60,
-        textAlign: 'center',
-        paddingHorizontal: 20,
-
+    heroSection: {
         position: 'relative',
-        zIndex: 500,
+        borderBottom: '1px solid rgba(15, 118, 110, 0.12)',
+        backgroundColor: '#ffffff',
     },
-    mainLogo: {
-        color: '#3a3a3a',
-        height: 'auto',
-        width: 100,
-        margin: '0 auto',
-        display: 'block',
+    heroInner: {
+        maxWidth: 1180,
+        paddingTop: theme.spacing(9),
+        paddingBottom: theme.spacing(8),
+        [theme.breakpoints.down('sm')]: {
+            paddingTop: theme.spacing(6),
+            paddingBottom: theme.spacing(6),
+        },
     },
-    textLogo: {
-        height: 'auto',
-        width: 240,
-        marginTop: 20,
+    eyebrow: {
+        color: '#0f766e',
+        fontSize: 13,
+        fontWeight: 800,
+        letterSpacing: 0,
+        textTransform: 'uppercase',
+        marginBottom: theme.spacing(1.5),
     },
-    subTitle: {
-        fontSize: 22,
-        marginBottom: 14,
+    heroTitle: {
+        color: '#202124',
+        fontFamily: 'DMSans, sans-serif',
+        fontSize: 64,
+        fontWeight: 900,
+        lineHeight: 1,
+        letterSpacing: 0,
+        marginBottom: theme.spacing(2),
+        [theme.breakpoints.down('sm')]: {
+            fontSize: 46,
+        },
     },
-    description: {
-        fontSize: '1.5vw',
+    heroCopy: {
+        maxWidth: 520,
+        color: '#667085',
+        fontSize: 19,
+        lineHeight: 1.7,
+        marginBottom: theme.spacing(3.5),
+        [theme.breakpoints.down('sm')]: {
+            fontSize: 17,
+        },
     },
-    icon: {
-        fontSize: 60,
-        color: '#3a3a3a',
-    },
-    plusIcon: {
-        fontSize: 15,
-        margin: '0 20px',
-        color: '#3a3a3a',
-    },
-    openAILogo: {
-        height: 60,
-        color: '#3a3a3a',
-    },
-    iconContainer: {
+    ctaRow: {
         display: 'flex',
-        justifyContent: 'center',
+        flexWrap: 'wrap',
+        gap: theme.spacing(1.5),
+        marginBottom: theme.spacing(3),
+    },
+    primaryButton: {
+        backgroundColor: '#0f766e',
+        color: '#ffffff',
+        borderRadius: 6,
+        minHeight: 46,
+        padding: theme.spacing(1.2, 2.75),
+        boxShadow: 'none',
+        textTransform: 'none',
+        fontWeight: 800,
+        '&:hover': {
+            backgroundColor: '#0b5f59',
+            boxShadow: 'none',
+        },
+    },
+    secondaryButton: {
+        backgroundColor: '#ffffff',
+        color: '#202124',
+        border: '1px solid rgba(32, 33, 36, 0.18)',
+        borderRadius: 6,
+        minHeight: 46,
+        padding: theme.spacing(1.2, 2.75),
+        boxShadow: 'none',
+        textTransform: 'none',
+        fontWeight: 800,
+        '&:hover': {
+            backgroundColor: '#f3f6f4',
+            boxShadow: 'none',
+        },
+    },
+    proofStrip: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: theme.spacing(1),
+        color: '#475467',
+        fontSize: 13,
+        fontWeight: 700,
+    },
+    proofItem: {
+        border: '1px solid rgba(15, 118, 110, 0.16)',
+        backgroundColor: '#f6f8f6',
+        borderRadius: 6,
+        padding: theme.spacing(0.75, 1.25),
+    },
+    visualWrap: {
+        width: '100%',
+        maxWidth: 620,
+        marginLeft: 'auto',
+        [theme.breakpoints.down('sm')]: {
+            marginTop: theme.spacing(5),
+            marginRight: 'auto',
+        },
+    },
+    previewFrame: {
+        overflow: 'hidden',
+        borderRadius: 8,
+        backgroundColor: '#ffffff',
+        border: '1px solid rgba(32, 33, 36, 0.12)',
+        boxShadow: '0 22px 60px rgba(32, 33, 36, 0.14)',
+    },
+    previewToolbar: {
+        display: 'flex',
         alignItems: 'center',
-        marginTop: 68,
+        justifyContent: 'space-between',
+        minHeight: 48,
+        padding: theme.spacing(0, 2),
+        backgroundColor: '#202124',
+        color: '#ffffff',
     },
-    loginButton: {
-        backgroundColor: '#B2DFDB',
-        color: '#3a3a3a',
-        height: 48,
-        fontWeight: 'bold',
-        fontSize: 14,
-        marginRight: 12,
-        padding: '8px 30px',
-        '&:hover': {
-            backgroundColor: '#80cbc4',
-        },
-        borderRadius: '10px',
-        border: '1px solid #1DA1F2',
-        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
-        textTransform: 'none',
-        marginBottom: 20,
+    previewDots: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
     },
-    signupButton: {
-        backgroundColor: '#B2DFDB',
-        color: '#3a3a3a',
-        height: 48,
-        fontWeight: 'bold',
-        fontSize: 14,
-        padding: '8px 30px',
-        '&:hover': {
-            backgroundColor: '#80cbc4',
-        },
-        borderRadius: '10px',
-        border: '1px solid #F44336',
-        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
-        textTransform: 'none',
-        marginBottom: 20,
+    previewDot: {
+        width: 8,
+        height: 8,
+        borderRadius: '50%',
+        backgroundColor: '#d0d5dd',
+        opacity: 0.85,
     },
-    blogButton: {
-        backgroundColor: '#B2DFDB',
-        color: '#3a3a3a',
-        fontWeight: 'bold',
-        height: 48,
-        fontSize: 14,
-        padding: '8px 30px',
-        '&:hover': {
-            backgroundColor: '#80cbc4',
-        },
-        borderRadius: '10px',
-        border: '1px solid #F44336',
-        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
-        textTransform: 'none',
-        marginBottom: 4,
-        marginLeft: 16,
+    previewTitle: {
+        color: '#f2f4f7',
+        fontSize: 13,
+        fontWeight: 800,
     },
-    contactButton: {
-        backgroundColor: '#26a69a', // Adjust color as needed
-        color: '#3a3a3a',
-        '&:hover': {
-            backgroundColor: '#80cbc4',
-        },
-        padding: '10px 20px',
-        textTransform: 'none',
-        borderRadius: '5px',
-    },
-    card: {
-        boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)',
-        borderRadius: '10px',
-        margin: 30,
-        textAlign: 'center',
-        backgroundColor: '#B2DFDB',
-        color: '#3a3a3a',
+    previewBody: {
+        display: 'grid',
+        gridTemplateColumns: '1.1fr 0.9fr',
+        gap: theme.spacing(2),
         padding: theme.spacing(2),
-        transition: '0.3s',
-        maxWidth: 345,
-        '&:hover': {
-            boxShadow: '0px 6px 15px rgba(0, 0, 0, 0.2)',
+        backgroundColor: '#f8faf9',
+        [theme.breakpoints.down('xs')]: {
+            gridTemplateColumns: '1fr',
         },
     },
-    cardGridItem: {
+    documentPane: {
+        minHeight: 280,
+        borderRadius: 8,
+        border: '1px solid rgba(32, 33, 36, 0.1)',
+        backgroundColor: '#ffffff',
+        padding: theme.spacing(2),
+    },
+    documentMeta: {
+        color: '#667085',
+        fontSize: 12,
+        fontWeight: 800,
+        marginBottom: theme.spacing(1),
+    },
+    docTitle: {
+        color: '#202124',
+        fontWeight: 900,
+        fontSize: 21,
+        marginBottom: theme.spacing(1.5),
+    },
+    docRows: {
+        display: 'grid',
+        gap: 9,
+        marginBottom: theme.spacing(2),
+    },
+    docLine: {
+        display: 'block',
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#e4e7ec',
+    },
+    highlightBox: {
         display: 'flex',
-        justifyContent: 'center'
+        alignItems: 'flex-start',
+        gap: theme.spacing(1.25),
+        borderRadius: 8,
+        border: '1px solid rgba(15, 118, 110, 0.18)',
+        backgroundColor: '#e6f4f1',
+        color: '#0f766e',
+        padding: theme.spacing(1.5),
+        '& svg': {
+            flexShrink: 0,
+            marginTop: 2,
+        },
     },
-    cardHeader: {
-        paddingBottom: 0,
-        fontSize: 18,
-        marginBottom: -12,
+    highlightTitle: {
+        color: '#0b5f59',
+        fontWeight: 900,
+        fontSize: 14,
+        marginBottom: 4,
     },
-    cardContent: {
-        paddingTop: 0,
+    highlightText: {
+        color: '#344054',
+        fontSize: 13,
+        lineHeight: 1.5,
+    },
+    reviewPane: {
+        display: 'grid',
+        gap: theme.spacing(1.5),
+    },
+    statusBlock: {
+        borderRadius: 8,
+        border: '1px solid rgba(32, 33, 36, 0.1)',
+        backgroundColor: '#ffffff',
+        padding: theme.spacing(1.5),
+    },
+    statusHeader: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: theme.spacing(1),
+    },
+    statusTitle: {
+        color: '#202124',
+        fontSize: 14,
+        fontWeight: 900,
+    },
+    statusPill: {
+        color: '#0f766e',
+        backgroundColor: '#e6f4f1',
+        borderRadius: 999,
+        padding: theme.spacing(0.35, 1),
+        fontSize: 11,
+        fontWeight: 900,
+    },
+    issueList: {
+        display: 'grid',
+        gap: theme.spacing(1),
+    },
+    issueItem: {
+        borderLeft: '3px solid #0f766e',
+        paddingLeft: theme.spacing(1),
+    },
+    issueLabel: {
+        color: '#202124',
+        fontSize: 13,
+        fontWeight: 900,
+    },
+    issueText: {
+        color: '#667085',
+        fontSize: 12,
+        lineHeight: 1.45,
+    },
+    chatPreview: {
+        borderRadius: 8,
+        backgroundColor: '#202124',
+        color: '#ffffff',
+        padding: theme.spacing(1.5),
+    },
+    chatPrompt: {
+        color: '#d0d5dd',
+        fontSize: 12,
+        fontWeight: 800,
+        marginBottom: theme.spacing(1),
+    },
+    chatBubble: {
+        backgroundColor: '#ffffff',
+        color: '#202124',
+        borderRadius: 8,
+        padding: theme.spacing(1.25),
+        fontSize: 13,
+        lineHeight: 1.55,
+    },
+    insightPanel: {
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: theme.spacing(1),
+        marginTop: theme.spacing(1.5),
+        [theme.breakpoints.down('xs')]: {
+            gridTemplateColumns: '1fr',
+        },
+    },
+    insightTile: {
+        backgroundColor: '#ffffff',
+        border: '1px solid rgba(15, 118, 110, 0.14)',
+        borderRadius: 8,
+        padding: theme.spacing(1.5),
+        textAlign: 'left',
+    },
+    insightLabel: {
+        color: '#667085',
+        fontSize: 12,
+        fontWeight: 700,
+        marginBottom: 4,
+    },
+    insightValue: {
+        color: '#202124',
+        fontSize: 15,
+        fontWeight: 800,
+    },
+    section: {
+        paddingTop: theme.spacing(7),
+        paddingBottom: theme.spacing(7),
+    },
+    sectionHeader: {
+        maxWidth: 720,
+        margin: '0 auto',
+        textAlign: 'center',
+        marginBottom: theme.spacing(4),
+    },
+    sectionTitle: {
+        color: '#202124',
+        fontFamily: 'DMSans, sans-serif',
+        fontWeight: 900,
+        fontSize: 34,
+        letterSpacing: 0,
+        marginBottom: theme.spacing(1.5),
+    },
+    sectionCopy: {
+        color: '#667085',
+        fontSize: 17,
+        lineHeight: 1.7,
+    },
+    featureCard: {
+        height: '100%',
+        borderRadius: 8,
+        border: '1px solid rgba(15, 118, 110, 0.14)',
+        boxShadow: 'none',
+        backgroundColor: '#ffffff',
+    },
+    featureContent: {
+        padding: theme.spacing(3),
+        textAlign: 'left',
     },
     cardIcon: {
-        fontSize: '3rem',
-        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
-        color: '#26a69a',
-    },
-    logoContainer: {
-        position: 'relative',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginLeft: 50,
-    },
-    alphaText: {
-        fontSize: 14,
-        color: '#F44336',
-        fontWeight: 'bold',
-        marginLeft: theme.spacing(1),
-    },
-    gradientBackground: {
-        background: 'linear-gradient(270deg, #B2DFDB, #26a69a, #B2DFDB)',
-        backgroundSize: '600% 600%',
-        animation: '$gradientAnimation 25s ease infinite',
-    },
-    '@keyframes gradientAnimation': {
-        '0%': {backgroundPosition: '0% 50%'},
-        '50%': {backgroundPosition: '100% 50%'},
-        '100%': {backgroundPosition: '0% 50%'},
-    },
-    videoContainer: {
-        position: 'relative',
-        height: 315,
-        width: 560,
-        margin: 'auto',
-        marginBottom: theme.spacing(4),
-        marginTop: theme.spacing(4),
-    },
-    loadingContainer: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        display: 'flex',
+        display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 2,
+        width: 44,
+        height: 44,
+        borderRadius: 8,
+        backgroundColor: '#e6f4f1',
+        color: '#0f766e',
+        marginBottom: theme.spacing(2),
+        '& svg': {
+            fontSize: 25,
+        },
     },
-    iframeStyle: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        zIndex: 1,
+    cardTitle: {
+        color: '#202124',
+        fontWeight: 900,
+        fontSize: 20,
+        marginBottom: theme.spacing(1),
     },
-
+    cardText: {
+        color: '#667085',
+        lineHeight: 1.7,
+    },
+    ctaBand: {
+        backgroundColor: '#202124',
+        color: '#ffffff',
+        paddingTop: theme.spacing(5),
+        paddingBottom: theme.spacing(5),
+    },
+    ctaBandInner: {
+        maxWidth: 960,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: theme.spacing(3),
+        [theme.breakpoints.down('sm')]: {
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+        },
+    },
+    ctaBandTitle: {
+        fontWeight: 900,
+        fontSize: 26,
+        letterSpacing: 0,
+        marginBottom: theme.spacing(0.5),
+    },
+    ctaBandCopy: {
+        color: '#d0d5dd',
+        maxWidth: 560,
+    },
+    ctaBandActions: {
+        display: 'flex',
+        flexWrap: 'wrap',
+        gap: theme.spacing(1.5),
+    },
 }));
 
 const HomePage = ({isAuthenticated}) => {
     const classes = useStyles();
-    const [iframeLoading, setIframeLoading] = useState(true);
 
-    const handleIframeLoad = () => {
-        setIframeLoading(false);
-    };
+    const features = [
+        {
+            icon: <DescriptionIcon/>,
+            title: 'Upload documents',
+            body: 'Start with contracts, agreements, invoices, or other PDFs you need to understand quickly.',
+        },
+        {
+            icon: <FindInPageIcon/>,
+            title: 'Spot unusual terms',
+            body: 'Surface non-standard language, risky obligations, and details that deserve a closer read.',
+        },
+        {
+            icon: <ChatIcon/>,
+            title: 'Ask follow-ups',
+            body: 'Keep the conversation going until the document feels clear enough to act on.',
+        },
+    ];
 
     return (
         <ThemeProvider theme={theme}>
             <div className={classes.root}>
-                {/* Gradient Background Section */}
-                <ParticlesBackground/>
-                <div className={classes.gradientBackground}>
-
-                    <div className={classes.chatContainer}>
-
-                        {/* Main logo and video container */}
-                        <Grid container spacing={4} alignItems="center" justifyContent="center"
-                              style={{minHeight: 450}}>
-                            {/* Logo and Text */}
-                            <Grid item xs={0} md={1}></Grid>
-                            <Grid item xs={12} md={3}>
-                                <img src={`${config.STATIC_URL}images/logos/LogoLGGreen.png`}
-                                     alt="Lawcrawl Logo"
-                                     className={classes.mainLogo}/>
-                                <img src={`${config.STATIC_URL}images/logos/TextLogoLG.png`}
-                                     alt="Lawcrawl Text Logo"
-                                     className={classes.textLogo}/>
-                                <Typography className={classes.subTitle}>
-                                    Contract Review, Simplified
+                <section className={classes.heroSection}>
+                    <Container className={classes.heroInner}>
+                        <Grid container spacing={4} alignItems="center">
+                            <Grid item xs={12} md={5}>
+                                <Typography className={classes.eyebrow}>
+                                    Lawcrawl Document Review
                                 </Typography>
-                                {!isAuthenticated && (
-                                    <Box display="flex" justifyContent="center" mt={3}>
+                                <Typography component="h1" className={classes.heroTitle}>
+                                    Lawcrawl
+                                </Typography>
+                                <Typography className={classes.heroCopy}>
+                                    Upload a legal document, see the terms that deserve attention,
+                                    and ask plain-language follow-up questions in one focused workspace.
+                                </Typography>
+                                <Box className={classes.ctaRow}>
+                                    {isAuthenticated ? (
                                         <Button
                                             variant="contained"
-                                            className={classes.loginButton}
-                                            startIcon={<LoginIcon/>}
+                                            className={classes.primaryButton}
+                                            startIcon={<ChatIcon/>}
                                             component={Link}
-                                            to="/login"
+                                            to="/chat"
                                         >
-                                            Login
+                                            Open Chat
                                         </Button>
-                                        <Button
-                                            variant="contained"
-                                            className={classes.signupButton}
-                                            startIcon={<PersonAddIcon/>}
-                                            component={Link}
-                                            to="/signup"
-                                        >
-                                            Signup
-                                        </Button>
-                                    </Box>
-                                )}
-                            </Grid>
-
-                            {/* YouTube Video */}
-                            <Grid item xs={12} md={8}>
-                                <div className={classes.videoContainer}>
-                                    {iframeLoading && (
-                                        <div className={classes.loadingContainer}>
-                                            <LinearProgress style={{width: '60%'}}/>
-                                        </div>
+                                    ) : (
+                                        <>
+                                            <Button
+                                                variant="contained"
+                                                className={classes.primaryButton}
+                                                startIcon={<PersonAddIcon/>}
+                                                component={Link}
+                                                to="/signup"
+                                            >
+                                                Start Reviewing
+                                            </Button>
+                                            <Button
+                                                variant="contained"
+                                                className={classes.secondaryButton}
+                                                startIcon={<LoginIcon/>}
+                                                component={Link}
+                                                to="/login"
+                                            >
+                                                Login
+                                            </Button>
+                                        </>
                                     )}
-                                    <iframe
-                                        className={classes.iframeStyle}
-                                        style={{visibility: iframeLoading ? 'hidden' : 'visible'}}
-                                        src="https://www.youtube.com/embed/79sVS0kHBEY?si=paYIRA13WcwRNPTx"
-                                        frameBorder="0"
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowFullScreen
-                                        onLoad={() => setIframeLoading(false)}
-                                        title="Lawcrawl Video"
-                                    ></iframe>
+                                </Box>
+                                <Box className={classes.proofStrip}>
+                                    <span className={classes.proofItem}>PDF upload</span>
+                                    <span className={classes.proofItem}>Term analysis</span>
+                                    <span className={classes.proofItem}>Document chat</span>
+                                </Box>
+                            </Grid>
+                            <Grid item xs={12} md={7}>
+                                <div className={classes.visualWrap}>
+                                    <div className={classes.previewFrame}>
+                                        <div className={classes.previewToolbar}>
+                                            <span className={classes.previewDots}>
+                                                <span className={classes.previewDot}/>
+                                                <span className={classes.previewDot}/>
+                                                <span className={classes.previewDot}/>
+                                            </span>
+                                            <span className={classes.previewTitle}>Review workspace</span>
+                                        </div>
+                                        <div className={classes.previewBody}>
+                                            <div className={classes.documentPane}>
+                                                <div className={classes.documentMeta}>Service Agreement.pdf</div>
+                                                <Typography className={classes.docTitle}>
+                                                    Important terms surfaced
+                                                </Typography>
+                                                <div className={classes.docRows}>
+                                                    <span className={classes.docLine} style={{width: '94%'}}/>
+                                                    <span className={classes.docLine} style={{width: '88%'}}/>
+                                                    <span className={classes.docLine} style={{width: '96%'}}/>
+                                                    <span className={classes.docLine} style={{width: '72%'}}/>
+                                                    <span className={classes.docLine} style={{width: '91%'}}/>
+                                                </div>
+                                                <div className={classes.highlightBox}>
+                                                    <FindInPageIcon/>
+                                                    <div>
+                                                        <div className={classes.highlightTitle}>
+                                                            Non-standard renewal clause
+                                                        </div>
+                                                        <div className={classes.highlightText}>
+                                                            Auto-renewal and termination timing need a closer read.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className={classes.reviewPane}>
+                                                <div className={classes.statusBlock}>
+                                                    <div className={classes.statusHeader}>
+                                                        <span className={classes.statusTitle}>Findings</span>
+                                                        <span className={classes.statusPill}>3 flagged</span>
+                                                    </div>
+                                                    <div className={classes.issueList}>
+                                                        <div className={classes.issueItem}>
+                                                            <div className={classes.issueLabel}>Payment timing</div>
+                                                            <div className={classes.issueText}>
+                                                                Net terms differ from the expected template.
+                                                            </div>
+                                                        </div>
+                                                        <div className={classes.issueItem}>
+                                                            <div className={classes.issueLabel}>Liability cap</div>
+                                                            <div className={classes.issueText}>
+                                                                Cap language may leave exclusions unclear.
+                                                            </div>
+                                                        </div>
+                                                        <div className={classes.issueItem}>
+                                                            <div className={classes.issueLabel}>Notice window</div>
+                                                            <div className={classes.issueText}>
+                                                                Cancellation timing is buried in the renewal section.
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className={classes.chatPreview}>
+                                                    <div className={classes.chatPrompt}>Ask Lawcrawl</div>
+                                                    <div className={classes.chatBubble}>
+                                                        What happens if we miss the notice deadline?
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className={classes.insightPanel}>
+                                        <div className={classes.insightTile}>
+                                            <div className={classes.insightLabel}>Review Mode</div>
+                                            <div className={classes.insightValue}>Clause-focused</div>
+                                        </div>
+                                        <div className={classes.insightTile}>
+                                            <div className={classes.insightLabel}>Output</div>
+                                            <div className={classes.insightValue}>Plain English</div>
+                                        </div>
+                                        <div className={classes.insightTile}>
+                                            <div className={classes.insightLabel}>Workflow</div>
+                                            <div className={classes.insightValue}>Upload to chat</div>
+                                        </div>
+                                    </div>
                                 </div>
                             </Grid>
                         </Grid>
+                    </Container>
+                </section>
 
-
-                        {/* Description Cards */}
-                        <Grid container spacing={2} style={{marginTop: 30}}>
-                            <Grid item xs={12} md={4} className={classes.cardGridItem}>
-                                <Card className={classes.card}>
-                                    <Box textAlign="center" paddingTop={2}>
-                                        <DescriptionIcon className={classes.cardIcon}/>
-                                    </Box>
-                                    <CardHeader
-                                        title={<Typography className={classes.cardHeader}>Upload
-                                            Documents</Typography>}
-                                    />
-                                    <CardContent>
-                                        <Typography variant="body2">
-                                            Upload your contracts, invoices, agreements, or any
-                                            other document you have questions about.
-                                        </Typography>
-                                    </CardContent>
-                                </Card>
-                            </Grid>
-                            <Grid item xs={12} md={4} className={classes.cardGridItem}>
-                                <Card className={classes.card}>
-                                    <Box textAlign="center" paddingTop={2}>
-                                        <FindInPageIcon className={classes.cardIcon}/>
-                                    </Box>
-                                    <CardHeader
-                                        title={<Typography className={classes.cardHeader}>See
-                                            What's Hidden</Typography>}
-                                    />
-                                    <CardContent>
-                                        <Typography variant="body2">
-                                            Our AI is trained to analyze your document and
-                                            identify any terms that are non-standard or unusual.
-                                        </Typography>
-                                    </CardContent>
-                                </Card>
-                            </Grid>
-                            <Grid item xs={12} md={4} className={classes.cardGridItem}>
-                                <Card className={classes.card}>
-                                    <Box textAlign="center" paddingTop={2}>
-                                        <ChatIcon className={classes.cardIcon}/>
-                                    </Box>
-                                    <CardHeader
-                                        title={<Typography className={classes.cardHeader}>Chat with
-                                            Your
-                                            Assistant</Typography>}
-                                    />
-                                    <CardContent>
-                                        <Typography variant="body2">
-                                            Continue asking questions to gain clarity on areas of
-                                            concern or confusion.
-                                        </Typography>
-                                    </CardContent>
-                                </Card>
-                            </Grid>
-
-                            <Grid item xs={12} style={{marginTop: 80}}>
-                                <Box display="flex" alignItems="center" justifyContent="center">
-                                    <Typography style={{fontSize: 16, marginRight: 8}}>
-                                        Learn More Here
-                                    </Typography>
-                                    <Button
-                                        variant="contained"
-                                        className={classes.loginButton}
-                                        startIcon={<LibraryBooksIcon/>}
-                                        component={Link}
-                                        to="/blog_list"
-                                    >
-                                        Blog
-                                    </Button>
-                                    {/*</Box>*/}
-                                    {/*<Box display="flex" alignItems="center" justifyContent="center">*/}
-                                    <Typography style={{fontSize: 16, marginRight: 8}}>
-                                        or
-                                    </Typography>
-                                    <Button
-                                        variant="contained"
-                                        color="primary"
-                                        className={classes.signupButton}
-                                        startIcon={<MailOutlineIcon/>}
-                                        href="mailto:tess@lawcrawl.com,tom@lawcrawl.com"
-                                    >
-                                        Contact Us
-                                    </Button>
-                                </Box>
-                            </Grid>
-
-                            {/*<Grid item xs={12} style={{marginTop: 30}}>*/}
-                            {/*    <Box display="flex" alignItems="center" justifyContent="center">*/}
-                            {/*        <Typography style={{fontSize: 16, marginRight: 8}}>*/}
-                            {/*            Have Questions?*/}
-                            {/*        </Typography>*/}
-                            {/*        <Button*/}
-                            {/*            variant="contained"*/}
-                            {/*            color="primary"*/}
-                            {/*            className={classes.contactButton}*/}
-                            {/*            startIcon={<MailOutlineIcon/>}*/}
-                            {/*            href="mailto:tess@lawcrawl.com,tom@lawcrawl.com"*/}
-                            {/*        >*/}
-                            {/*            Contact Us*/}
-                            {/*        </Button>*/}
-                            {/*    </Box>*/}
-                            {/*</Grid>*/}
-
-
+                <section className={classes.section}>
+                    <Container maxWidth="lg">
+                        <div className={classes.sectionHeader}>
+                            <Typography component="h2" className={classes.sectionTitle}>
+                                A cleaner way to read what matters
+                            </Typography>
+                            <Typography className={classes.sectionCopy}>
+                                Lawcrawl keeps document review focused on the path from source file
+                                to specific answers, without sending you through a maze of tabs.
+                            </Typography>
+                        </div>
+                        <Grid container spacing={3}>
+                            {features.map((feature) => (
+                                <Grid item xs={12} md={4} key={feature.title}>
+                                    <Card className={classes.featureCard}>
+                                        <CardContent className={classes.featureContent}>
+                                            <span className={classes.cardIcon}>{feature.icon}</span>
+                                            <Typography component="h3" className={classes.cardTitle}>
+                                                {feature.title}
+                                            </Typography>
+                                            <Typography variant="body2" className={classes.cardText}>
+                                                {feature.body}
+                                            </Typography>
+                                        </CardContent>
+                                    </Card>
+                                </Grid>
+                            ))}
                         </Grid>
+                    </Container>
+                </section>
 
-                    </div>
-                    <Footer/>
-                </div>
+                <section className={classes.ctaBand}>
+                    <Container className={classes.ctaBandInner}>
+                        <Box>
+                            <Typography className={classes.ctaBandTitle}>
+                                Need a little more context first?
+                            </Typography>
+                            <Typography className={classes.ctaBandCopy}>
+                                Read the latest notes or reach out before uploading anything sensitive.
+                            </Typography>
+                        </Box>
+                        <Box className={classes.ctaBandActions}>
+                            <Button
+                                variant="contained"
+                                className={classes.primaryButton}
+                                startIcon={<LibraryBooksIcon/>}
+                                component={Link}
+                                to="/blog_list"
+                            >
+                                Blog
+                            </Button>
+                            <Button
+                                variant="contained"
+                                className={classes.secondaryButton}
+                                startIcon={<MailOutlineIcon/>}
+                                href="mailto:tess@lawcrawl.com,tom@lawcrawl.com"
+                            >
+                                Contact
+                            </Button>
+                        </Box>
+                    </Container>
+                </section>
+                <Footer/>
             </div>
-
         </ThemeProvider>
     );
 }

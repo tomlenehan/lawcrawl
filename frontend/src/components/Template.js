@@ -20,7 +20,7 @@ const useStyles = makeStyles((theme) => ({
         margin: '0 auto', // this will center the chat log horizontally
     },
     chatMessage: {
-        backgroundColor: '#3a3a3a',
+        backgroundColor: '#202124',
         display: 'flex',
         justifyContent: 'center', // centers the inner content horizontally
     },
@@ -30,7 +30,7 @@ const useStyles = makeStyles((theme) => ({
         paddingRight: 40,
     },
     avatar: {
-        backgroundColor: '#B2DFDB',
+        backgroundColor: '#e6f4f1',
         borderRadius: '50%',
         width: 40,
         height: 40,

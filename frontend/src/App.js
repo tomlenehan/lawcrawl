@@ -25,13 +25,13 @@ import AccountPage from "./components/AccountPage";
 
 const bodyStyles = makeStyles(() => ({
     htmlBody: {
-        height: '100%',
+        minHeight: '100vh',
         width: '100%',
         margin: 0,
         padding: 0,
-        backgroundColor: '#B2DFDB',
-        color: '#3a3a3a',
-        fontFamily: 'Roboto, sans-serif',
+        backgroundColor: '#f6f8f6',
+        color: '#202124',
+        fontFamily: 'DMSans, Roboto, sans-serif',
     },
 }));
 

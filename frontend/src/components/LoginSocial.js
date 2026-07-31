@@ -5,31 +5,47 @@ import TwitterIcon from "@mui/icons-material/Twitter";
 import React from "react";
 
 
+const API_URL = process.env.REACT_APP_API_URL || window.location.origin;
+
+
 const useStyles = makeStyles((theme) => ({
     twitterButton: {
-        backgroundColor: "#1DA1F2",
-        borderRadius: '50px',
-        color: "white",
+        backgroundColor: "#ffffff",
+        borderRadius: 6,
+        border: '1px solid rgba(29, 161, 242, 0.28)',
+        boxShadow: 'none',
+        color: "#145b87",
+        minHeight: 42,
+        minWidth: 150,
         textTransform: 'none',
-        padding: '4px 25px',
-        maxWidth: 150,
+        padding: '6px 18px',
+        margin: theme.spacing(0.75, 0),
         "&:hover": {
-            backgroundColor: "#0C7EBF",
+            backgroundColor: "#eef7fd",
+            boxShadow: 'none',
         },
     },
     googleButton: {
-        backgroundColor: "#4285F4",
-        color: "white",
+        backgroundColor: "#ffffff",
+        color: "#174ea6",
+        border: '1px solid rgba(66, 133, 244, 0.28)',
         textTransform: 'none',
-        padding: '4px 25px',
+        padding: '6px 18px',
+        minHeight: 42,
+        minWidth: 150,
         "&:hover": {
-            backgroundColor: "#357abd",
+            backgroundColor: "#f3f7ff",
+            boxShadow: 'none',
         },
-        borderRadius: '50px',
-        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
-        margin: theme.spacing(1, 0),
-        maxWidth: 150,
-        marginTop: 20,
+        borderRadius: 6,
+        boxShadow: 'none',
+        margin: theme.spacing(2, 0, 0.75),
+    },
+    socialWrap: {
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        alignItems: 'center',
     },
 }));
 
@@ -41,7 +57,7 @@ const LoginSocial = () => {
     const loginWithTwitter = async () => {
         // Logic for logging in with Twitter
         try {
-            const res = await axios.get(`/auth/o/twitter/?redirect_uri=${process.env.REACT_APP_API_URL}/chat`)
+            const res = await axios.get(`/auth/o/twitter/?redirect_uri=${API_URL}/chat`)
             window.location.replace(res.data.authorization_url)
 
         } catch (err) {
@@ -51,7 +67,7 @@ const LoginSocial = () => {
 
     const loginWithGoogle = async () => {
         try {
-            const res = await axios.get(`${process.env.REACT_APP_API_URL}/auth/o/google-oauth2/?redirect_uri=${process.env.REACT_APP_API_URL}/chat`)
+            const res = await axios.get(`${API_URL}/auth/o/google-oauth2/?redirect_uri=${API_URL}/chat`)
             window.location.replace(res.data.authorization_url)
 
         } catch (err) {
@@ -60,14 +76,14 @@ const LoginSocial = () => {
     };
 
     return (
-        <Box>
+        <Box className={classes.socialWrap}>
             <Button
                 variant="contained"
                 className={`${classes.googleButton} ${classes.commonButton}`}
                 onClick={loginWithGoogle}
                 startIcon={<GoogleIcon/>}
             >
-                <Box style={{padding: 4, textDecoration: 'None'}}>
+                <Box style={{padding: 4, textDecoration: 'none'}}>
                     Google
                 </Box>
             </Button>
@@ -78,7 +94,7 @@ const LoginSocial = () => {
                 onClick={loginWithTwitter}
                 startIcon={<TwitterIcon/>}
             >
-                <Box style={{padding: 4, textDecoration: 'none !important'}}>
+                <Box style={{padding: 4, textDecoration: 'none'}}>
                     Twitter
                 </Box>
             </Button>

@@ -1,7 +1,19 @@
 /frontend/.env
 /.env
 /.idea
-/frontend/static/
+/frontend/static/main.js
+/frontend/static/main.js.LICENSE.txt
+/frontend/static/*.map
+/frontend/node_modules/
+/venv/
+/__pycache__/
+__pycache__/
+*.py[cod]
+.DS_Store
+/logs/
+/media/
+/static/
+/tmp/
 
 # Elastic Beanstalk Files
 .elasticbeanstalk/*

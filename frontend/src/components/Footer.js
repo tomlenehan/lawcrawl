@@ -6,18 +6,24 @@ import { Link } from 'react-router-dom';
 
 const useStyles = makeStyles(() => ({
     footer: {
-        color: 'white',
+        color: '#667085',
         justifyContent: 'center',
         textAlign: 'center',
         fontSize: '14px !important',
         position: 'relative',
         zIndex: 5,
-        paddingTop: '50px',
+        padding: '28px 16px',
+        borderTop: '1px solid rgba(15, 118, 110, 0.12)',
+        backgroundColor: '#ffffff',
     },
     link: {
-        marginLeft: '15px',
-        color: 'inherit',
+        marginLeft: 8,
+        color: '#0f766e',
         textDecoration: 'none',
+        fontWeight: 700,
+        '&:hover': {
+            textDecoration: 'underline',
+        },
     }
 }));
 
@@ -28,7 +34,7 @@ const Footer = (props) => {
     return (
         <ThemeProvider theme={theme}>
             <footer className={classes.footer}>
-                Copyright &copy; {new Date().getFullYear()} Lawcrawl:
+                Copyright &copy; {new Date().getFullYear()} Lawcrawl
                 <Link to="/terms" className={classes.link}>Privacy Policy & Terms of Service</Link>
             </footer>
         </ThemeProvider>

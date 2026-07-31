@@ -164,5 +164,6 @@ uritemplate==4.1.1
 urllib3==1.26.16
 wagtail==5.2.2
 webencodings==0.5.1
+whitenoise==6.7.0
 Willow==1.6.3
 yarl==1.9.2

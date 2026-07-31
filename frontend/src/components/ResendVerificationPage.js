@@ -22,14 +22,16 @@ import {useQuery} from "react-query";
 const useStyles = makeStyles((theme) => ({
     root: {
         flexGrow: 1,
-        overflowY: "scroll",
+        overflowY: "auto",
         justifyContent: "center",
         minHeight: "100vh",
+        backgroundColor: '#f6f8f6',
     },
     contentContainer: {
         display: "flex",
         flexDirection: "column",
-        paddingTop: 60,
+        paddingTop: theme.spacing(7),
+        paddingBottom: theme.spacing(7),
         alignItems: "center",
         textAlign: "center",
     },
@@ -38,40 +40,59 @@ const useStyles = makeStyles((theme) => ({
         flexDirection: "column",
         alignItems: "center",
         textAlign: "center",
-        marginBottom: 20,
-        maxWidth: 220,
+        width: '100%',
+        maxWidth: 380,
+        marginBottom: theme.spacing(3),
+        padding: theme.spacing(4),
+        backgroundColor: '#ffffff',
+        border: '1px solid rgba(15, 118, 110, 0.12)',
+        borderRadius: 8,
+        boxShadow: '0 20px 50px rgba(32, 33, 36, 0.08)',
+        [theme.breakpoints.down('xs')]: {
+            padding: theme.spacing(3),
+        },
     },
     mainLogo: {
-        width: 100,
+        width: 76,
         margin: '0 auto',
         display: 'block',
+        marginBottom: theme.spacing(2),
     },
     loginHeadline: {
         fontFamily: "DMSans, sans-serif",
-        marginBottom: 0,
-        color: '#3a3a3a',
+        marginBottom: theme.spacing(1),
+        color: '#202124',
+        fontWeight: 900,
+    },
+    loginDescription: {
+        color: '#667085',
+        lineHeight: 1.6,
     },
     verifyButton: {
-        backgroundColor: '#fdfbee',
-        color: '#3a3a3a',
+        backgroundColor: '#0f766e',
+        color: '#ffffff',
         fontWeight: 'bold',
         fontSize: 16,
         padding: '8px 30px',
         '&:hover': {
-            backgroundColor: '#80cbc4',
+            backgroundColor: '#0b5f59',
+            boxShadow: 'none',
         },
-        borderRadius: '10px',
-        border: '2px solid #1DA1F2',
-        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
+        borderRadius: 6,
+        border: 'none',
+        boxShadow: 'none',
         textTransform: 'none',
         marginTop: 4,
         marginBottom: 30,
+        width: '100%',
+        minHeight: 44,
     },
     signupLink: {
         marginTop: theme.spacing(2),
         textDecoration: 'none',
         cursor: 'pointer',
-        color: "#4285F4",
+        color: "#0f766e",
+        fontWeight: 700,
         '&:hover': {
             textDecoration: 'underline',
         },
@@ -140,7 +161,7 @@ const ResendVerificationPage = () => {
                         </Typography>
 
                         <Button
-                            onClick={resend_activation(activationEmail)}
+                            onClick={() => resend_verification(activationEmail)}
                             style={{marginTop: '20px'}}
                             type='button'
                             className={classes.verifyButton}

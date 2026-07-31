@@ -33,15 +33,17 @@ import config from "./config";
 const useStyles = makeStyles((theme) => ({
     root: {
         flexGrow: 1,
-        overflowY: 'scroll',
+        overflowY: 'auto',
         justifyContent: 'center',
         minHeight: "100vh",
         paddingBottom: 35,
+        backgroundColor: '#f6f8f6',
     },
     contentContainer: {
         display: "flex",
         flexDirection: "column",
-        paddingTop: 60,
+        paddingTop: theme.spacing(7),
+        paddingBottom: theme.spacing(7),
         alignItems: "center",
         textAlign: "center",
     },
@@ -50,18 +52,29 @@ const useStyles = makeStyles((theme) => ({
         flexDirection: "column",
         alignItems: "center",
         textAlign: "center",
-        marginBottom: 20,
-        maxWidth: 220,
+        width: '100%',
+        maxWidth: 440,
+        marginBottom: theme.spacing(3),
+        padding: theme.spacing(4),
+        backgroundColor: '#ffffff',
+        border: '1px solid rgba(15, 118, 110, 0.12)',
+        borderRadius: 8,
+        boxShadow: '0 20px 50px rgba(32, 33, 36, 0.08)',
+        [theme.breakpoints.down('xs')]: {
+            padding: theme.spacing(3),
+        },
     },
     mainLogo: {
-        width: 100,
+        width: 76,
         margin: '0 auto',
         display: 'block',
+        marginBottom: theme.spacing(2),
     },
     loginHeadline: {
         fontFamily: "DMSans, sans-serif",
-        marginBottom: 0,
-        color: '#3a3a3a',
+        marginBottom: theme.spacing(1),
+        color: '#202124',
+        fontWeight: 900,
     },
     icon: {
         fontSize: 60,
@@ -79,39 +92,43 @@ const useStyles = makeStyles((theme) => ({
         fontFamily: 'DMSans, sans-serif',
     },
     inputButton: {
-        color: '#3a3a3a',
+        color: '#ffffff',
         marginTop: 18,
-        padding: '8px 30px',
-        backgroundColor: '#80cbc4',
+        padding: '8px 18px',
+        backgroundColor: '#0f766e',
         '&:hover': {
-            backgroundColor: '#26a69a',  // Darker color on hover
+            backgroundColor: '#0b5f59',
+            boxShadow: 'none',
         },
-        borderRadius: '10px',
-        boxShadow: '0px 3px 10px rgba(0, 0, 0, 0.2)',
+        borderRadius: 6,
+        boxShadow: 'none',
         textTransform: 'none',
+        minHeight: 44,
+        width: '100%',
+        fontWeight: 800,
     },
     form: {
         width: '100%',
         marginTop: theme.spacing(1),
     },
     textField: {
-        minWidth: 200,
+        minWidth: 0,
         marginTop: 12,
         width: '100%',
-        color: '#3a3a3a',
+        color: '#202124',
     },
     fileInput: {
         display: 'none',
     },
     blackLabel: {
-        color: '#3a3a3a',
+        color: '#667085',
     },
     creamInput: {
-        backgroundColor: '#fdfbee',
+        backgroundColor: '#ffffff',
     },
     error: {
         maxWidth: 250,
-        fontSize: '1.1vw',
+        fontSize: 14,
         color: '#ff1744',
         marginBottom: 15,
         marginTop: -15,
@@ -121,7 +138,8 @@ const useStyles = makeStyles((theme) => ({
         textDecoration: 'none',
         cursor: 'pointer',
         marginLeft: 10,
-        color: "#4285F4",
+        color: "#0f766e",
+        fontWeight: 700,
         '&:hover': {
             textDecoration: 'underline',
         },
@@ -142,9 +160,9 @@ const useStyles = makeStyles((theme) => ({
         maxHeight: '80vh',
     },
     tooltip: {
-        backgroundColor: '#3a3a3a',
+        backgroundColor: '#202124',
         padding: '8px 30px',
-        color: '#80cbc4',
+        color: '#d7f1ec',
     },
     infoProgress: {
         // Set the track color
@@ -305,7 +323,7 @@ const UploadPage = ({token, isAuthenticated, userCases}) => {
                 <Box className={classes.root}>
                     <Container className={classes.contentContainer}>
 
-                        <Grid container style={{justifyContent: 'center', maxWidth: 210}}>
+                        <Grid container style={{justifyContent: 'center', maxWidth: 440}}>
                             {!loading && (
                                 <Box>
                                     <Grid item xs={12}>

@@ -8,20 +8,23 @@ import DisabledByDefaultIcon from '@mui/icons-material/DisabledByDefault';
 
 const useStyles = makeStyles((theme) => ({
     termsText: {
-        backgroundColor: '#fdfbee',
-        padding: 20,
-        border: '2px solid #80cbc4',
-        borderRadius: '10px',
-        position: 'relative', // For positioning the close button
+        backgroundColor: '#ffffff',
+        padding: 28,
+        border: '1px solid rgba(15, 118, 110, 0.14)',
+        borderRadius: 8,
+        position: 'relative',
+        boxShadow: '0 20px 50px rgba(32, 33, 36, 0.08)',
+        textAlign: 'left',
     },
     heading: {
-        color: '#3a3a3a',
+        color: '#202124',
         marginBottom: theme.spacing(1),
-        fontWeight: 'bold', // Make headings bold
+        fontWeight: 'bold',
     },
     paragraph: {
-        color: '#3a3a3a',
+        color: '#475467',
         marginBottom: theme.spacing(2),
+        lineHeight: 1.7,
     },
     closeButton: {
         position: 'absolute',
@@ -36,7 +39,7 @@ const TermsOfService = ({onClose}) => {
     return (
         <div className={classes.termsText}>
             <Button className={classes.closeButton} onClick={onClose}>
-                <DisabledByDefaultIcon style={{color: '#26a69a'}}/>
+                <DisabledByDefaultIcon style={{color: '#0f766e'}}/>
             </Button>
 
             <Typography variant="h6" className={classes.heading}>

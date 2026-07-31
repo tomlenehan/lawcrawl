@@ -5,7 +5,7 @@ import { makeStyles } from '@material-ui/core/styles';
 // Define styles similar to your Chat component
 const useStyles = makeStyles((theme) => ({
     adMessage: {
-        backgroundColor: '#e0f2f1',
+        backgroundColor: '#eef7f5',
         display: 'flex',
         justifyContent: 'center',
     },
@@ -37,7 +37,7 @@ const useStyles = makeStyles((theme) => ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#80cbc4',
+        color: '#0f766e',
         fontWeight: 'bold',
     },
 }));

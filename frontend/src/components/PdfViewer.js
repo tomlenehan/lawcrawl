@@ -20,8 +20,8 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/$
 
 const styles = StyleSheet.create({
     page: {
-        backgroundColor: '#e0f2f1',
-        color: '#3a3a3a',
+        backgroundColor: '#eef7f5',
+        color: '#202124',
     }
     // section: { color: 'white', textAlign: 'center', margin: 30 }
 });
@@ -37,25 +37,25 @@ const useStyles = makeStyles({
         borderRadius: 15,
     },
     pdfPage: {
-        color: '#3a3a3a',
-        backgroundColor: '#e0f2f1',
+        color: '#202124',
+        backgroundColor: '#eef7f5',
     },
     navIcon: {
-        color: '#80cbc4',
+        color: '#0f766e',
         '&disabled': {
             color: '#bdbdbd',
         },
         '&:hover': {
-            backgroundColor: '#26a69a',
+            backgroundColor: '#e6f4f1',
         },
     },
     navigationButton: {
         position: 'absolute',
         top: '10%',
         zIndex: 1000,
-        backgroundColor: 'white',
+            backgroundColor: 'white',
         '&:hover': {
-            backgroundColor: '#26a69a',
+            backgroundColor: '#e6f4f1',
         },
     },
     disabledButton: {
@@ -70,10 +70,10 @@ const useStyles = makeStyles({
     },
     pageSelector: {
         position: 'absolute',
-        color: '#3a3a3a',
+        color: '#202124',
         maxWidth: 165,
         maxHeight: 36,
-        backgroundColor: '#B3DFDB',
+        backgroundColor: '#ffffff',
         borderRadius: 20,
         left: '50%',
         transform: 'translateX(-50%)',
@@ -83,13 +83,13 @@ const useStyles = makeStyles({
         '&:hover': {
             boxShadow: '0 0 10px #719ECE',
         },
-        boxShadow: '0 0 5px #3a3a3a',
+        boxShadow: '0 10px 24px rgba(32, 33, 36, 0.14)',
     },
     pageInput: {
         width: 60,
     },
     pageButton: {
-        color: '#3a3a3a',
+        color: '#202124',
     }
 });
 
